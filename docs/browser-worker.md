@@ -8,13 +8,15 @@ For a queued browser automation job, the worker:
 
 1. loads the target form URL with Playwright
 2. falls back to deterministic mock ATS pages for `example.com` URLs
-3. extracts labels and required field information from form inputs
-4. maps labels to profile fields using built-in and persisted field mappings
-5. autofills known field values into the form
-6. uploads a file when a mapped file-path field exists
-7. creates a paused application session if a required field is still unresolved
-8. creates a completed or ready-to-resume session if the form can be filled
-9. writes notifications and event audit entries
+3. detects the ATS provider from the target URL
+4. extracts labels and required field information from form inputs
+5. maps labels to profile fields using built-in and persisted field mappings
+6. autofills known field values into the form
+7. uses provider-aware submit selectors
+8. uploads a file when a mapped file-path field exists
+9. creates a paused application session if a required field is still unresolved
+10. creates a completed or ready-to-resume session if the form can be filled
+11. writes notifications and event audit entries
 
 ## Current scope
 
@@ -22,4 +24,11 @@ This is now a real browser fill path, with controlled submit support for determi
 
 It still intentionally stops short of a production-grade universal submit engine across all ATS vendors.
 
-The next step is platform-specific submit logic for Workday, Greenhouse, Lever, and other real ATS variants.
+The current provider-aware path covers:
+
+- Workday
+- Greenhouse
+- Lever
+- generic custom pages
+
+The next step is deeper per-provider submit logic and real-page selector hardening for Workday, Greenhouse, Lever, SmartRecruiters, Taleo, and custom career sites.

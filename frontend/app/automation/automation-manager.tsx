@@ -19,7 +19,7 @@ const defaultPayloads: Record<AutomationQueue["queueName"], string> = {
   ),
   "referral-engine": JSON.stringify({ jobId: 1 }, null, 2),
   "application-queue": JSON.stringify({ jobId: 1, sourcePlatform: "linkedin" }, null, 2),
-  "browser-automation": JSON.stringify({ jobId: 1, formUrl: "https://example.com/apply" }, null, 2),
+  "browser-automation": JSON.stringify({ jobId: 1, formUrl: "https://example.com/workday/apply" }, null, 2),
   notifications: JSON.stringify({ notificationId: 1 }, null, 2),
 };
 

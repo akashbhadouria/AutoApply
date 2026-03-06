@@ -11,6 +11,7 @@ interface AtsField {
 }
 
 type AtsFieldType = AtsField["type"];
+type AtsProvider = "workday" | "greenhouse" | "lever" | "smartrecruiters" | "taleo" | "custom";
 
 const builtInMappings: Record<string, string> = {
   "full name": "name",
@@ -30,18 +31,42 @@ function normalizeLabel(label: string) {
   return label.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-function mockAtsPageContent(formUrl: string) {
+function detectAtsProvider(formUrl: string): AtsProvider {
   const lower = formUrl.toLowerCase();
 
   if (lower.includes("workday")) {
+    return "workday";
+  }
+
+  if (lower.includes("greenhouse")) {
+    return "greenhouse";
+  }
+
+  if (lower.includes("lever")) {
+    return "lever";
+  }
+
+  if (lower.includes("smartrecruiters")) {
+    return "smartrecruiters";
+  }
+
+  if (lower.includes("taleo")) {
+    return "taleo";
+  }
+
+  return "custom";
+}
+
+function mockAtsPageContent(provider: AtsProvider) {
+  if (provider === "workday") {
     return `
-      <form id="application-form">
-        <label>Full Name <input id="name" name="name" required /></label>
-        <label>Email <input id="email" type="email" name="email" required /></label>
-        <label>Phone Number <input id="phone" type="tel" name="phone" required /></label>
-        <label>Current Salary <input id="current_salary" name="current_salary" required /></label>
-        <label>Resume <input id="resume" type="file" name="resume" required /></label>
-        <button id="submit" type="submit">Submit</button>
+      <form id="application-form" data-provider="workday">
+        <label>Full Name <input id="wd-name" name="name" required /></label>
+        <label>Email <input id="wd-email" type="email" name="email" required /></label>
+        <label>Phone Number <input id="wd-phone" type="tel" name="phone" required /></label>
+        <label>Current Salary <input id="wd-current-salary" name="current_salary" required /></label>
+        <label>Resume <input id="wd-resume" type="file" name="resume" required /></label>
+        <button id="wd-submit" type="submit">Submit</button>
       </form>
       <script>
         document.getElementById("application-form")?.addEventListener("submit", function(event) {
@@ -52,15 +77,34 @@ function mockAtsPageContent(formUrl: string) {
     `;
   }
 
-  if (lower.includes("greenhouse")) {
+  if (provider === "greenhouse") {
     return `
-      <form id="application-form">
-        <label>Full Name <input id="name" name="name" required /></label>
-        <label>Email <input id="email" type="email" name="email" required /></label>
-        <label>LinkedIn Profile <input id="linkedin" name="linkedin" /></label>
-        <label>Portfolio <input id="portfolio" name="portfolio" /></label>
-        <label>Notice Period <input id="notice_period" name="notice_period" required /></label>
-        <button id="submit" type="submit">Submit</button>
+      <form id="application-form" data-provider="greenhouse">
+        <label>Full Name <input id="gh-name" name="name" required /></label>
+        <label>Email <input id="gh-email" type="email" name="email" required /></label>
+        <label>LinkedIn Profile <input id="gh-linkedin" name="linkedin" /></label>
+        <label>Portfolio <input id="gh-portfolio" name="portfolio" /></label>
+        <label>Notice Period <input id="gh-notice-period" name="notice_period" required /></label>
+        <button id="gh-submit" type="submit">Submit</button>
+      </form>
+      <script>
+        document.getElementById("application-form")?.addEventListener("submit", function(event) {
+          event.preventDefault();
+          document.body.setAttribute("data-submitted", "true");
+        });
+      </script>
+    `;
+  }
+
+  if (provider === "lever") {
+    return `
+      <form id="application-form" data-provider="lever">
+        <label>Full Name <input id="lever-name" name="name" required /></label>
+        <label>Email <input id="lever-email" type="email" name="email" required /></label>
+        <label>Phone <input id="lever-phone" type="tel" name="phone" required /></label>
+        <label>Portfolio <input id="lever-portfolio" name="portfolio" /></label>
+        <label>Resume Link <input id="lever-resume-link" name="resume_link" /></label>
+        <button id="lever-submit" type="submit">Submit</button>
       </form>
       <script>
         document.getElementById("application-form")?.addEventListener("submit", function(event) {
@@ -72,7 +116,7 @@ function mockAtsPageContent(formUrl: string) {
   }
 
   return `
-    <form id="application-form">
+    <form id="application-form" data-provider="${provider}">
       <label>Full Name <input id="name" name="name" required /></label>
       <label>Email <input id="email" type="email" name="email" required /></label>
       <label>Phone <input id="phone" type="tel" name="phone" required /></label>
@@ -90,16 +134,17 @@ function mockAtsPageContent(formUrl: string) {
 }
 
 async function openAtsPage(formUrl: string) {
+  const provider = detectAtsProvider(formUrl);
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
 
   if (formUrl.includes("example.com")) {
-    await page.setContent(mockAtsPageContent(formUrl));
+    await page.setContent(mockAtsPageContent(provider));
   } else {
     await page.goto(formUrl, { waitUntil: "domcontentloaded" });
   }
 
-  return { browser, page };
+  return { browser, page, provider };
 }
 
 async function collectAtsFields(page: Awaited<ReturnType<typeof openAtsPage>>["page"]): Promise<AtsField[]> {
@@ -208,7 +253,7 @@ export async function runAtsAutofill(params: {
   profileFields: Array<{ key: string; value: string }>;
   fieldMappings: Array<{ rawLabel: string; normalizedLabel: string; profileKey: string }>;
 }) {
-  const { browser, page } = await openAtsPage(params.formUrl);
+  const { browser, page, provider } = await openAtsPage(params.formUrl);
 
   try {
     const fields = await collectAtsFields(page);
@@ -288,17 +333,32 @@ export async function runAtsAutofill(params: {
 
     let submitted = false;
 
+    const submitSelectors: Record<AtsProvider, string[]> = {
+      workday: ['#wd-submit', 'button[data-automation-id="bottom-navigation-next-button"]', 'button[type="submit"]'],
+      greenhouse: ['#gh-submit', '#submit_app', 'button[type="submit"]'],
+      lever: ['#lever-submit', 'button[type="submit"]'],
+      smartrecruiters: ['button[type="submit"]'],
+      taleo: ['button[type="submit"]'],
+      custom: ['button[type="submit"]', 'input[type="submit"]'],
+    };
+
     if (!unresolvedRequiredField) {
-      const submitButton = page.locator('button[type="submit"], input[type="submit"]').first();
-      if ((await submitButton.count()) > 0) {
-        await submitButton.click();
-        submitted = true;
-      } else if (params.formUrl.includes("example.com")) {
+      for (const selector of submitSelectors[provider]) {
+        const submitButton = page.locator(selector).first();
+        if ((await submitButton.count()) > 0) {
+          await submitButton.click();
+          submitted = true;
+          break;
+        }
+      }
+
+      if (!submitted && params.formUrl.includes("example.com")) {
         submitted = true;
       }
     }
 
     return {
+      provider,
       analyzedFields: fields,
       filledFields,
       missingRequiredField: unresolvedRequiredField,

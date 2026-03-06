@@ -302,6 +302,7 @@ export function startWorkers() {
         payload: {
           jobId: job.data.jobId,
           formUrl: job.data.formUrl,
+          provider: automationResult.provider,
           resumePath: job.data.resumePath ?? null,
           analyzedFieldCount: automationResult.analyzedFields.length,
           filledFieldCount: Object.keys(automationResult.filledFields).length,
