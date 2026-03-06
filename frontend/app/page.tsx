@@ -24,6 +24,12 @@ export default function HomePage() {
           >
             Open Jobs Inventory
           </Link>
+          <Link
+            className="inline-flex rounded-full border border-border bg-panel px-5 py-3 text-sm font-medium text-ink transition hover:bg-white"
+            href="/applications"
+          >
+            Open Applications Tracker
+          </Link>
         </div>
         <div className="rounded-[32px] border border-border bg-panel p-6 shadow-panel">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Implemented now</p>
@@ -33,6 +39,7 @@ export default function HomePage() {
             <li>Next.js dashboard page with inline management</li>
             <li>Docs and quickstart for local setup</li>
             <li>Jobs inventory with duplicate detection and source merging</li>
+            <li>Applications tracker linked to canonical jobs</li>
           </ul>
         </div>
       </section>

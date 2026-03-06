@@ -64,3 +64,28 @@ CREATE TABLE IF NOT EXISTS job_sources (
     source_platform IN ('linkedin', 'instahyre', 'hirist', 'naukri', 'company_site')
   )
 );
+
+CREATE TABLE IF NOT EXISTS applications (
+  id BIGSERIAL PRIMARY KEY,
+  job_id BIGINT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+  source_platform TEXT NOT NULL,
+  applied BOOLEAN NOT NULL DEFAULT FALSE,
+  applied_date TIMESTAMPTZ,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT applications_job_unique UNIQUE (job_id),
+  CONSTRAINT applications_source_platform_check CHECK (
+    source_platform IN ('linkedin', 'instahyre', 'hirist', 'naukri', 'company_site')
+  ),
+  CONSTRAINT applications_status_check CHECK (
+    status IN ('pending', 'applied', 'interview', 'rejected', 'offer')
+  )
+);
+
+DROP TRIGGER IF EXISTS applications_set_updated_at ON applications;
+
+CREATE TRIGGER applications_set_updated_at
+BEFORE UPDATE ON applications
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();

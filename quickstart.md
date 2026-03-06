@@ -1,9 +1,10 @@
 # Quickstart
 
-This repository currently implements two foundational slices of the larger job-hunting automation system:
+This repository currently implements three foundational slices of the larger job-hunting automation system:
 
 - `Profile Manager`
 - `Jobs Inventory`
+- `Applications Tracker`
 
 ## Prerequisites
 
@@ -66,6 +67,8 @@ Open `http://localhost:3000/profile`.
 
 Open `http://localhost:3000/jobs`.
 
+Open `http://localhost:3000/applications`.
+
 ## Implemented endpoints
 
 - `GET /health`
@@ -74,9 +77,12 @@ Open `http://localhost:3000/jobs`.
 - `DELETE /api/profile-fields/:key`
 - `GET /api/jobs`
 - `POST /api/jobs/discover`
+- `GET /api/applications`
+- `POST /api/applications`
 
 ## Implemented docs
 
 - [docs/profile-manager.md](/home/akash/AutoApply/docs/profile-manager.md)
 - [docs/jobs-inventory.md](/home/akash/AutoApply/docs/jobs-inventory.md)
+- [docs/applications-tracker.md](/home/akash/AutoApply/docs/applications-tracker.md)
 - [database/schema.sql](/home/akash/AutoApply/database/schema.sql)

@@ -8,5 +8,6 @@ The first implemented feature is the `Profile Manager`, which provides:
 - an Express API for listing, upserting, and deleting fields
 - a Next.js dashboard page for editing those fields
 - normalized jobs ingestion with duplicate detection and source merging
+- application tracking linked to normalized jobs
 
 See [quickstart.md](/home/akash/AutoApply/quickstart.md) to run the current slice locally.

@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { Router } from "express";
 import { ZodError } from "zod";
 
+import { getApplications, saveApplication } from "./application.service.js";
 import { getJobs, ingestDiscoveredJob } from "./job.service.js";
 import { getProfileFields, removeProfileField, saveProfileField } from "./profile.service.js";
 
@@ -51,6 +52,24 @@ apiRouter.post("/api/jobs/discover", async (request, response, next) => {
   try {
     const job = await ingestDiscoveredJob(request.body);
     response.status(201).json({ data: job });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/applications", async (_request, response, next) => {
+  try {
+    const applications = await getApplications();
+    response.json({ data: applications });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/applications", async (request, response, next) => {
+  try {
+    const application = await saveApplication(request.body);
+    response.status(201).json({ data: application });
   } catch (error) {
     next(error);
   }

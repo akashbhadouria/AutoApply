@@ -21,6 +21,20 @@ export interface Job {
   updatedAt: string;
 }
 
+export interface Application {
+  id: number;
+  jobId: number;
+  company: string;
+  title: string;
+  location: string;
+  sourcePlatform: Job["primarySourcePlatform"];
+  applied: boolean;
+  appliedDate: string | null;
+  status: "pending" | "applied" | "interview" | "rejected" | "offer";
+  createdAt: string;
+  updatedAt: string;
+}
+
 const backendUrl = process.env.BACKEND_URL;
 
 function getBackendUrl() {
@@ -104,6 +118,42 @@ export async function discoverJob(body: {
 
   if (!response.ok) {
     throw new Error("Failed to ingest job");
+  }
+
+  return response.json();
+}
+
+export async function fetchApplications(): Promise<Application[]> {
+  const response = await fetch(`${getBackendUrl()}/api/applications`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load applications");
+  }
+
+  const payload = (await response.json()) as { data: Application[] };
+  return payload.data;
+}
+
+export async function upsertApplication(body: {
+  jobId: number;
+  sourcePlatform: Job["primarySourcePlatform"];
+  applied: boolean;
+  appliedDate?: string;
+  status: Application["status"];
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/applications`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to save application");
   }
 
   return response.json();
