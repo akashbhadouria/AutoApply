@@ -1,5 +1,5 @@
 import { discoverJob, listJobs } from "./job.repository.js";
-import { discoverJobSchema } from "./job.schema.js";
+import { discoverJobsBatchSchema, discoverJobSchema } from "./job.schema.js";
 
 export async function getJobs() {
   return listJobs();
@@ -10,3 +10,7 @@ export async function ingestDiscoveredJob(payload: unknown) {
   return discoverJob(input);
 }
 
+export async function ingestDiscoveredJobsBatch(payload: unknown) {
+  const input = discoverJobsBatchSchema.parse(payload);
+  return Promise.all(input.jobs.map((job) => discoverJob(job)));
+}

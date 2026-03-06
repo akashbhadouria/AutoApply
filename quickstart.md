@@ -98,6 +98,7 @@ The worker runtime expects:
 - `DELETE /api/profile-fields/:key`
 - `GET /api/jobs`
 - `POST /api/jobs/discover`
+- `POST /api/jobs/discover/batch`
 - `GET /api/applications`
 - `POST /api/applications`
 - `GET /api/contacts`
@@ -123,4 +124,5 @@ The worker runtime expects:
 - [docs/operations-layer.md](/home/akash/AutoApply/docs/operations-layer.md)
 - [docs/worker-architecture.md](/home/akash/AutoApply/docs/worker-architecture.md)
 - [docs/automation-control-plane.md](/home/akash/AutoApply/docs/automation-control-plane.md)
+- [docs/job-scanner-worker.md](/home/akash/AutoApply/docs/job-scanner-worker.md)
 - [database/schema.sql](/home/akash/AutoApply/database/schema.sql)

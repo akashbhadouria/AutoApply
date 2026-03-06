@@ -13,3 +13,8 @@ export const discoverJobSchema = z.object({
 
 export type DiscoverJobInput = z.infer<typeof discoverJobSchema>;
 
+export const discoverJobsBatchSchema = z.object({
+  jobs: z.array(discoverJobSchema).min(1).max(100),
+});
+
+export type DiscoverJobsBatchInput = z.infer<typeof discoverJobsBatchSchema>;

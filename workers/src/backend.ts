@@ -70,3 +70,19 @@ export async function createBackendApplicationSession(body: {
     body,
   });
 }
+
+export async function discoverBackendJobsBatch(body: {
+  jobs: Array<{
+    company: string;
+    title: string;
+    location: string;
+    jobUrl: string;
+    sourcePlatform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
+    postedDate: string;
+  }>;
+}) {
+  return request<{ data: Array<{ id: number }> }>("/api/jobs/discover/batch", {
+    method: "POST",
+    body,
+  });
+}

@@ -3,6 +3,7 @@ import { Worker } from "bullmq";
 import {
   createBackendApplicationSession,
   createBackendEvent,
+  discoverBackendJobsBatch,
   createBackendNotification,
   updateBackendNotificationStatus,
 } from "./backend.js";
@@ -15,6 +16,7 @@ import type {
 } from "./contracts.js";
 import { getConnectionOptions } from "./connection.js";
 import { queueNames } from "./contracts.js";
+import { scanDiscoveredJobs } from "./scanners.js";
 
 function logWorkerStart(name: string, data: unknown) {
   console.log(`[worker:${name}] received`, JSON.stringify(data));
@@ -27,6 +29,10 @@ export function startWorkers() {
     queueNames.jobScanner,
     async (job) => {
       logWorkerStart(queueNames.jobScanner, job.data);
+      const discoveredJobs = scanDiscoveredJobs(job.data);
+      const batchResult = await discoverBackendJobsBatch({
+        jobs: discoveredJobs,
+      });
       await createBackendEvent({
         eventType: "job_scanner.run_requested",
         actor: "jobScannerWorker",
@@ -34,14 +40,15 @@ export function startWorkers() {
           searchTitles: job.data.searchTitles,
           locations: job.data.locations,
           recencyDays: job.data.recencyDays,
+          discoveredCount: batchResult.data.length,
         },
       });
       await createBackendNotification({
         type: "job_scanner_requested",
-        title: "Job scanner run requested",
-        message: `Requested discovery for ${job.data.searchTitles.length} titles across ${job.data.locations.length} locations.`,
+        title: "Job scanner completed",
+        message: `Discovered ${batchResult.data.length} normalized jobs for ${job.data.searchTitles.length} titles across ${job.data.locations.length} locations.`,
         channel: "dashboard",
-        status: "pending",
+        status: "delivered",
       });
     },
     { connection },

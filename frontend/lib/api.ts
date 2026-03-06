@@ -197,6 +197,32 @@ export async function discoverJob(body: {
   return response.json();
 }
 
+export async function discoverJobsBatch(body: {
+  jobs: Array<{
+    company: string;
+    title: string;
+    location: string;
+    jobUrl: string;
+    sourcePlatform: Job["primarySourcePlatform"];
+    postedDate?: string;
+  }>;
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/jobs/discover/batch`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to ingest jobs batch");
+  }
+
+  return response.json();
+}
+
 export async function fetchApplications(): Promise<Application[]> {
   const response = await fetch(`${getBackendUrl()}/api/applications`, {
     cache: "no-store",

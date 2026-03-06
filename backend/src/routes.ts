@@ -6,7 +6,7 @@ import { enqueueAutomationJob, getAutomationQueues } from "./automation.service.
 import { getContacts, saveContact } from "./contact.service.js";
 import { getEvents, saveEvent } from "./event.service.js";
 import { getApplications, saveApplication } from "./application.service.js";
-import { getJobs, ingestDiscoveredJob } from "./job.service.js";
+import { getJobs, ingestDiscoveredJob, ingestDiscoveredJobsBatch } from "./job.service.js";
 import { changeNotificationStatus, getNotifications, saveNotification } from "./notification.service.js";
 import { getProfileFields, removeProfileField, saveProfileField } from "./profile.service.js";
 import { getReferrals, saveReferral } from "./referral.service.js";
@@ -89,6 +89,15 @@ apiRouter.post("/api/jobs/discover", async (request, response, next) => {
   try {
     const job = await ingestDiscoveredJob(request.body);
     response.status(201).json({ data: job });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/jobs/discover/batch", async (request, response, next) => {
+  try {
+    const jobs = await ingestDiscoveredJobsBatch(request.body);
+    response.status(201).json({ data: jobs });
   } catch (error) {
     next(error);
   }

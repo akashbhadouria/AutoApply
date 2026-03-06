@@ -43,3 +43,4 @@ The `/automation` page is a manual control harness that:
 
 This is the first operational bridge between the dashboard and the worker runtime.
 
+The `job-scanner` queue now performs real backend ingestion through the batch discovery endpoint.
