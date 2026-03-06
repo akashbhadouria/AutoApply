@@ -29,9 +29,14 @@ export function AutomationManager({ queues }: { queues: AutomationQueue[] }) {
   const [lastJob, setLastJob] = useState<EnqueuedAutomationJob | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const hasQueues = queues.length > 0;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!hasQueues) {
+      setError("No automation queues are available.");
+      return;
+    }
     setError(null);
     setIsLoading(true);
 
@@ -73,6 +78,7 @@ export function AutomationManager({ queues }: { queues: AutomationQueue[] }) {
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <select
             className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
+            disabled={!hasQueues}
             value={selectedQueue}
             onChange={(event) => {
               const nextQueue = event.target.value as AutomationQueue["queueName"];
@@ -89,13 +95,14 @@ export function AutomationManager({ queues }: { queues: AutomationQueue[] }) {
 
           <textarea
             className="min-h-72 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
+            disabled={!hasQueues}
             value={payload}
             onChange={(event) => setPayload(event.target.value)}
           />
 
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-          <Button className="w-full" disabled={isLoading} type="submit">
+          <Button className="w-full" disabled={isLoading || !hasQueues} type="submit">
             {isLoading ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
             Enqueue job
           </Button>
@@ -105,11 +112,15 @@ export function AutomationManager({ queues }: { queues: AutomationQueue[] }) {
       <div className="space-y-6">
         <Card className="p-6">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Available queues</p>
-          <ul className="mt-4 space-y-3 text-sm text-ink">
-            {queues.map((queue) => (
-              <li key={queue.queueName}>{queue.queueName}</li>
-            ))}
-          </ul>
+          {hasQueues ? (
+            <ul className="mt-4 space-y-3 text-sm text-ink">
+              {queues.map((queue) => (
+                <li key={queue.queueName}>{queue.queueName}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-4 text-sm text-muted">No queues were returned by the backend.</p>
+          )}
         </Card>
 
         <Card className="p-6">

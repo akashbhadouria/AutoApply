@@ -81,6 +81,8 @@ Open `http://localhost:3000/operations`.
 
 Open `http://localhost:3000/automation`.
 
+The automation page is server-rendered and requires the backend to be reachable from the frontend runtime. If it fails to open, verify `frontend/.env.local` contains `BACKEND_URL=http://localhost:4000` and confirm `http://localhost:4000/health` responds before retrying.
+
 Open `http://localhost:3000/field-mappings`.
 
 ## 6. Run worker scaffolds
