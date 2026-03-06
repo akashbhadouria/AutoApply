@@ -236,6 +236,23 @@ export async function fetchApplications(): Promise<Application[]> {
   return payload.data;
 }
 
+export async function fetchApplicationByJobId(jobId: number): Promise<Application | null> {
+  const response = await fetch(`${getBackendUrl()}/api/applications/job/${jobId}`, {
+    cache: "no-store",
+  });
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error("Failed to load application");
+  }
+
+  const payload = (await response.json()) as { data: Application };
+  return payload.data;
+}
+
 export async function upsertApplication(body: {
   jobId: number;
   sourcePlatform: Job["primarySourcePlatform"];
@@ -299,6 +316,19 @@ export async function createContact(body: {
 
 export async function fetchReferrals(): Promise<Referral[]> {
   const response = await fetch(`${getBackendUrl()}/api/referrals`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load referrals");
+  }
+
+  const payload = (await response.json()) as { data: Referral[] };
+  return payload.data;
+}
+
+export async function fetchReferralsByJobId(jobId: number): Promise<Referral[]> {
+  const response = await fetch(`${getBackendUrl()}/api/referrals/job/${jobId}`, {
     cache: "no-store",
   });
 

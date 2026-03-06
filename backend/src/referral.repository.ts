@@ -49,6 +49,17 @@ export async function listReferrals(): Promise<ReferralRecord[]> {
   return result.rows.map(mapReferralRow);
 }
 
+export async function listReferralsByJobId(jobId: number): Promise<ReferralRecord[]> {
+  const result = await pool.query(
+    `${referralSelect}
+     WHERE referrals.job_id = $1
+     ORDER BY referrals.updated_at DESC, referrals.id DESC`,
+    [jobId],
+  );
+
+  return result.rows.map(mapReferralRow);
+}
+
 export async function upsertReferral(input: UpsertReferralInput): Promise<ReferralRecord> {
   const result = await pool.query(
     `INSERT INTO referrals (
@@ -85,4 +96,3 @@ export async function upsertReferral(input: UpsertReferralInput): Promise<Referr
   const record = await pool.query(`${referralSelect} WHERE referrals.id = $1`, [referralId]);
   return mapReferralRow(record.rows[0]);
 }
-

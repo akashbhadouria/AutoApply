@@ -48,6 +48,90 @@ export async function createBackendNotification(body: {
   });
 }
 
+export async function fetchBackendApplicationByJobId(jobId: number) {
+  const response = await fetch(`${env.backendUrl}/api/applications/job/${jobId}`);
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`Backend request failed: ${response.status} /api/applications/job/${jobId}`);
+  }
+
+  return response.json() as Promise<{
+    data: {
+      id: number;
+      jobId: number;
+      applied: boolean;
+      status: "pending" | "applied" | "interview" | "rejected" | "offer";
+    };
+  }>;
+}
+
+export async function fetchBackendReferralsByJobId(jobId: number) {
+  return request<{
+    data: Array<{
+      id: number;
+      jobId: number;
+      contactId: number;
+      company: string;
+      jobTitle: string;
+      contactName: string;
+      status: "pending" | "replied" | "referred" | "no_response";
+    }>;
+  }>(`/api/referrals/job/${jobId}`);
+}
+
+export async function fetchBackendContacts() {
+  return request<{
+    data: Array<{
+      id: number;
+      company: string;
+      fullName: string;
+      firstName: string;
+      title: string;
+      sourcePlatform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
+    }>;
+  }>("/api/contacts");
+}
+
+export async function fetchBackendProfileFields() {
+  return request<{
+    data: Array<{
+      key: string;
+      value: string;
+    }>;
+  }>("/api/profile-fields");
+}
+
+export async function saveBackendApplication(body: {
+  jobId: number;
+  sourcePlatform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
+  applied: boolean;
+  appliedDate?: string;
+  status: "pending" | "applied" | "interview" | "rejected" | "offer";
+}) {
+  return request<{ data: { id: number } }>("/api/applications", {
+    method: "POST",
+    body,
+  });
+}
+
+export async function saveBackendReferral(body: {
+  jobId: number;
+  contactId: number;
+  status: "pending" | "replied" | "referred" | "no_response";
+  outreachMessage: string;
+  connectionRequestMessage?: string;
+  messageSentAt?: string;
+}) {
+  return request<{ data: { id: number } }>("/api/referrals", {
+    method: "POST",
+    body,
+  });
+}
+
 export async function updateBackendNotificationStatus(
   notificationId: number,
   body: { status: "pending" | "delivered" | "failed"; deliveredAt?: string },

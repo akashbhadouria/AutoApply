@@ -5,11 +5,11 @@ import { ZodError } from "zod";
 import { enqueueAutomationJob, getAutomationQueues } from "./automation.service.js";
 import { getContacts, saveContact } from "./contact.service.js";
 import { getEvents, saveEvent } from "./event.service.js";
-import { getApplications, saveApplication } from "./application.service.js";
+import { getApplicationByJobId, getApplications, saveApplication } from "./application.service.js";
 import { getJobs, ingestDiscoveredJob, ingestDiscoveredJobsBatch } from "./job.service.js";
 import { changeNotificationStatus, getNotifications, saveNotification } from "./notification.service.js";
 import { getProfileFields, removeProfileField, saveProfileField } from "./profile.service.js";
-import { getReferrals, saveReferral } from "./referral.service.js";
+import { getReferrals, getReferralsForJob, saveReferral } from "./referral.service.js";
 import { getApplicationSessions, saveApplicationSession } from "./session.service.js";
 
 export const apiRouter = Router();
@@ -112,6 +112,15 @@ apiRouter.get("/api/applications", async (_request, response, next) => {
   }
 });
 
+apiRouter.get("/api/applications/job/:jobId", async (request, response, next) => {
+  try {
+    const application = await getApplicationByJobId(request.params.jobId);
+    response.status(application ? 200 : 404).json(application ? { data: application } : { error: "Not found" });
+  } catch (error) {
+    next(error);
+  }
+});
+
 apiRouter.post("/api/applications", async (request, response, next) => {
   try {
     const application = await saveApplication(request.body);
@@ -142,6 +151,15 @@ apiRouter.post("/api/contacts", async (request, response, next) => {
 apiRouter.get("/api/referrals", async (_request, response, next) => {
   try {
     const referrals = await getReferrals();
+    response.json({ data: referrals });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/referrals/job/:jobId", async (request, response, next) => {
+  try {
+    const referrals = await getReferralsForJob(request.params.jobId);
     response.json({ data: referrals });
   } catch (error) {
     next(error);

@@ -42,6 +42,11 @@ export async function listApplications(): Promise<ApplicationRecord[]> {
   return result.rows.map(mapApplicationRow);
 }
 
+export async function findApplicationByJobId(jobId: number): Promise<ApplicationRecord | null> {
+  const result = await pool.query(`${applicationSelect} WHERE applications.job_id = $1`, [jobId]);
+  return result.rows[0] ? mapApplicationRow(result.rows[0]) : null;
+}
+
 export async function upsertApplication(input: UpsertApplicationInput): Promise<ApplicationRecord> {
   const effectiveAppliedDate =
     input.appliedDate ?? (input.applied ? new Date().toISOString() : null);
@@ -71,4 +76,3 @@ export async function upsertApplication(input: UpsertApplicationInput): Promise<
 
   return mapApplicationRow(record.rows[0]);
 }
-

@@ -35,7 +35,7 @@ The backend now exposes enqueue endpoints so queues can be populated without dir
 ## Next implementation steps
 
 - make `job-scanner` publish normalized discoveries to the backend
-- make `referral-engine` create draft outreach and timeout notifications
-- make `application-queue` rate-limit queued applications
+- make `referral-engine` create richer AI-generated outreach and timeout notifications
+- make `application-queue` apply queue throttling and browser handoff policies
 - make `browser-automation` hand off to Playwright
 - make `notifications` deliver to dashboard, email, and Telegram/WhatsApp

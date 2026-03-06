@@ -100,10 +100,12 @@ The worker runtime expects:
 - `POST /api/jobs/discover`
 - `POST /api/jobs/discover/batch`
 - `GET /api/applications`
+- `GET /api/applications/job/:jobId`
 - `POST /api/applications`
 - `GET /api/contacts`
 - `POST /api/contacts`
 - `GET /api/referrals`
+- `GET /api/referrals/job/:jobId`
 - `POST /api/referrals`
 - `GET /api/application-sessions`
 - `POST /api/application-sessions`
@@ -125,4 +127,6 @@ The worker runtime expects:
 - [docs/worker-architecture.md](/home/akash/AutoApply/docs/worker-architecture.md)
 - [docs/automation-control-plane.md](/home/akash/AutoApply/docs/automation-control-plane.md)
 - [docs/job-scanner-worker.md](/home/akash/AutoApply/docs/job-scanner-worker.md)
+- [docs/application-queue-worker.md](/home/akash/AutoApply/docs/application-queue-worker.md)
+- [docs/referral-engine-worker.md](/home/akash/AutoApply/docs/referral-engine-worker.md)
 - [database/schema.sql](/home/akash/AutoApply/database/schema.sql)

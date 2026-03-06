@@ -5,6 +5,12 @@ import {
   createBackendEvent,
   discoverBackendJobsBatch,
   createBackendNotification,
+  fetchBackendApplicationByJobId,
+  fetchBackendContacts,
+  fetchBackendProfileFields,
+  fetchBackendReferralsByJobId,
+  saveBackendApplication,
+  saveBackendReferral,
   updateBackendNotificationStatus,
 } from "./backend.js";
 import type {
@@ -16,10 +22,32 @@ import type {
 } from "./contracts.js";
 import { getConnectionOptions } from "./connection.js";
 import { queueNames } from "./contracts.js";
+import { browserAutomationQueue } from "./queues.js";
 import { scanDiscoveredJobs } from "./scanners.js";
 
 function logWorkerStart(name: string, data: unknown) {
   console.log(`[worker:${name}] received`, JSON.stringify(data));
+}
+
+function buildReferralDraft(params: {
+  contactFirstName: string;
+  role: string;
+  company: string;
+  resumeLink?: string;
+  userName?: string;
+}) {
+  return `Hi ${params.contactFirstName},
+
+I came across the ${params.role} position at ${params.company} and it aligns well with my frontend experience building React and TypeScript applications.
+
+If you think my background could be a fit, I would appreciate any guidance or referral.${params.resumeLink ? ` Resume: ${params.resumeLink}` : ""}
+
+Thanks,
+${params.userName ?? "Akash"}`;
+}
+
+function buildConnectionDraft(params: { company: string; role: string }) {
+  return `Hi, I found the ${params.role} opening at ${params.company} and would value the chance to connect.`;
 }
 
 export function startWorkers() {
@@ -58,18 +86,57 @@ export function startWorkers() {
     queueNames.referralEngine,
     async (job) => {
       logWorkerStart(queueNames.referralEngine, job.data);
+      const [existingReferrals, contactsResponse, profileFieldsResponse] = await Promise.all([
+        fetchBackendReferralsByJobId(job.data.jobId),
+        fetchBackendContacts(),
+        fetchBackendProfileFields(),
+      ]);
+      const alreadyTrackedContactIds = new Set(existingReferrals.data.map((referral) => referral.contactId));
+      const profileFieldMap = new Map(profileFieldsResponse.data.map((field) => [field.key, field.value]));
+      const resumeLink = profileFieldMap.get("resume_link") ?? profileFieldMap.get("resume");
+      const userName = profileFieldMap.get("name");
+      const matchingContacts = contactsResponse.data.filter(
+        (contact) => !alreadyTrackedContactIds.has(contact.id),
+      );
+
+      let createdReferrals = 0;
+      for (const contact of matchingContacts.slice(0, 3)) {
+        await saveBackendReferral({
+          jobId: job.data.jobId,
+          contactId: contact.id,
+          status: "pending",
+          outreachMessage: buildReferralDraft({
+            contactFirstName: contact.firstName,
+            role: "Frontend Engineer",
+            company: contact.company,
+            resumeLink,
+            userName,
+          }),
+          connectionRequestMessage: buildConnectionDraft({
+            company: contact.company,
+            role: "Frontend Engineer",
+          }),
+          messageSentAt: new Date().toISOString(),
+        });
+        createdReferrals += 1;
+      }
+
       await createBackendEvent({
         eventType: "referral_engine.run_requested",
         actor: "referralEngineWorker",
-        payload: { queue: queueNames.referralEngine, jobId: job.data.jobId },
+        payload: {
+          queue: queueNames.referralEngine,
+          jobId: job.data.jobId,
+          createdReferrals,
+        },
         relatedJobId: job.data.jobId,
       });
       await createBackendNotification({
-        type: "referral_draft_ready",
-        title: "Referral run queued",
-        message: `Referral generation was queued for job ${job.data.jobId}.`,
+        type: "referral_drafts_created",
+        title: "Referral drafts prepared",
+        message: `Prepared ${createdReferrals} referral drafts for job ${job.data.jobId}.`,
         channel: "dashboard",
-        status: "pending",
+        status: "delivered",
         relatedJobId: job.data.jobId,
       });
     },
@@ -80,21 +147,77 @@ export function startWorkers() {
     queueNames.applicationQueue,
     async (job) => {
       logWorkerStart(queueNames.applicationQueue, job.data);
+      const [existingApplication, referralsResponse] = await Promise.all([
+        fetchBackendApplicationByJobId(job.data.jobId),
+        fetchBackendReferralsByJobId(job.data.jobId),
+      ]);
+      const appliedRecord = existingApplication?.data ?? null;
+      const hasSuccessfulReferral = referralsResponse.data.some((referral) => referral.status === "referred");
+      const hasPendingReferral = referralsResponse.data.some((referral) =>
+        referral.status === "pending" || referral.status === "replied",
+      );
+
+      if (appliedRecord?.applied) {
+        await createBackendEvent({
+          eventType: "application_queue.skipped_already_applied",
+          actor: "applicationQueueWorker",
+          payload: {
+            jobId: job.data.jobId,
+            applicationId: appliedRecord.id,
+          },
+          relatedJobId: job.data.jobId,
+        });
+        return;
+      }
+
+      if (hasSuccessfulReferral) {
+        await createBackendEvent({
+          eventType: "application_queue.skipped_referred",
+          actor: "applicationQueueWorker",
+          payload: {
+            jobId: job.data.jobId,
+          },
+          relatedJobId: job.data.jobId,
+        });
+        return;
+      }
+
+      const nextStatus = hasPendingReferral ? "pending" : "applied";
+      const application = await saveBackendApplication({
+        jobId: job.data.jobId,
+        sourcePlatform: job.data.sourcePlatform,
+        applied: nextStatus === "applied",
+        appliedDate: nextStatus === "applied" ? new Date().toISOString() : undefined,
+        status: nextStatus,
+      });
+
+      if (nextStatus === "applied") {
+        await browserAutomationQueue.add(queueNames.browserAutomation, {
+          jobId: job.data.jobId,
+          formUrl: `https://apply.example.com/jobs/${job.data.jobId}`,
+        });
+      }
+
       await createBackendEvent({
-        eventType: "application_queue.run_requested",
+        eventType: nextStatus === "applied" ? "application_queue.application_created" : "application_queue.awaiting_referral",
         actor: "applicationQueueWorker",
         payload: {
           jobId: job.data.jobId,
           sourcePlatform: job.data.sourcePlatform,
+          applicationId: application.data.id,
+          status: nextStatus,
         },
         relatedJobId: job.data.jobId,
       });
       await createBackendNotification({
-        type: "application_queue_requested",
-        title: "Application queue run requested",
-        message: `Application processing was requested for job ${job.data.jobId} from ${job.data.sourcePlatform}.`,
+        type: nextStatus === "applied" ? "application_created" : "application_waiting_for_referral",
+        title: nextStatus === "applied" ? "Application record created" : "Application waiting on referral outcome",
+        message:
+          nextStatus === "applied"
+            ? `Created application tracking and queued browser automation for job ${job.data.jobId}.`
+            : `Job ${job.data.jobId} still has pending referral activity, so the application remains pending.`,
         channel: "dashboard",
-        status: "pending",
+        status: "delivered",
         relatedJobId: job.data.jobId,
       });
     },
