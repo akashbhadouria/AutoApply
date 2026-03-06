@@ -1,6 +1,6 @@
 # Quickstart
 
-This repository currently implements six foundational slices of the larger job-hunting automation system:
+This repository currently implements seven foundational slices of the larger job-hunting automation system:
 
 - `Profile Manager`
 - `Jobs Inventory`
@@ -8,6 +8,7 @@ This repository currently implements six foundational slices of the larger job-h
 - `Contacts + Referrals`
 - `Operations Layer`
 - `Automation Control Plane`
+- `ATS Self-Learning Layer`
 
 ## Prerequisites
 
@@ -78,6 +79,8 @@ Open `http://localhost:3000/operations`.
 
 Open `http://localhost:3000/automation`.
 
+Open `http://localhost:3000/field-mappings`.
+
 ## 6. Run worker scaffolds
 
 ```bash
@@ -89,6 +92,12 @@ The worker runtime expects:
 
 - Redis on `REDIS_URL`
 - backend access on `BACKEND_URL`
+
+For Playwright browser analysis, install the browser runtime once:
+
+```bash
+npx playwright install chromium
+```
 
 ## Implemented endpoints
 
@@ -114,6 +123,8 @@ The worker runtime expects:
 - `PUT /api/notifications/:id/status`
 - `GET /api/events`
 - `POST /api/events`
+- `GET /api/field-mappings`
+- `POST /api/field-mappings`
 - `GET /api/automation/queues`
 - `POST /api/automation/enqueue`
 
@@ -129,4 +140,6 @@ The worker runtime expects:
 - [docs/job-scanner-worker.md](/home/akash/AutoApply/docs/job-scanner-worker.md)
 - [docs/application-queue-worker.md](/home/akash/AutoApply/docs/application-queue-worker.md)
 - [docs/referral-engine-worker.md](/home/akash/AutoApply/docs/referral-engine-worker.md)
+- [docs/field-mappings.md](/home/akash/AutoApply/docs/field-mappings.md)
+- [docs/browser-worker.md](/home/akash/AutoApply/docs/browser-worker.md)
 - [database/schema.sql](/home/akash/AutoApply/database/schema.sql)

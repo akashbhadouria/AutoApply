@@ -186,3 +186,23 @@ CREATE TABLE IF NOT EXISTS events (
   related_job_id BIGINT REFERENCES jobs(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS field_mappings (
+  id BIGSERIAL PRIMARY KEY,
+  raw_label TEXT NOT NULL UNIQUE,
+  normalized_label TEXT NOT NULL,
+  profile_key TEXT NOT NULL,
+  confidence TEXT NOT NULL DEFAULT 'manual',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT field_mappings_confidence_check CHECK (
+    confidence IN ('manual', 'learned', 'suggested')
+  )
+);
+
+DROP TRIGGER IF EXISTS field_mappings_set_updated_at ON field_mappings;
+
+CREATE TRIGGER field_mappings_set_updated_at
+BEFORE UPDATE ON field_mappings
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();

@@ -100,6 +100,16 @@ export interface Event {
   createdAt: string;
 }
 
+export interface FieldMapping {
+  id: number;
+  rawLabel: string;
+  normalizedLabel: string;
+  profileKey: string;
+  confidence: "manual" | "learned" | "suggested";
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AutomationQueue {
   queueName: "job-scanner" | "referral-engine" | "application-queue" | "browser-automation" | "notifications";
 }
@@ -487,6 +497,40 @@ export async function createEvent(body: {
 
   if (!response.ok) {
     throw new Error("Failed to create event");
+  }
+
+  return response.json();
+}
+
+export async function fetchFieldMappings(): Promise<FieldMapping[]> {
+  const response = await fetch(`${getBackendUrl()}/api/field-mappings`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load field mappings");
+  }
+
+  const payload = (await response.json()) as { data: FieldMapping[] };
+  return payload.data;
+}
+
+export async function upsertFieldMapping(body: {
+  rawLabel: string;
+  profileKey: string;
+  confidence: FieldMapping["confidence"];
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/field-mappings`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to save field mapping");
   }
 
   return response.json();

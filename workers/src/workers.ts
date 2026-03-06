@@ -7,12 +7,15 @@ import {
   createBackendNotification,
   fetchBackendApplicationByJobId,
   fetchBackendContacts,
+  fetchBackendFieldMappings,
   fetchBackendProfileFields,
   fetchBackendReferralsByJobId,
   saveBackendApplication,
+  saveBackendFieldMapping,
   saveBackendReferral,
   updateBackendNotificationStatus,
 } from "./backend.js";
+import { analyzeAtsForm, mapAtsFields } from "./ats.js";
 import type {
   ApplicationQueueJobData,
   BrowserAutomationJobData,
@@ -228,20 +231,76 @@ export function startWorkers() {
     queueNames.browserAutomation,
     async (job) => {
       logWorkerStart(queueNames.browserAutomation, job.data);
-      await createBackendApplicationSession({
-        jobId: job.data.jobId,
-        formUrl: job.data.formUrl,
-        filledFields: {},
-        missingField: "resume_path",
-        status: "paused",
+      const [profileFieldsResponse, fieldMappingsResponse] = await Promise.all([
+        fetchBackendProfileFields(),
+        fetchBackendFieldMappings(),
+      ]);
+      const analyzedFields = await analyzeAtsForm(job.data.formUrl);
+      const mappedResult = mapAtsFields({
+        fields: analyzedFields,
+        profileFields: profileFieldsResponse.data,
+        fieldMappings: fieldMappingsResponse.data,
       });
+
+      if (mappedResult.missingRequiredField) {
+        if (mappedResult.missingRequiredField.profileKey) {
+          await saveBackendFieldMapping({
+            rawLabel: mappedResult.missingRequiredField.label,
+            profileKey: mappedResult.missingRequiredField.profileKey,
+            confidence: "learned",
+          });
+        }
+
+        await createBackendApplicationSession({
+          jobId: job.data.jobId,
+          formUrl: job.data.formUrl,
+          filledFields: Object.fromEntries(
+            mappedResult.resolvedFields
+              .filter((field) => field.value)
+              .map((field) => [field.normalizedLabel, String(field.value)]),
+          ),
+          missingField: mappedResult.missingRequiredField.label,
+          status: "paused",
+        });
+        await createBackendNotification({
+          type: "application_paused_missing_field",
+          title: "Application paused for missing field",
+          message: `Browser automation paused for job ${job.data.jobId} because ${mappedResult.missingRequiredField.label} is not fully mapped yet.`,
+          channel: "dashboard",
+          status: "delivered",
+          relatedJobId: job.data.jobId,
+        });
+      } else {
+        await createBackendApplicationSession({
+          jobId: job.data.jobId,
+          formUrl: job.data.formUrl,
+          filledFields: Object.fromEntries(
+            mappedResult.resolvedFields
+              .filter((field) => field.value)
+              .map((field) => [field.normalizedLabel, String(field.value)]),
+          ),
+          missingField: "none",
+          status: "completed",
+        });
+        await createBackendNotification({
+          type: "application_form_ready",
+          title: "ATS form mapped successfully",
+          message: `Browser automation mapped all required fields for job ${job.data.jobId}.`,
+          channel: "dashboard",
+          status: "delivered",
+          relatedJobId: job.data.jobId,
+        });
+      }
+
       await createBackendEvent({
-        eventType: "browser_automation.session_paused",
+        eventType: mappedResult.missingRequiredField ? "browser_automation.session_paused" : "browser_automation.form_mapped",
         actor: "browserAutomationWorker",
         payload: {
           jobId: job.data.jobId,
           formUrl: job.data.formUrl,
           resumePath: job.data.resumePath ?? null,
+          analyzedFieldCount: analyzedFields.length,
+          missingField: mappedResult.missingRequiredField?.label ?? null,
         },
         relatedJobId: job.data.jobId,
       });

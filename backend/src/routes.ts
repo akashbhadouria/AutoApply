@@ -5,6 +5,7 @@ import { ZodError } from "zod";
 import { enqueueAutomationJob, getAutomationQueues } from "./automation.service.js";
 import { getContacts, saveContact } from "./contact.service.js";
 import { getEvents, saveEvent } from "./event.service.js";
+import { getFieldMappings, saveFieldMapping } from "./field-mapping.service.js";
 import { getApplicationByJobId, getApplications, saveApplication } from "./application.service.js";
 import { getJobs, ingestDiscoveredJob, ingestDiscoveredJobsBatch } from "./job.service.js";
 import { changeNotificationStatus, getNotifications, saveNotification } from "./notification.service.js";
@@ -35,6 +36,24 @@ apiRouter.get("/api/events", async (_request, response, next) => {
   try {
     const events = await getEvents();
     response.json({ data: events });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/field-mappings", async (_request, response, next) => {
+  try {
+    const fieldMappings = await getFieldMappings();
+    response.json({ data: fieldMappings });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/field-mappings", async (request, response, next) => {
+  try {
+    const fieldMapping = await saveFieldMapping(request.body);
+    response.status(201).json({ data: fieldMapping });
   } catch (error) {
     next(error);
   }

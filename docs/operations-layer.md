@@ -57,5 +57,6 @@ The `/operations` page allows the user to:
 - save or update missing-field interruptions
 - inspect notifications
 - create sample notifications for workflow testing
+- review the event audit stream created by workers
 
 This creates the operational substrate for browser workers, self-learning field mapping, and n8n notification delivery.

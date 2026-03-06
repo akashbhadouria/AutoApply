@@ -13,5 +13,6 @@ The first implemented feature is the `Profile Manager`, which provides:
 - notifications and resumable paused application session tracking
 - worker, queue, n8n, and agent scaffolding aligned with the target architecture
 - backend queue producer APIs and a manual automation control plane
+- Playwright-backed browser analysis and persistent field mapping storage
 
 See [quickstart.md](/home/akash/AutoApply/quickstart.md) to run the current slice locally.

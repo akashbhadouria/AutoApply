@@ -105,6 +105,29 @@ export async function fetchBackendProfileFields() {
   }>("/api/profile-fields");
 }
 
+export async function fetchBackendFieldMappings() {
+  return request<{
+    data: Array<{
+      id: number;
+      rawLabel: string;
+      normalizedLabel: string;
+      profileKey: string;
+      confidence: "manual" | "learned" | "suggested";
+    }>;
+  }>("/api/field-mappings");
+}
+
+export async function saveBackendFieldMapping(body: {
+  rawLabel: string;
+  profileKey: string;
+  confidence: "manual" | "learned" | "suggested";
+}) {
+  return request<{ data: { id: number } }>("/api/field-mappings", {
+    method: "POST",
+    body,
+  });
+}
+
 export async function saveBackendApplication(body: {
   jobId: number;
   sourcePlatform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";

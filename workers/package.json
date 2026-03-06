@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "bullmq": "^5.46.1",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "playwright": "^1.52.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
