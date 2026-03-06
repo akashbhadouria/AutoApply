@@ -1,0 +1,15 @@
+{
+  "name": "referral-timeout",
+  "description": "Placeholder workflow: check pending referrals older than 24 hours and raise application queue or notifications.",
+  "nodes": [
+    {
+      "name": "Cron",
+      "type": "n8n-nodes-base.cron"
+    },
+    {
+      "name": "Fetch Pending Referrals",
+      "type": "n8n-nodes-base.httpRequest"
+    }
+  ]
+}
+

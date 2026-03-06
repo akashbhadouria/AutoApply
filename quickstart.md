@@ -75,6 +75,15 @@ Open `http://localhost:3000/referrals`.
 
 Open `http://localhost:3000/operations`.
 
+## 6. Run worker scaffolds
+
+```bash
+cp workers/.env.example workers/.env
+npm run dev:workers
+```
+
+The worker runtime expects Redis on `REDIS_URL`.
+
 ## Implemented endpoints
 
 - `GET /health`
@@ -101,4 +110,5 @@ Open `http://localhost:3000/operations`.
 - [docs/applications-tracker.md](/home/akash/AutoApply/docs/applications-tracker.md)
 - [docs/referrals-hub.md](/home/akash/AutoApply/docs/referrals-hub.md)
 - [docs/operations-layer.md](/home/akash/AutoApply/docs/operations-layer.md)
+- [docs/worker-architecture.md](/home/akash/AutoApply/docs/worker-architecture.md)
 - [database/schema.sql](/home/akash/AutoApply/database/schema.sql)

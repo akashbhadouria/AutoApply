@@ -11,5 +11,6 @@ The first implemented feature is the `Profile Manager`, which provides:
 - application tracking linked to normalized jobs
 - contacts and referrals tracking with reusable outreach drafts
 - notifications and resumable paused application session tracking
+- worker, queue, n8n, and agent scaffolding aligned with the target architecture
 
 See [quickstart.md](/home/akash/AutoApply/quickstart.md) to run the current slice locally.
