@@ -11,6 +11,7 @@ npm run dev:stack
 ```
 
 That command brings up Dockerized PostgreSQL and Redis, applies the schema, and starts backend, frontend, and workers together with consistent local credentials.
+It also seeds deterministic demo data so the dashboard and operational pages are immediately usable.
 
 The first implemented feature is the `Profile Manager`, which provides:
 

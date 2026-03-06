@@ -12,6 +12,7 @@
     "dev:frontend": "npm run dev -w frontend",
     "dev:stack": "bash scripts/dev-stack.sh",
     "dev:workers": "npm run dev -w workers",
-    "lint": "npm run lint -w backend && npm run lint -w frontend && npm run lint -w workers"
+    "lint": "npm run lint -w backend && npm run lint -w frontend && npm run lint -w workers",
+    "seed:demo": "bash -lc 'DATABASE_URL=\"${DATABASE_URL:-postgresql://postgres:postgres@localhost:55432/job_hunter}\" REDIS_URL=\"${REDIS_URL:-redis://localhost:56379}\" FRONTEND_ORIGIN=\"${FRONTEND_ORIGIN:-http://localhost:3000}\" npm run seed -w backend'"
   }
 }

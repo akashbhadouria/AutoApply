@@ -36,6 +36,7 @@ That single command will:
 - start Dockerized PostgreSQL on `localhost:55432`
 - start Dockerized Redis on `localhost:56379`
 - apply `database/schema.sql`
+- seed deterministic demo data
 - start backend on `http://localhost:4000`
 - start frontend on `http://localhost:3000`
 - start workers against the same local dependencies
@@ -49,6 +50,12 @@ Open:
 - `http://localhost:3000/operations`
 - `http://localhost:3000/automation`
 - `http://localhost:3000/field-mappings`
+
+If you want to reseed demo data manually without restarting the stack:
+
+```bash
+npm run seed:demo
+```
 
 ## Manual startup
 
@@ -104,6 +111,7 @@ If host database auth is inconsistent, pages now remain styled and show explicit
 
 - [docs/profile-manager.md](/home/akash/AutoApply/docs/profile-manager.md)
 - [docs/dashboard.md](/home/akash/AutoApply/docs/dashboard.md)
+- [docs/demo-seed.md](/home/akash/AutoApply/docs/demo-seed.md)
 - [docs/jobs-inventory.md](/home/akash/AutoApply/docs/jobs-inventory.md)
 - [docs/applications-tracker.md](/home/akash/AutoApply/docs/applications-tracker.md)
 - [docs/referrals-hub.md](/home/akash/AutoApply/docs/referrals-hub.md)
