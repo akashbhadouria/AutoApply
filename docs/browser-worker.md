@@ -1,6 +1,6 @@
 # Browser Worker
 
-`browserAutomationWorker` now performs Playwright-backed ATS analysis.
+`browserAutomationWorker` now performs Playwright-backed ATS analysis and controlled autofill.
 
 ## Current behavior
 
@@ -10,19 +10,16 @@ For a queued browser automation job, the worker:
 2. falls back to deterministic mock ATS pages for `example.com` URLs
 3. extracts labels and required field information from form inputs
 4. maps labels to profile fields using built-in and persisted field mappings
-5. creates a paused application session if a required field is still unresolved
-6. creates a completed application session if all required fields are mapped
-7. writes notifications and event audit entries
+5. autofills known field values into the form
+6. uploads a file when a mapped file-path field exists
+7. creates a paused application session if a required field is still unresolved
+8. creates a completed or ready-to-resume session if the form can be filled
+9. writes notifications and event audit entries
 
 ## Current scope
 
-This is a real browser analysis path, but not yet a full submitter.
+This is now a real browser fill path, with controlled submit support for deterministic mock ATS forms.
 
-It intentionally stops at:
+It still intentionally stops short of a production-grade universal submit engine across all ATS vendors.
 
-- field discovery
-- mapping
-- pause/completion state
-
-The next step is actual autofill interactions and resume-upload handling for specific ATS platforms.
-
+The next step is platform-specific submit logic for Workday, Greenhouse, Lever, and other real ATS variants.

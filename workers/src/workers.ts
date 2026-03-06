@@ -15,7 +15,7 @@ import {
   saveBackendReferral,
   updateBackendNotificationStatus,
 } from "./backend.js";
-import { analyzeAtsForm, mapAtsFields } from "./ats.js";
+import { runAtsAutofill } from "./ats.js";
 import type {
   ApplicationQueueJobData,
   BrowserAutomationJobData,
@@ -235,18 +235,17 @@ export function startWorkers() {
         fetchBackendProfileFields(),
         fetchBackendFieldMappings(),
       ]);
-      const analyzedFields = await analyzeAtsForm(job.data.formUrl);
-      const mappedResult = mapAtsFields({
-        fields: analyzedFields,
+      const automationResult = await runAtsAutofill({
+        formUrl: job.data.formUrl,
         profileFields: profileFieldsResponse.data,
         fieldMappings: fieldMappingsResponse.data,
       });
 
-      if (mappedResult.missingRequiredField) {
-        if (mappedResult.missingRequiredField.profileKey) {
+      if (automationResult.missingRequiredField) {
+        if (automationResult.missingRequiredField.profileKey) {
           await saveBackendFieldMapping({
-            rawLabel: mappedResult.missingRequiredField.label,
-            profileKey: mappedResult.missingRequiredField.profileKey,
+            rawLabel: automationResult.missingRequiredField.label,
+            profileKey: automationResult.missingRequiredField.profileKey,
             confidence: "learned",
           });
         }
@@ -254,18 +253,14 @@ export function startWorkers() {
         await createBackendApplicationSession({
           jobId: job.data.jobId,
           formUrl: job.data.formUrl,
-          filledFields: Object.fromEntries(
-            mappedResult.resolvedFields
-              .filter((field) => field.value)
-              .map((field) => [field.normalizedLabel, String(field.value)]),
-          ),
-          missingField: mappedResult.missingRequiredField.label,
+          filledFields: automationResult.filledFields,
+          missingField: automationResult.missingRequiredField.label,
           status: "paused",
         });
         await createBackendNotification({
           type: "application_paused_missing_field",
           title: "Application paused for missing field",
-          message: `Browser automation paused for job ${job.data.jobId} because ${mappedResult.missingRequiredField.label} is not fully mapped yet.`,
+          message: `Browser automation paused for job ${job.data.jobId} because ${automationResult.missingRequiredField.label} is not fully mapped yet.`,
           channel: "dashboard",
           status: "delivered",
           relatedJobId: job.data.jobId,
@@ -274,18 +269,23 @@ export function startWorkers() {
         await createBackendApplicationSession({
           jobId: job.data.jobId,
           formUrl: job.data.formUrl,
-          filledFields: Object.fromEntries(
-            mappedResult.resolvedFields
-              .filter((field) => field.value)
-              .map((field) => [field.normalizedLabel, String(field.value)]),
-          ),
+          filledFields: automationResult.filledFields,
           missingField: "none",
-          status: "completed",
+          status: automationResult.submitted ? "completed" : "ready_to_resume",
+        });
+        await saveBackendApplication({
+          jobId: job.data.jobId,
+          sourcePlatform: "company_site",
+          applied: automationResult.submitted,
+          appliedDate: automationResult.submitted ? new Date().toISOString() : undefined,
+          status: automationResult.submitted ? "applied" : "pending",
         });
         await createBackendNotification({
-          type: "application_form_ready",
-          title: "ATS form mapped successfully",
-          message: `Browser automation mapped all required fields for job ${job.data.jobId}.`,
+          type: automationResult.submitted ? "application_submitted" : "application_form_ready",
+          title: automationResult.submitted ? "Application autofill completed" : "ATS form mapped successfully",
+          message: automationResult.submitted
+            ? `Browser automation autofilled and submitted the ATS flow for job ${job.data.jobId}.`
+            : `Browser automation mapped all required fields for job ${job.data.jobId}, but submission still needs a final step.`,
           channel: "dashboard",
           status: "delivered",
           relatedJobId: job.data.jobId,
@@ -293,14 +293,20 @@ export function startWorkers() {
       }
 
       await createBackendEvent({
-        eventType: mappedResult.missingRequiredField ? "browser_automation.session_paused" : "browser_automation.form_mapped",
+        eventType: automationResult.missingRequiredField
+          ? "browser_automation.session_paused"
+          : automationResult.submitted
+            ? "browser_automation.submitted"
+            : "browser_automation.form_filled",
         actor: "browserAutomationWorker",
         payload: {
           jobId: job.data.jobId,
           formUrl: job.data.formUrl,
           resumePath: job.data.resumePath ?? null,
-          analyzedFieldCount: analyzedFields.length,
-          missingField: mappedResult.missingRequiredField?.label ?? null,
+          analyzedFieldCount: automationResult.analyzedFields.length,
+          filledFieldCount: Object.keys(automationResult.filledFields).length,
+          submitted: automationResult.submitted,
+          missingField: automationResult.missingRequiredField?.label ?? null,
         },
         relatedJobId: job.data.jobId,
       });

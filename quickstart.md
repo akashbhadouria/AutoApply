@@ -101,6 +101,8 @@ For Playwright browser analysis, install the browser runtime once:
 npx playwright install chromium
 ```
 
+For local browser-worker validation, enqueue a `browser-automation` job against an `example.com` form URL from the Automation page. Those deterministic mock pages support autofill and controlled submit behavior.
+
 ## Implemented endpoints
 
 - `GET /health`

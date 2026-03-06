@@ -29,4 +29,3 @@ Each mapping stores:
 4. the label can then be stored as a new field mapping
 
 This is the persistence layer that makes the automation system progressively smarter over time.
-
