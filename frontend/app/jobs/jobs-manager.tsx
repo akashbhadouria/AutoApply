@@ -151,7 +151,7 @@ export function JobsManager({ initialJobs }: { initialJobs: Job[] }) {
                 Source platform
               </label>
               <select
-                className="h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent"
+                className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
                 id="source-platform"
                 onChange={(event) =>
                   setForm((current) => ({
@@ -197,7 +197,7 @@ export function JobsManager({ initialJobs }: { initialJobs: Job[] }) {
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Normalized jobs</p>
             <p className="text-sm text-muted">Duplicate job discoveries are merged into a single record with multiple sources.</p>
           </div>
-          <p className="rounded-full bg-canvas px-3 py-1 text-sm font-medium text-ink">{jobs.length} jobs</p>
+          <p className="rounded-full bg-slate-900/80 px-3 py-1 text-sm font-medium text-ink">{jobs.length} jobs</p>
         </div>
 
         <div className="overflow-x-auto">

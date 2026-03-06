@@ -72,7 +72,7 @@ export function AutomationManager({ queues }: { queues: AutomationQueue[] }) {
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <select
-            className="h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent"
+            className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
             value={selectedQueue}
             onChange={(event) => {
               const nextQueue = event.target.value as AutomationQueue["queueName"];
@@ -88,7 +88,7 @@ export function AutomationManager({ queues }: { queues: AutomationQueue[] }) {
           </select>
 
           <textarea
-            className="min-h-72 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
+            className="min-h-72 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
             value={payload}
             onChange={(event) => setPayload(event.target.value)}
           />

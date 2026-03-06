@@ -178,7 +178,7 @@ export function OperationsManager({
 
           <form className="mt-6 space-y-4" onSubmit={handleSessionSubmit}>
             <select
-              className="h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
               required
               value={sessionForm.jobId}
               onChange={(event) => setSessionForm((current) => ({ ...current, jobId: event.target.value }))}
@@ -193,14 +193,14 @@ export function OperationsManager({
             <Input placeholder="Form URL" required value={sessionForm.formUrl} onChange={(event) => setSessionForm((current) => ({ ...current, formUrl: event.target.value }))} />
             <Input placeholder="Missing field" required value={sessionForm.missingField} onChange={(event) => setSessionForm((current) => ({ ...current, missingField: event.target.value }))} />
             <textarea
-              className="min-h-28 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
+              className="min-h-28 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
               placeholder='{"name":"Akash Bhadouria"}'
               required
               value={sessionForm.filledFieldsJson}
               onChange={(event) => setSessionForm((current) => ({ ...current, filledFieldsJson: event.target.value }))}
             />
             <select
-              className="h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
               value={sessionForm.status}
               onChange={(event) => setSessionForm((current) => ({ ...current, status: event.target.value as ApplicationSession["status"] }))}
             >
@@ -226,14 +226,14 @@ export function OperationsManager({
             <Input placeholder="Type" required value={notificationForm.type} onChange={(event) => setNotificationForm((current) => ({ ...current, type: event.target.value }))} />
             <Input placeholder="Title" required value={notificationForm.title} onChange={(event) => setNotificationForm((current) => ({ ...current, title: event.target.value }))} />
             <textarea
-              className="min-h-28 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
+              className="min-h-28 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
               placeholder="Message"
               required
               value={notificationForm.message}
               onChange={(event) => setNotificationForm((current) => ({ ...current, message: event.target.value }))}
             />
             <select
-              className="h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
               value={notificationForm.channel}
               onChange={(event) => setNotificationForm((current) => ({ ...current, channel: event.target.value as Notification["channel"] }))}
             >
@@ -243,7 +243,7 @@ export function OperationsManager({
               <option value="whatsapp">whatsapp</option>
             </select>
             <select
-              className="h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
               value={notificationForm.status}
               onChange={(event) => setNotificationForm((current) => ({ ...current, status: event.target.value as Notification["status"] }))}
             >
@@ -252,7 +252,7 @@ export function OperationsManager({
               <option value="failed">failed</option>
             </select>
             <select
-              className="h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
               value={notificationForm.relatedJobId}
               onChange={(event) => setNotificationForm((current) => ({ ...current, relatedJobId: event.target.value }))}
             >
@@ -275,7 +275,7 @@ export function OperationsManager({
         <Card className="overflow-hidden p-2">
           <div className="flex items-center justify-between px-4 pb-4 pt-3">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Paused sessions</p>
-            <p className="rounded-full bg-canvas px-3 py-1 text-sm font-medium text-ink">{sessions.length} sessions</p>
+            <p className="rounded-full bg-slate-900/80 px-3 py-1 text-sm font-medium text-ink">{sessions.length} sessions</p>
           </div>
           <div className="overflow-x-auto">
             <Table>
@@ -312,7 +312,7 @@ export function OperationsManager({
         <Card className="overflow-hidden p-2">
           <div className="flex items-center justify-between px-4 pb-4 pt-3">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Notifications</p>
-            <p className="rounded-full bg-canvas px-3 py-1 text-sm font-medium text-ink">{notifications.length} notifications</p>
+            <p className="rounded-full bg-slate-900/80 px-3 py-1 text-sm font-medium text-ink">{notifications.length} notifications</p>
           </div>
           <div className="overflow-x-auto">
             <Table>
@@ -349,7 +349,7 @@ export function OperationsManager({
         <Card className="overflow-hidden p-2">
           <div className="flex items-center justify-between px-4 pb-4 pt-3">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Event audit</p>
-            <p className="rounded-full bg-canvas px-3 py-1 text-sm font-medium text-ink">{events.length} events</p>
+            <p className="rounded-full bg-slate-900/80 px-3 py-1 text-sm font-medium text-ink">{events.length} events</p>
           </div>
           <div className="overflow-x-auto">
             <Table>

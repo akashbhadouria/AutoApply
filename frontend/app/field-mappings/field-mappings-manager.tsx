@@ -71,7 +71,7 @@ export function FieldMappingsManager({ initialMappings }: { initialMappings: Fie
           <Input placeholder="Raw field label" required value={form.rawLabel} onChange={(event) => setForm((current) => ({ ...current, rawLabel: event.target.value }))} />
           <Input placeholder="Profile key" required value={form.profileKey} onChange={(event) => setForm((current) => ({ ...current, profileKey: event.target.value }))} />
           <select
-            className="h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent"
+            className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
             value={form.confidence}
             onChange={(event) => setForm((current) => ({ ...current, confidence: event.target.value as FieldMapping["confidence"] }))}
           >
@@ -90,7 +90,7 @@ export function FieldMappingsManager({ initialMappings }: { initialMappings: Fie
       <Card className="overflow-hidden p-2">
         <div className="flex items-center justify-between px-4 pb-4 pt-3">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Known mappings</p>
-          <p className="rounded-full bg-canvas px-3 py-1 text-sm font-medium text-ink">{mappings.length} mappings</p>
+          <p className="rounded-full bg-slate-900/80 px-3 py-1 text-sm font-medium text-ink">{mappings.length} mappings</p>
         </div>
         <div className="overflow-x-auto">
           <Table>

@@ -9,7 +9,7 @@ export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttribute
   return (
     <input
       className={cn(
-        "h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent",
+        "h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-cyan-400/50",
         className,
       )}
       ref={ref}
@@ -17,4 +17,3 @@ export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttribute
     />
   );
 });
-

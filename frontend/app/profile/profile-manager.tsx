@@ -151,7 +151,7 @@ export function ProfileManager({ initialFields }: { initialFields: ProfileField[
               Source
             </label>
             <select
-              className="h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
               id="field-source"
               onChange={(event) =>
                 setForm((current) => ({
@@ -182,7 +182,7 @@ export function ProfileManager({ initialFields }: { initialFields: ProfileField[
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Stored values</p>
             <p className="text-sm text-muted">These values become the source of truth for later automation workers.</p>
           </div>
-          <p className="rounded-full bg-canvas px-3 py-1 text-sm font-medium text-ink">{fields.length} fields</p>
+          <p className="rounded-full bg-slate-900/80 px-3 py-1 text-sm font-medium text-ink">{fields.length} fields</p>
         </div>
 
         <div className="overflow-x-auto">

@@ -1,76 +1,65 @@
 import Link from "next/link";
 
+import { BackgroundBeams } from "@/components/aceternity/background-beams";
+import { BentoGrid, BentoGridItem } from "@/components/aceternity/bento-grid";
+import { LampContainer } from "@/components/aceternity/lamp";
+
+const routes = [
+  { href: "/profile", title: "Profile", description: "Canonical profile fields, salary data, links, and identity primitives." },
+  { href: "/jobs", title: "Jobs", description: "Normalized job ingestion with duplicate merging across platforms." },
+  { href: "/applications", title: "Applications", description: "Stateful tracking with queue-driven application decisions." },
+  { href: "/referrals", title: "Referrals", description: "Contacts, outreach drafts, and referral state tied to jobs." },
+  { href: "/operations", title: "Operations", description: "Notifications, paused sessions, and event audit trail." },
+  { href: "/automation", title: "Automation", description: "Queue producers and operator-triggered workflow runs." },
+  { href: "/field-mappings", title: "Field Mappings", description: "Self-learning ATS label persistence for future runs." },
+];
+
 export default function HomePage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-6xl items-center px-6 py-16">
-      <section className="grid gap-8 md:grid-cols-[1.25fr_0.75fr]">
-        <div className="space-y-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Job Hunter System</p>
-          <h1 className="max-w-3xl text-5xl font-semibold leading-tight text-ink md:text-6xl">
-            Profile data is the control plane for every automated application flow.
-          </h1>
-          <p className="max-w-2xl text-lg text-muted">
-            This initial slice ships the dynamic Profile Manager that later ATS, referral, and self-learning workers will use as their single source of truth.
-          </p>
-          <Link
-            className="inline-flex rounded-full bg-ink px-5 py-3 text-sm font-medium text-white transition hover:bg-accentDark"
-            href="/profile"
-          >
-            Open Profile Manager
-          </Link>
-          <Link
-            className="inline-flex rounded-full border border-border bg-panel px-5 py-3 text-sm font-medium text-ink transition hover:bg-white"
-            href="/jobs"
-          >
-            Open Jobs Inventory
-          </Link>
-          <Link
-            className="inline-flex rounded-full border border-border bg-panel px-5 py-3 text-sm font-medium text-ink transition hover:bg-white"
-            href="/applications"
-          >
-            Open Applications Tracker
-          </Link>
-          <Link
-            className="inline-flex rounded-full border border-border bg-panel px-5 py-3 text-sm font-medium text-ink transition hover:bg-white"
-            href="/referrals"
-          >
-            Open Referrals Hub
-          </Link>
-          <Link
-            className="inline-flex rounded-full border border-border bg-panel px-5 py-3 text-sm font-medium text-ink transition hover:bg-white"
-            href="/operations"
-          >
-            Open Operations
-          </Link>
-          <Link
-            className="inline-flex rounded-full border border-border bg-panel px-5 py-3 text-sm font-medium text-ink transition hover:bg-white"
-            href="/automation"
-          >
-            Open Automation
-          </Link>
-          <Link
-            className="inline-flex rounded-full border border-border bg-panel px-5 py-3 text-sm font-medium text-ink transition hover:bg-white"
-            href="/field-mappings"
-          >
-            Open Field Mappings
-          </Link>
-        </div>
-        <div className="rounded-[32px] border border-border bg-panel p-6 shadow-panel">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Implemented now</p>
-          <ul className="mt-4 space-y-3 text-sm text-ink">
-            <li>Dynamic key-value profile storage in PostgreSQL</li>
-            <li>Express API for upsert and delete flows</li>
-            <li>Next.js dashboard page with inline management</li>
-            <li>Docs and quickstart for local setup</li>
-            <li>Jobs inventory with duplicate detection and source merging</li>
-            <li>Applications tracker linked to canonical jobs</li>
-            <li>Contacts and referrals hub with reusable message drafts</li>
-            <li>Notifications and resumable paused application sessions</li>
-            <li>Backend queue producers and automation control plane</li>
-            <li>Persistent ATS field mappings for self-learning automation</li>
-          </ul>
-        </div>
-      </section>
+    <main className="relative min-h-screen overflow-hidden px-6 py-10">
+      <BackgroundBeams />
+      <div className="relative z-10 mx-auto max-w-7xl">
+        <LampContainer>
+          <div className="mx-auto max-w-5xl text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.42em] text-cyan-300">Job Hunter System</p>
+            <h1 className="mt-6 text-5xl font-semibold leading-tight text-white md:text-7xl">
+              Frontend automation, redesigned around Aceternity-style interface primitives.
+            </h1>
+            <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-slate-300">
+              This control surface now uses an Aceternity-inspired shell for the platform: luminous hero sections, bento navigation, dark glass cards, and motion-led visual hierarchy across the dashboard.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Link className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-5 py-3 text-sm font-medium text-cyan-100 transition hover:bg-cyan-400/20" href="/profile">
+                Open Profile
+              </Link>
+              <Link className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium text-slate-100 transition hover:bg-white/10" href="/automation">
+                Open Automation
+              </Link>
+            </div>
+          </div>
+        </LampContainer>
+
+        <BentoGrid className="mt-8 md:auto-rows-[16rem]">
+          {routes.map((route, index) => (
+            <BentoGridItem
+              className={index === 0 || index === 4 ? "md:col-span-2" : ""}
+              description={route.description}
+              header={
+                <div className="flex items-center justify-between">
+                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">
+                    {route.title}
+                  </span>
+                  <Link className="text-sm text-cyan-300" href={route.href}>
+                    Open
+                  </Link>
+                </div>
+              }
+              key={route.href}
+              title={route.title}
+            />
+          ))}
+        </BentoGrid>
+      </div>
     </main>
   );
 }

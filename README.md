@@ -2,6 +2,8 @@
 
 This repository contains a production-oriented scaffold for a personal job hunter automation platform.
 
+The frontend is now standardized on an Aceternity-inspired component system and page shell direction.
+
 The first implemented feature is the `Profile Manager`, which provides:
 
 - a PostgreSQL schema for dynamic profile fields

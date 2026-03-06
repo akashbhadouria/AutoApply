@@ -174,7 +174,7 @@ export function ReferralsManager({
             <Input placeholder="Profile URL" value={contactForm.profileUrl} onChange={(event) => setContactForm((current) => ({ ...current, profileUrl: event.target.value }))} />
             <Input placeholder="Email" value={contactForm.email} onChange={(event) => setContactForm((current) => ({ ...current, email: event.target.value }))} />
             <select
-              className="h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
               value={contactForm.sourcePlatform}
               onChange={(event) => setContactForm((current) => ({ ...current, sourcePlatform: event.target.value as Job["primarySourcePlatform"] }))}
             >
@@ -199,7 +199,7 @@ export function ReferralsManager({
 
           <form className="mt-6 space-y-4" onSubmit={handleReferralSubmit}>
             <select
-              className="h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
               required
               value={referralForm.jobId}
               onChange={(event) => setReferralForm((current) => ({ ...current, jobId: event.target.value }))}
@@ -213,7 +213,7 @@ export function ReferralsManager({
             </select>
 
             <select
-              className="h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
               required
               value={referralForm.contactId}
               onChange={(event) => setReferralForm((current) => ({ ...current, contactId: event.target.value }))}
@@ -227,7 +227,7 @@ export function ReferralsManager({
             </select>
 
             <select
-              className="h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
               value={referralForm.status}
               onChange={(event) => setReferralForm((current) => ({ ...current, status: event.target.value as Referral["status"] }))}
             >
@@ -238,7 +238,7 @@ export function ReferralsManager({
             </select>
 
             <textarea
-              className="min-h-28 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
+              className="min-h-28 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
               placeholder="Referral outreach message"
               required
               value={referralForm.outreachMessage}
@@ -246,14 +246,14 @@ export function ReferralsManager({
             />
 
             <textarea
-              className="min-h-24 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
+              className="min-h-24 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
               placeholder="Connection request draft"
               value={referralForm.connectionRequestMessage}
               onChange={(event) => setReferralForm((current) => ({ ...current, connectionRequestMessage: event.target.value }))}
             />
 
             <input
-              className="h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
               type="datetime-local"
               value={referralForm.messageSentAt}
               onChange={(event) => setReferralForm((current) => ({ ...current, messageSentAt: event.target.value }))}
@@ -273,7 +273,7 @@ export function ReferralsManager({
         <Card className="overflow-hidden p-2">
           <div className="flex items-center justify-between px-4 pb-4 pt-3">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Contacts</p>
-            <p className="rounded-full bg-canvas px-3 py-1 text-sm font-medium text-ink">{contacts.length} contacts</p>
+            <p className="rounded-full bg-slate-900/80 px-3 py-1 text-sm font-medium text-ink">{contacts.length} contacts</p>
           </div>
           <div className="overflow-x-auto">
             <Table>
@@ -308,7 +308,7 @@ export function ReferralsManager({
         <Card className="overflow-hidden p-2">
           <div className="flex items-center justify-between px-4 pb-4 pt-3">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Referrals</p>
-            <p className="rounded-full bg-canvas px-3 py-1 text-sm font-medium text-ink">{referrals.length} referrals</p>
+            <p className="rounded-full bg-slate-900/80 px-3 py-1 text-sm font-medium text-ink">{referrals.length} referrals</p>
           </div>
           <div className="overflow-x-auto">
             <Table>

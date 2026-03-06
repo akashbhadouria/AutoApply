@@ -67,6 +67,8 @@ The API will start on `http://localhost:4000`.
 npm run dev:frontend
 ```
 
+The frontend is standardized on an Aceternity-style shell and component direction.
+
 Open `http://localhost:3000/profile`.
 
 Open `http://localhost:3000/jobs`.

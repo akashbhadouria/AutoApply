@@ -110,7 +110,7 @@ export function ApplicationsManager({
               Job
             </label>
             <select
-              className="h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
               id="job-id"
               onChange={(event) => {
                 const nextJobId = event.target.value;
@@ -139,7 +139,7 @@ export function ApplicationsManager({
                 Source platform
               </label>
               <select
-                className="h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent"
+                className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
                 id="application-source"
                 onChange={(event) =>
                   setForm((current) => ({
@@ -162,7 +162,7 @@ export function ApplicationsManager({
                 Status
               </label>
               <select
-                className="h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent"
+                className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
                 id="application-status"
                 onChange={(event) =>
                   setForm((current) => ({
@@ -181,7 +181,7 @@ export function ApplicationsManager({
             </div>
           </div>
 
-          <div className="flex items-center gap-3 rounded-2xl border border-border bg-white px-4 py-3">
+          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3">
             <input
               checked={form.applied}
               id="applied"
@@ -198,7 +198,7 @@ export function ApplicationsManager({
               Applied date
             </label>
             <input
-              className="h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
               id="applied-date"
               onChange={(event) => setForm((current) => ({ ...current, appliedDate: event.target.value }))}
               type="datetime-local"
@@ -221,7 +221,7 @@ export function ApplicationsManager({
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Tracked applications</p>
             <p className="text-sm text-muted">One application record per normalized job.</p>
           </div>
-          <p className="rounded-full bg-canvas px-3 py-1 text-sm font-medium text-ink">{applications.length} applications</p>
+          <p className="rounded-full bg-slate-900/80 px-3 py-1 text-sm font-medium text-ink">{applications.length} applications</p>
         </div>
 
         <div className="overflow-x-auto">
