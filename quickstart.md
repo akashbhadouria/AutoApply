@@ -57,6 +57,15 @@ If you want to reseed demo data manually without restarting the stack:
 npm run seed:demo
 ```
 
+To manually run the referral-timeout sweep from the Automation page, enqueue `referral-engine` with:
+
+```json
+{
+  "mode": "timeouts",
+  "olderThanHours": 24
+}
+```
+
 ## Manual startup
 
 If you do not want to use Docker, you can still use host services by creating:
@@ -93,8 +102,10 @@ If host database auth is inconsistent, pages now remain styled and show explicit
 - `GET /api/contacts`
 - `POST /api/contacts`
 - `GET /api/referrals`
+- `GET /api/referrals/timeouts`
 - `GET /api/referrals/job/:jobId`
 - `POST /api/referrals`
+- `PUT /api/referrals/:id/status`
 - `GET /api/application-sessions`
 - `POST /api/application-sessions`
 - `GET /api/notifications`

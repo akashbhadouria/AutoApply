@@ -17,8 +17,14 @@ For a queued application job, the worker:
 
 - already applied: skip
 - referred: skip
-- pending or replied referral exists: keep application in `pending`
+- pending referral exists: keep application in `pending`
+- replied or no_response referrals do not block application processing
 - otherwise: mark as `applied` and enqueue browser automation
 
 This preserves the system rule that referral success should block manual application, while unresolved referral activity can still hold the application in a waiting state.
 
+## Local browser target
+
+For local validation, the worker now sends browser automation to deterministic `example.com` provider-aware ATS mocks instead of a dead placeholder domain. That keeps the application queue testable with the current Playwright worker.
+
+The original source platform is also forwarded into browser automation so the application record keeps the discovery source instead of being overwritten during ATS submission.

@@ -83,6 +83,25 @@ export async function fetchBackendReferralsByJobId(jobId: number) {
   }>(`/api/referrals/job/${jobId}`);
 }
 
+export async function fetchBackendTimedOutReferrals(olderThanHours = 24) {
+  return request<{
+    data: Array<{
+      id: number;
+      jobId: number;
+      contactId: number;
+      company: string;
+      jobTitle: string;
+      contactName: string;
+      contactRole: string;
+      jobSourcePlatform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
+      status: "pending" | "replied" | "referred" | "no_response";
+      outreachMessage: string;
+      connectionRequestMessage: string | null;
+      messageSentAt: string | null;
+    }>;
+  }>(`/api/referrals/timeouts?olderThanHours=${olderThanHours}`);
+}
+
 export async function fetchBackendContacts() {
   return request<{
     data: Array<{
@@ -151,6 +170,19 @@ export async function saveBackendReferral(body: {
 }) {
   return request<{ data: { id: number } }>("/api/referrals", {
     method: "POST",
+    body,
+  });
+}
+
+export async function updateBackendReferralStatus(
+  referralId: number,
+  body: {
+    status: "pending" | "replied" | "referred" | "no_response";
+    repliedAt?: string;
+  },
+) {
+  return request<{ data: { id: number } }>(`/api/referrals/${referralId}/status`, {
+    method: "PUT",
     body,
   });
 }

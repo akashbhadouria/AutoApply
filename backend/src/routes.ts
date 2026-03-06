@@ -11,7 +11,7 @@ import { getJobs, ingestDiscoveredJob, ingestDiscoveredJobsBatch } from "./job.s
 import { changeNotificationStatus, getNotifications, saveNotification } from "./notification.service.js";
 import { getDashboardSummary } from "./dashboard.service.js";
 import { getProfileFields, removeProfileField, saveProfileField } from "./profile.service.js";
-import { getReferrals, getReferralsForJob, saveReferral } from "./referral.service.js";
+import { changeReferralStatus, getReferrals, getReferralsForJob, getTimedOutPendingReferrals, saveReferral } from "./referral.service.js";
 import { getApplicationSessions, saveApplicationSession } from "./session.service.js";
 
 export const apiRouter = Router();
@@ -186,6 +186,17 @@ apiRouter.get("/api/referrals", async (_request, response, next) => {
   }
 });
 
+apiRouter.get("/api/referrals/timeouts", async (request, response, next) => {
+  try {
+    const referrals = await getTimedOutPendingReferrals(
+      typeof request.query.olderThanHours === "string" ? request.query.olderThanHours : undefined,
+    );
+    response.json({ data: referrals });
+  } catch (error) {
+    next(error);
+  }
+});
+
 apiRouter.get("/api/referrals/job/:jobId", async (request, response, next) => {
   try {
     const referrals = await getReferralsForJob(request.params.jobId);
@@ -199,6 +210,15 @@ apiRouter.post("/api/referrals", async (request, response, next) => {
   try {
     const referral = await saveReferral(request.body);
     response.status(201).json({ data: referral });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.put("/api/referrals/:id/status", async (request, response, next) => {
+  try {
+    const referral = await changeReferralStatus(request.params.id, request.body);
+    response.status(referral ? 200 : 404).json(referral ? { data: referral } : { error: "Not found" });
   } catch (error) {
     next(error);
   }

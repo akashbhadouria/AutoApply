@@ -13,7 +13,9 @@ export interface JobDiscoveryJobData {
 }
 
 export interface ReferralJobData {
-  jobId: number;
+  mode?: "drafts" | "timeouts";
+  jobId?: number;
+  olderThanHours?: number;
 }
 
 export interface ApplicationQueueJobData {
@@ -25,9 +27,9 @@ export interface BrowserAutomationJobData {
   jobId: number;
   formUrl: string;
   resumePath?: string;
+  sourcePlatform?: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
 }
 
 export interface NotificationJobData {
   notificationId: number;
 }
-

@@ -8,6 +8,7 @@ export interface ReferralRecord {
   jobTitle: string;
   contactName: string;
   contactRole: string;
+  jobSourcePlatform?: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
   status: ReferralStatus;
   outreachMessage: string;
   connectionRequestMessage: string | null;
@@ -17,3 +18,6 @@ export interface ReferralRecord {
   updatedAt: string;
 }
 
+export interface TimedOutReferralRecord extends ReferralRecord {
+  jobSourcePlatform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
+}

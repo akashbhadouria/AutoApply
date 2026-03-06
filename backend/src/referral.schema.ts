@@ -14,3 +14,9 @@ export const upsertReferralSchema = z.object({
 
 export type UpsertReferralInput = z.infer<typeof upsertReferralSchema>;
 
+export const updateReferralStatusSchema = z.object({
+  status: referralStatusSchema,
+  repliedAt: z.string().datetime().optional(),
+});
+
+export type UpdateReferralStatusInput = z.infer<typeof updateReferralStatusSchema>;

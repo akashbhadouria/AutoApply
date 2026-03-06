@@ -10,9 +10,11 @@ import {
   fetchBackendFieldMappings,
   fetchBackendProfileFields,
   fetchBackendReferralsByJobId,
+  fetchBackendTimedOutReferrals,
   saveBackendApplication,
   saveBackendFieldMapping,
   saveBackendReferral,
+  updateBackendReferralStatus,
   updateBackendNotificationStatus,
 } from "./backend.js";
 import { runAtsAutofill } from "./ats.js";
@@ -25,7 +27,7 @@ import type {
 } from "./contracts.js";
 import { getConnectionOptions } from "./connection.js";
 import { queueNames } from "./contracts.js";
-import { browserAutomationQueue } from "./queues.js";
+import { applicationQueue, browserAutomationQueue } from "./queues.js";
 import { scanDiscoveredJobs } from "./scanners.js";
 
 function logWorkerStart(name: string, data: unknown) {
@@ -51,6 +53,19 @@ ${params.userName ?? "Akash"}`;
 
 function buildConnectionDraft(params: { company: string; role: string }) {
   return `Hi, I found the ${params.role} opening at ${params.company} and would value the chance to connect.`;
+}
+
+function buildMockApplicationFormUrl(jobId: number, sourcePlatform: ApplicationQueueJobData["sourcePlatform"]) {
+  const provider =
+    sourcePlatform === "company_site"
+      ? "workday"
+      : sourcePlatform === "linkedin"
+        ? "greenhouse"
+        : sourcePlatform === "instahyre"
+          ? "lever"
+          : "workday";
+
+  return `https://example.com/${provider}/apply?jobId=${jobId}`;
 }
 
 export function startWorkers() {
@@ -89,6 +104,48 @@ export function startWorkers() {
     queueNames.referralEngine,
     async (job) => {
       logWorkerStart(queueNames.referralEngine, job.data);
+      if (job.data.mode === "timeouts") {
+        const olderThanHours = job.data.olderThanHours ?? 24;
+        const timedOutReferralsResponse = await fetchBackendTimedOutReferrals(olderThanHours);
+
+        let processedCount = 0;
+        for (const referral of timedOutReferralsResponse.data) {
+          await updateBackendReferralStatus(referral.id, {
+            status: "no_response",
+          });
+          await applicationQueue.add(queueNames.applicationQueue, {
+            jobId: referral.jobId,
+            sourcePlatform: referral.jobSourcePlatform,
+          });
+          processedCount += 1;
+        }
+
+        await createBackendEvent({
+          eventType: "referral_engine.timeouts_processed",
+          actor: "referralEngineWorker",
+          payload: {
+            queue: queueNames.referralEngine,
+            olderThanHours,
+            processedCount,
+          },
+        });
+        await createBackendNotification({
+          type: "referral_timeouts_processed",
+          title: "Referral timeout sweep completed",
+          message:
+            processedCount === 0
+              ? `No pending referrals exceeded the ${olderThanHours}-hour timeout window.`
+              : `Marked ${processedCount} referrals as no_response and queued their jobs for application processing.`,
+          channel: "dashboard",
+          status: "delivered",
+        });
+        return;
+      }
+
+      if (!job.data.jobId) {
+        throw new Error("referralEngineWorker requires jobId when mode is drafts.");
+      }
+
       const [existingReferrals, contactsResponse, profileFieldsResponse] = await Promise.all([
         fetchBackendReferralsByJobId(job.data.jobId),
         fetchBackendContacts(),
@@ -156,9 +213,7 @@ export function startWorkers() {
       ]);
       const appliedRecord = existingApplication?.data ?? null;
       const hasSuccessfulReferral = referralsResponse.data.some((referral) => referral.status === "referred");
-      const hasPendingReferral = referralsResponse.data.some((referral) =>
-        referral.status === "pending" || referral.status === "replied",
-      );
+      const hasPendingReferral = referralsResponse.data.some((referral) => referral.status === "pending");
 
       if (appliedRecord?.applied) {
         await createBackendEvent({
@@ -197,7 +252,8 @@ export function startWorkers() {
       if (nextStatus === "applied") {
         await browserAutomationQueue.add(queueNames.browserAutomation, {
           jobId: job.data.jobId,
-          formUrl: `https://apply.example.com/jobs/${job.data.jobId}`,
+          formUrl: buildMockApplicationFormUrl(job.data.jobId, job.data.sourcePlatform),
+          sourcePlatform: job.data.sourcePlatform,
         });
       }
 
@@ -275,7 +331,7 @@ export function startWorkers() {
         });
         await saveBackendApplication({
           jobId: job.data.jobId,
-          sourcePlatform: "company_site",
+          sourcePlatform: job.data.sourcePlatform ?? "company_site",
           applied: automationResult.submitted,
           appliedDate: automationResult.submitted ? new Date().toISOString() : undefined,
           status: automationResult.submitted ? "applied" : "pending",

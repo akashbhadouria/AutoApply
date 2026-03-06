@@ -1,6 +1,6 @@
 import { pool } from "./db.js";
-import type { UpsertReferralInput } from "./referral.schema.js";
-import type { ReferralRecord } from "./referral.types.js";
+import type { UpdateReferralStatusInput, UpsertReferralInput } from "./referral.schema.js";
+import type { ReferralRecord, TimedOutReferralRecord } from "./referral.types.js";
 
 function mapReferralRow(row: Record<string, unknown>): ReferralRecord {
   return {
@@ -11,6 +11,9 @@ function mapReferralRow(row: Record<string, unknown>): ReferralRecord {
     jobTitle: String(row.job_title),
     contactName: String(row.contact_name),
     contactRole: String(row.contact_role),
+    jobSourcePlatform: row.job_source_platform
+      ? (String(row.job_source_platform) as ReferralRecord["jobSourcePlatform"])
+      : undefined,
     status: String(row.status) as ReferralRecord["status"],
     outreachMessage: String(row.outreach_message),
     connectionRequestMessage: row.connection_request_message ? String(row.connection_request_message) : null,
@@ -27,6 +30,7 @@ const referralSelect = `SELECT
   referrals.contact_id,
   jobs.company,
   jobs.title AS job_title,
+  jobs.primary_source_platform AS job_source_platform,
   contacts.full_name AS contact_name,
   contacts.title AS contact_role,
   referrals.status,
@@ -58,6 +62,19 @@ export async function listReferralsByJobId(jobId: number): Promise<ReferralRecor
   );
 
   return result.rows.map(mapReferralRow);
+}
+
+export async function listTimedOutPendingReferrals(olderThanHours: number): Promise<TimedOutReferralRecord[]> {
+  const result = await pool.query(
+    `${referralSelect}
+     WHERE referrals.status = 'pending'
+       AND referrals.message_sent_at IS NOT NULL
+       AND referrals.message_sent_at <= NOW() - ($1::text || ' hours')::interval
+     ORDER BY referrals.message_sent_at ASC, referrals.id ASC`,
+    [olderThanHours],
+  );
+
+  return result.rows.map((row) => mapReferralRow(row) as TimedOutReferralRecord);
 }
 
 export async function upsertReferral(input: UpsertReferralInput): Promise<ReferralRecord> {
@@ -93,6 +110,29 @@ export async function upsertReferral(input: UpsertReferralInput): Promise<Referr
   );
 
   const referralId = Number(result.rows[0]?.id);
+  const record = await pool.query(`${referralSelect} WHERE referrals.id = $1`, [referralId]);
+  return mapReferralRow(record.rows[0]);
+}
+
+export async function updateReferralStatus(
+  referralId: number,
+  input: UpdateReferralStatusInput,
+): Promise<ReferralRecord | null> {
+  const result = await pool.query(
+    `UPDATE referrals
+     SET
+       status = $2,
+       replied_at = COALESCE($3, replied_at),
+       updated_at = NOW()
+     WHERE id = $1
+     RETURNING id`,
+    [referralId, input.status, input.repliedAt ?? null],
+  );
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
   const record = await pool.query(`${referralSelect} WHERE referrals.id = $1`, [referralId]);
   return mapReferralRow(record.rows[0]);
 }
