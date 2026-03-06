@@ -5,8 +5,10 @@ import { ZodError } from "zod";
 import { getContacts, saveContact } from "./contact.service.js";
 import { getApplications, saveApplication } from "./application.service.js";
 import { getJobs, ingestDiscoveredJob } from "./job.service.js";
+import { getNotifications, saveNotification } from "./notification.service.js";
 import { getProfileFields, removeProfileField, saveProfileField } from "./profile.service.js";
 import { getReferrals, saveReferral } from "./referral.service.js";
+import { getApplicationSessions, saveApplicationSession } from "./session.service.js";
 
 export const apiRouter = Router();
 
@@ -108,6 +110,42 @@ apiRouter.post("/api/referrals", async (request, response, next) => {
   try {
     const referral = await saveReferral(request.body);
     response.status(201).json({ data: referral });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/application-sessions", async (_request, response, next) => {
+  try {
+    const sessions = await getApplicationSessions();
+    response.json({ data: sessions });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/application-sessions", async (request, response, next) => {
+  try {
+    const session = await saveApplicationSession(request.body);
+    response.status(201).json({ data: session });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/notifications", async (_request, response, next) => {
+  try {
+    const notifications = await getNotifications();
+    response.json({ data: notifications });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/notifications", async (request, response, next) => {
+  try {
+    const notification = await saveNotification(request.body);
+    response.status(201).json({ data: notification });
   } catch (error) {
     next(error);
   }

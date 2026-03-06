@@ -36,6 +36,12 @@ export default function HomePage() {
           >
             Open Referrals Hub
           </Link>
+          <Link
+            className="inline-flex rounded-full border border-border bg-panel px-5 py-3 text-sm font-medium text-ink transition hover:bg-white"
+            href="/operations"
+          >
+            Open Operations
+          </Link>
         </div>
         <div className="rounded-[32px] border border-border bg-panel p-6 shadow-panel">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Implemented now</p>
@@ -47,6 +53,7 @@ export default function HomePage() {
             <li>Jobs inventory with duplicate detection and source merging</li>
             <li>Applications tracker linked to canonical jobs</li>
             <li>Contacts and referrals hub with reusable message drafts</li>
+            <li>Notifications and resumable paused application sessions</li>
           </ul>
         </div>
       </section>

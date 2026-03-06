@@ -1,11 +1,12 @@
 # Quickstart
 
-This repository currently implements four foundational slices of the larger job-hunting automation system:
+This repository currently implements five foundational slices of the larger job-hunting automation system:
 
 - `Profile Manager`
 - `Jobs Inventory`
 - `Applications Tracker`
 - `Contacts + Referrals`
+- `Operations Layer`
 
 ## Prerequisites
 
@@ -72,6 +73,8 @@ Open `http://localhost:3000/applications`.
 
 Open `http://localhost:3000/referrals`.
 
+Open `http://localhost:3000/operations`.
+
 ## Implemented endpoints
 
 - `GET /health`
@@ -86,6 +89,10 @@ Open `http://localhost:3000/referrals`.
 - `POST /api/contacts`
 - `GET /api/referrals`
 - `POST /api/referrals`
+- `GET /api/application-sessions`
+- `POST /api/application-sessions`
+- `GET /api/notifications`
+- `POST /api/notifications`
 
 ## Implemented docs
 
@@ -93,4 +100,5 @@ Open `http://localhost:3000/referrals`.
 - [docs/jobs-inventory.md](/home/akash/AutoApply/docs/jobs-inventory.md)
 - [docs/applications-tracker.md](/home/akash/AutoApply/docs/applications-tracker.md)
 - [docs/referrals-hub.md](/home/akash/AutoApply/docs/referrals-hub.md)
+- [docs/operations-layer.md](/home/akash/AutoApply/docs/operations-layer.md)
 - [database/schema.sql](/home/akash/AutoApply/database/schema.sql)

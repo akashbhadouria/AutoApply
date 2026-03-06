@@ -65,6 +65,32 @@ export interface Referral {
   updatedAt: string;
 }
 
+export interface ApplicationSession {
+  id: number;
+  jobId: number;
+  company: string;
+  title: string;
+  formUrl: string;
+  filledFields: Record<string, string>;
+  missingField: string;
+  status: "paused" | "ready_to_resume" | "completed";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Notification {
+  id: number;
+  type: string;
+  title: string;
+  message: string;
+  channel: "dashboard" | "email" | "telegram" | "whatsapp";
+  status: "pending" | "delivered" | "failed";
+  relatedJobId: number | null;
+  relatedReferralId: number | null;
+  createdAt: string;
+  deliveredAt: string | null;
+}
+
 const backendUrl = process.env.BACKEND_URL;
 
 function getBackendUrl() {
@@ -260,6 +286,81 @@ export async function upsertReferral(body: {
 
   if (!response.ok) {
     throw new Error("Failed to save referral");
+  }
+
+  return response.json();
+}
+
+export async function fetchApplicationSessions(): Promise<ApplicationSession[]> {
+  const response = await fetch(`${getBackendUrl()}/api/application-sessions`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load application sessions");
+  }
+
+  const payload = (await response.json()) as { data: ApplicationSession[] };
+  return payload.data;
+}
+
+export async function upsertApplicationSession(body: {
+  jobId: number;
+  formUrl: string;
+  filledFields: Record<string, string>;
+  missingField: string;
+  status: ApplicationSession["status"];
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/application-sessions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to save application session");
+  }
+
+  return response.json();
+}
+
+export async function fetchNotifications(): Promise<Notification[]> {
+  const response = await fetch(`${getBackendUrl()}/api/notifications`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load notifications");
+  }
+
+  const payload = (await response.json()) as { data: Notification[] };
+  return payload.data;
+}
+
+export async function createNotification(body: {
+  type: string;
+  title: string;
+  message: string;
+  channel: Notification["channel"];
+  status: Notification["status"];
+  relatedJobId?: number;
+  relatedReferralId?: number;
+  deliveredAt?: string;
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/notifications`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to save notification");
   }
 
   return response.json();

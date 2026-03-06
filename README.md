@@ -10,5 +10,6 @@ The first implemented feature is the `Profile Manager`, which provides:
 - normalized jobs ingestion with duplicate detection and source merging
 - application tracking linked to normalized jobs
 - contacts and referrals tracking with reusable outreach drafts
+- notifications and resumable paused application session tracking
 
 See [quickstart.md](/home/akash/AutoApply/quickstart.md) to run the current slice locally.

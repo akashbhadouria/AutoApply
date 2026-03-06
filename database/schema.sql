@@ -136,3 +136,44 @@ CREATE TRIGGER referrals_set_updated_at
 BEFORE UPDATE ON referrals
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE IF NOT EXISTS application_sessions (
+  id BIGSERIAL PRIMARY KEY,
+  job_id BIGINT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+  form_url TEXT NOT NULL,
+  filled_fields JSONB NOT NULL DEFAULT '{}'::jsonb,
+  missing_field TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'paused',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT application_sessions_job_form_missing_unique UNIQUE (job_id, form_url, missing_field),
+  CONSTRAINT application_sessions_status_check CHECK (
+    status IN ('paused', 'ready_to_resume', 'completed')
+  )
+);
+
+DROP TRIGGER IF EXISTS application_sessions_set_updated_at ON application_sessions;
+
+CREATE TRIGGER application_sessions_set_updated_at
+BEFORE UPDATE ON application_sessions
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id BIGSERIAL PRIMARY KEY,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  channel TEXT NOT NULL DEFAULT 'dashboard',
+  status TEXT NOT NULL DEFAULT 'pending',
+  related_job_id BIGINT REFERENCES jobs(id) ON DELETE SET NULL,
+  related_referral_id BIGINT REFERENCES referrals(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  delivered_at TIMESTAMPTZ,
+  CONSTRAINT notifications_channel_check CHECK (
+    channel IN ('dashboard', 'email', 'telegram', 'whatsapp')
+  ),
+  CONSTRAINT notifications_status_check CHECK (
+    status IN ('pending', 'delivered', 'failed')
+  )
+);
