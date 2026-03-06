@@ -20,14 +20,15 @@ This is the contract boundary between:
 
 ## Current state
 
-The workers are intentionally scaffolded and log incoming job payloads.
+The workers now do minimal backend side effects in addition to logging incoming payloads.
 
 This is deliberate:
 
 - queue names are fixed
 - payload contracts are typed
 - Redis/BullMQ wiring is in place
-- future implementations can fill in behavior without rewriting topology
+- backend side effects already have stable APIs
+- future implementations can fill in deeper behavior without rewriting topology
 
 The backend now exposes enqueue endpoints so queues can be populated without direct Redis access.
 

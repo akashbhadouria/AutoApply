@@ -29,6 +29,7 @@ When ATS automation pauses because a field is missing, or when a referral timeou
 - `channel`
 - `status`
 - related job or referral links
+- delivery state that workers can update later
 
 ## API contract
 

@@ -4,9 +4,10 @@ import { ZodError } from "zod";
 
 import { enqueueAutomationJob, getAutomationQueues } from "./automation.service.js";
 import { getContacts, saveContact } from "./contact.service.js";
+import { getEvents, saveEvent } from "./event.service.js";
 import { getApplications, saveApplication } from "./application.service.js";
 import { getJobs, ingestDiscoveredJob } from "./job.service.js";
-import { getNotifications, saveNotification } from "./notification.service.js";
+import { changeNotificationStatus, getNotifications, saveNotification } from "./notification.service.js";
 import { getProfileFields, removeProfileField, saveProfileField } from "./profile.service.js";
 import { getReferrals, saveReferral } from "./referral.service.js";
 import { getApplicationSessions, saveApplicationSession } from "./session.service.js";
@@ -25,6 +26,24 @@ apiRouter.post("/api/automation/enqueue", async (request, response, next) => {
   try {
     const job = await enqueueAutomationJob(request.body);
     response.status(201).json({ data: job });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/events", async (_request, response, next) => {
+  try {
+    const events = await getEvents();
+    response.json({ data: events });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/events", async (request, response, next) => {
+  try {
+    const event = await saveEvent(request.body);
+    response.status(201).json({ data: event });
   } catch (error) {
     next(error);
   }
@@ -160,6 +179,15 @@ apiRouter.post("/api/notifications", async (request, response, next) => {
   try {
     const notification = await saveNotification(request.body);
     response.status(201).json({ data: notification });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.put("/api/notifications/:id/status", async (request, response, next) => {
+  try {
+    const notification = await changeNotificationStatus(request.params.id, request.body);
+    response.status(notification ? 200 : 404).json(notification ? { data: notification } : { error: "Not found" });
   } catch (error) {
     next(error);
   }

@@ -16,3 +16,9 @@ export const createNotificationSchema = z.object({
 
 export type CreateNotificationInput = z.infer<typeof createNotificationSchema>;
 
+export const updateNotificationStatusSchema = z.object({
+  status: notificationStatusSchema,
+  deliveredAt: z.string().datetime().optional(),
+});
+
+export type UpdateNotificationStatusInput = z.infer<typeof updateNotificationStatusSchema>;

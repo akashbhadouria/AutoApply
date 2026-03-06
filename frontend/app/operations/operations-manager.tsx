@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/table";
-import type { ApplicationSession, Job, Notification } from "@/lib/api";
+import type { ApplicationSession, Event, Job, Notification } from "@/lib/api";
 
 interface SessionFormState {
   jobId: string;
@@ -46,14 +46,17 @@ const emptyNotificationForm: NotificationFormState = {
 export function OperationsManager({
   initialSessions,
   initialNotifications,
+  initialEvents,
   jobs,
 }: {
   initialSessions: ApplicationSession[];
   initialNotifications: Notification[];
+  initialEvents: Event[];
   jobs: Job[];
 }) {
   const [sessions, setSessions] = useState(initialSessions);
   const [notifications, setNotifications] = useState(initialNotifications);
+  const [events, setEvents] = useState(initialEvents);
   const [sessionForm, setSessionForm] = useState<SessionFormState>(emptySessionForm);
   const [notificationForm, setNotificationForm] = useState<NotificationFormState>(emptyNotificationForm);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +86,15 @@ export function OperationsManager({
     setNotifications(payload.data);
   }
 
+  async function refreshEvents() {
+    const response = await fetch("/api/events", { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error("Failed to refresh events");
+    }
+    const payload = (await response.json()) as { data: Event[] };
+    setEvents(payload.data);
+  }
+
   async function handleSessionSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -108,6 +120,7 @@ export function OperationsManager({
 
       setSessionForm(emptySessionForm);
       await refreshSessions();
+      await refreshEvents();
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : "Failed to save session");
     } finally {
@@ -140,6 +153,7 @@ export function OperationsManager({
 
       setNotificationForm(emptyNotificationForm);
       await refreshNotifications();
+      await refreshEvents();
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : "Failed to save notification");
     } finally {
@@ -150,7 +164,8 @@ export function OperationsManager({
   useEffect(() => {
     setSessions(initialSessions);
     setNotifications(initialNotifications);
-  }, [initialNotifications, initialSessions]);
+    setEvents(initialEvents);
+  }, [initialEvents, initialNotifications, initialSessions]);
 
   return (
     <div className="space-y-6">
@@ -256,7 +271,7 @@ export function OperationsManager({
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
         <Card className="overflow-hidden p-2">
           <div className="flex items-center justify-between px-4 pb-4 pt-3">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Paused sessions</p>
@@ -323,6 +338,41 @@ export function OperationsManager({
                       <TableCell>{notification.title}</TableCell>
                       <TableCell>{notification.channel}</TableCell>
                       <TableCell>{notification.status}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
+
+        <Card className="overflow-hidden p-2">
+          <div className="flex items-center justify-between px-4 pb-4 pt-3">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Event audit</p>
+            <p className="rounded-full bg-canvas px-3 py-1 text-sm font-medium text-ink">{events.length} events</p>
+          </div>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableHeaderCell>Type</TableHeaderCell>
+                  <TableHeaderCell>Actor</TableHeaderCell>
+                  <TableHeaderCell>Job</TableHeaderCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {events.length === 0 ? (
+                  <TableRow>
+                    <TableCell className="px-4 py-10 text-muted" colSpan={3}>
+                      No events yet.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  events.map((event) => (
+                    <TableRow key={event.id}>
+                      <TableCell className="font-medium">{event.eventType}</TableCell>
+                      <TableCell>{event.actor}</TableCell>
+                      <TableCell>{event.relatedJobId ?? "None"}</TableCell>
                     </TableRow>
                   ))
                 )}

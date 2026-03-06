@@ -91,6 +91,15 @@ export interface Notification {
   deliveredAt: string | null;
 }
 
+export interface Event {
+  id: number;
+  eventType: string;
+  actor: string;
+  payload: Record<string, unknown>;
+  relatedJobId: number | null;
+  createdAt: string;
+}
+
 export interface AutomationQueue {
   queueName: "job-scanner" | "referral-engine" | "application-queue" | "browser-automation" | "notifications";
 }
@@ -370,6 +379,58 @@ export async function createNotification(body: {
 
   if (!response.ok) {
     throw new Error("Failed to save notification");
+  }
+
+  return response.json();
+}
+
+export async function updateNotificationStatus(id: number, body: { status: Notification["status"]; deliveredAt?: string }) {
+  const response = await fetch(`${getBackendUrl()}/api/notifications/${id}/status`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update notification status");
+  }
+
+  return response.json();
+}
+
+export async function fetchEvents(): Promise<Event[]> {
+  const response = await fetch(`${getBackendUrl()}/api/events`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load events");
+  }
+
+  const payload = (await response.json()) as { data: Event[] };
+  return payload.data;
+}
+
+export async function createEvent(body: {
+  eventType: string;
+  actor: string;
+  payload: Record<string, unknown>;
+  relatedJobId?: number;
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/events`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to create event");
   }
 
   return response.json();

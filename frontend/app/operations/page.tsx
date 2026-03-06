@@ -1,14 +1,15 @@
 import { Card } from "@/components/ui/card";
-import { fetchApplicationSessions, fetchJobs, fetchNotifications } from "@/lib/api";
+import { fetchApplicationSessions, fetchEvents, fetchJobs, fetchNotifications } from "@/lib/api";
 
 import { OperationsManager } from "./operations-manager";
 
 export const dynamic = "force-dynamic";
 
 export default async function OperationsPage() {
-  const [sessions, notifications, jobs] = await Promise.all([
+  const [sessions, notifications, events, jobs] = await Promise.all([
     fetchApplicationSessions(),
     fetchNotifications(),
+    fetchEvents(),
     fetchJobs(),
   ]);
 
@@ -35,7 +36,12 @@ export default async function OperationsPage() {
         </Card>
       </div>
 
-      <OperationsManager initialSessions={sessions} initialNotifications={notifications} jobs={jobs} />
+      <OperationsManager
+        initialSessions={sessions}
+        initialNotifications={notifications}
+        initialEvents={events}
+        jobs={jobs}
+      />
     </main>
   );
 }

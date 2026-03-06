@@ -85,7 +85,10 @@ cp workers/.env.example workers/.env
 npm run dev:workers
 ```
 
-The worker runtime expects Redis on `REDIS_URL`.
+The worker runtime expects:
+
+- Redis on `REDIS_URL`
+- backend access on `BACKEND_URL`
 
 ## Implemented endpoints
 
@@ -105,6 +108,9 @@ The worker runtime expects Redis on `REDIS_URL`.
 - `POST /api/application-sessions`
 - `GET /api/notifications`
 - `POST /api/notifications`
+- `PUT /api/notifications/:id/status`
+- `GET /api/events`
+- `POST /api/events`
 - `GET /api/automation/queues`
 - `POST /api/automation/enqueue`
 

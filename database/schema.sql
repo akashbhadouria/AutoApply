@@ -177,3 +177,12 @@ CREATE TABLE IF NOT EXISTS notifications (
     status IN ('pending', 'delivered', 'failed')
   )
 );
+
+CREATE TABLE IF NOT EXISTS events (
+  id BIGSERIAL PRIMARY KEY,
+  event_type TEXT NOT NULL,
+  actor TEXT NOT NULL,
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  related_job_id BIGINT REFERENCES jobs(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

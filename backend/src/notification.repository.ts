@@ -1,5 +1,5 @@
 import { pool } from "./db.js";
-import type { CreateNotificationInput } from "./notification.schema.js";
+import type { CreateNotificationInput, UpdateNotificationStatusInput } from "./notification.schema.js";
 import type { NotificationRecord } from "./notification.types.js";
 
 function mapNotificationRow(row: Record<string, unknown>): NotificationRecord {
@@ -76,3 +76,29 @@ export async function createNotification(input: CreateNotificationInput): Promis
   return mapNotificationRow(result.rows[0]);
 }
 
+export async function updateNotificationStatus(
+  id: number,
+  input: UpdateNotificationStatusInput,
+): Promise<NotificationRecord | null> {
+  const result = await pool.query(
+    `UPDATE notifications
+     SET
+       status = $2,
+       delivered_at = COALESCE($3, delivered_at)
+     WHERE id = $1
+     RETURNING
+       id,
+       type,
+       title,
+       message,
+       channel,
+       status,
+       related_job_id,
+       related_referral_id,
+       created_at,
+       delivered_at`,
+    [id, input.status, input.deliveredAt ?? null],
+  );
+
+  return result.rows[0] ? mapNotificationRow(result.rows[0]) : null;
+}
