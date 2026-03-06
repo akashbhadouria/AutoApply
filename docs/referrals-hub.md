@@ -1,0 +1,58 @@
+# Referrals Hub
+
+`Referrals Hub` adds two connected capabilities:
+
+- contact management
+- referral tracking
+
+## Problem it solves
+
+Referral outreach needs structure:
+
+- who to message
+- for which job
+- what draft was prepared
+- whether the contact replied or referred
+
+This slice keeps those records separate from job discovery and application state.
+
+## Data model
+
+`contacts` stores candidate referral targets.
+
+`referrals` links a `job_id` and `contact_id` with:
+
+- `status`
+- `outreach_message`
+- `connection_request_message`
+- `message_sent_at`
+- `replied_at`
+
+## API contract
+
+### `GET /api/contacts`
+
+Returns saved contacts.
+
+### `POST /api/contacts`
+
+Creates a new contact record.
+
+### `GET /api/referrals`
+
+Returns referral records joined with job and contact context.
+
+### `POST /api/referrals`
+
+Creates or updates a referral record for a given job and contact pair.
+
+## UI behavior
+
+The `/referrals` page allows the user to:
+
+- add contacts
+- select a normalized job and contact
+- save outreach and connection request drafts
+- update referral status over time
+
+This keeps the user in manual control of messaging while making the state machine explicit for later timeout and notification automation.

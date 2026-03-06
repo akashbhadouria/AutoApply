@@ -2,9 +2,11 @@ import type { Request, Response } from "express";
 import { Router } from "express";
 import { ZodError } from "zod";
 
+import { getContacts, saveContact } from "./contact.service.js";
 import { getApplications, saveApplication } from "./application.service.js";
 import { getJobs, ingestDiscoveredJob } from "./job.service.js";
 import { getProfileFields, removeProfileField, saveProfileField } from "./profile.service.js";
+import { getReferrals, saveReferral } from "./referral.service.js";
 
 export const apiRouter = Router();
 
@@ -70,6 +72,42 @@ apiRouter.post("/api/applications", async (request, response, next) => {
   try {
     const application = await saveApplication(request.body);
     response.status(201).json({ data: application });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/contacts", async (_request, response, next) => {
+  try {
+    const contacts = await getContacts();
+    response.json({ data: contacts });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/contacts", async (request, response, next) => {
+  try {
+    const contact = await saveContact(request.body);
+    response.status(201).json({ data: contact });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/referrals", async (_request, response, next) => {
+  try {
+    const referrals = await getReferrals();
+    response.json({ data: referrals });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/referrals", async (request, response, next) => {
+  try {
+    const referral = await saveReferral(request.body);
+    response.status(201).json({ data: referral });
   } catch (error) {
     next(error);
   }

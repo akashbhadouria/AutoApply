@@ -9,5 +9,6 @@ The first implemented feature is the `Profile Manager`, which provides:
 - a Next.js dashboard page for editing those fields
 - normalized jobs ingestion with duplicate detection and source merging
 - application tracking linked to normalized jobs
+- contacts and referrals tracking with reusable outreach drafts
 
 See [quickstart.md](/home/akash/AutoApply/quickstart.md) to run the current slice locally.

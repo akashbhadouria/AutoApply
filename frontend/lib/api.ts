@@ -35,6 +35,36 @@ export interface Application {
   updatedAt: string;
 }
 
+export interface Contact {
+  id: number;
+  company: string;
+  fullName: string;
+  firstName: string;
+  title: string;
+  profileUrl: string | null;
+  email: string | null;
+  sourcePlatform: Job["primarySourcePlatform"];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Referral {
+  id: number;
+  jobId: number;
+  contactId: number;
+  company: string;
+  jobTitle: string;
+  contactName: string;
+  contactRole: string;
+  status: "pending" | "replied" | "referred" | "no_response";
+  outreachMessage: string;
+  connectionRequestMessage: string | null;
+  messageSentAt: string | null;
+  repliedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const backendUrl = process.env.BACKEND_URL;
 
 function getBackendUrl() {
@@ -154,6 +184,82 @@ export async function upsertApplication(body: {
 
   if (!response.ok) {
     throw new Error("Failed to save application");
+  }
+
+  return response.json();
+}
+
+export async function fetchContacts(): Promise<Contact[]> {
+  const response = await fetch(`${getBackendUrl()}/api/contacts`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load contacts");
+  }
+
+  const payload = (await response.json()) as { data: Contact[] };
+  return payload.data;
+}
+
+export async function createContact(body: {
+  company: string;
+  fullName: string;
+  firstName: string;
+  title: string;
+  profileUrl?: string;
+  email?: string;
+  sourcePlatform: Job["primarySourcePlatform"];
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/contacts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to save contact");
+  }
+
+  return response.json();
+}
+
+export async function fetchReferrals(): Promise<Referral[]> {
+  const response = await fetch(`${getBackendUrl()}/api/referrals`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load referrals");
+  }
+
+  const payload = (await response.json()) as { data: Referral[] };
+  return payload.data;
+}
+
+export async function upsertReferral(body: {
+  jobId: number;
+  contactId: number;
+  status: Referral["status"];
+  outreachMessage: string;
+  connectionRequestMessage?: string;
+  messageSentAt?: string;
+  repliedAt?: string;
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/referrals`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to save referral");
   }
 
   return response.json();

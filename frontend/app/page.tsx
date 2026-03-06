@@ -30,6 +30,12 @@ export default function HomePage() {
           >
             Open Applications Tracker
           </Link>
+          <Link
+            className="inline-flex rounded-full border border-border bg-panel px-5 py-3 text-sm font-medium text-ink transition hover:bg-white"
+            href="/referrals"
+          >
+            Open Referrals Hub
+          </Link>
         </div>
         <div className="rounded-[32px] border border-border bg-panel p-6 shadow-panel">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Implemented now</p>
@@ -40,6 +46,7 @@ export default function HomePage() {
             <li>Docs and quickstart for local setup</li>
             <li>Jobs inventory with duplicate detection and source merging</li>
             <li>Applications tracker linked to canonical jobs</li>
+            <li>Contacts and referrals hub with reusable message drafts</li>
           </ul>
         </div>
       </section>

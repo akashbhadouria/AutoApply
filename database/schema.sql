@@ -89,3 +89,50 @@ CREATE TRIGGER applications_set_updated_at
 BEFORE UPDATE ON applications
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE IF NOT EXISTS contacts (
+  id BIGSERIAL PRIMARY KEY,
+  company TEXT NOT NULL,
+  full_name TEXT NOT NULL,
+  first_name TEXT NOT NULL,
+  title TEXT NOT NULL,
+  profile_url TEXT,
+  email TEXT,
+  source_platform TEXT NOT NULL DEFAULT 'linkedin',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT contacts_source_platform_check CHECK (
+    source_platform IN ('linkedin', 'instahyre', 'hirist', 'naukri', 'company_site')
+  )
+);
+
+DROP TRIGGER IF EXISTS contacts_set_updated_at ON contacts;
+
+CREATE TRIGGER contacts_set_updated_at
+BEFORE UPDATE ON contacts
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE IF NOT EXISTS referrals (
+  id BIGSERIAL PRIMARY KEY,
+  job_id BIGINT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+  contact_id BIGINT NOT NULL REFERENCES contacts(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pending',
+  outreach_message TEXT NOT NULL,
+  connection_request_message TEXT,
+  message_sent_at TIMESTAMPTZ,
+  replied_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT referrals_status_check CHECK (
+    status IN ('pending', 'replied', 'referred', 'no_response')
+  ),
+  CONSTRAINT referrals_job_contact_unique UNIQUE (job_id, contact_id)
+);
+
+DROP TRIGGER IF EXISTS referrals_set_updated_at ON referrals;
+
+CREATE TRIGGER referrals_set_updated_at
+BEFORE UPDATE ON referrals
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();

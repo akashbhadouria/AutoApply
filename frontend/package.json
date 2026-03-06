@@ -4,7 +4,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
-    "lint": "tsc --noEmit -p tsconfig.json",
+    "lint": "tsc --noEmit -p tsconfig.lint.json",
     "start": "next start"
   },
   "dependencies": {
@@ -26,4 +26,3 @@
     "typescript": "^5.8.2"
   }
 }
-
