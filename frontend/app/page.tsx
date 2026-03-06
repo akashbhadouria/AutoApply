@@ -11,9 +11,11 @@ const routes = [
   { href: "/jobs", title: "Jobs", description: "Normalized inventory with source-platform merging and queue-driven ingestion." },
   { href: "/applications", title: "Applications", description: "Application state attached to canonical jobs instead of fragmented trackers." },
   { href: "/referrals", title: "Referrals", description: "Contacts, outreach drafts, and referral statuses tied to jobs." },
+  { href: "/notifications", title: "Notifications", description: "Dedicated delivery inbox across dashboard, email, Telegram, and WhatsApp channels." },
   { href: "/operations", title: "Operations", description: "Paused sessions, notifications, and runtime event audit trail." },
   { href: "/automation", title: "Automation", description: "Operator controls for queue producers and worker validation." },
   { href: "/field-mappings", title: "Field Mappings", description: "Self-learning ATS label memory for future autofill runs." },
+  { href: "/settings", title: "Settings", description: "System-level configuration for channels, automation policy, and local ops defaults." },
 ];
 
 function BreakdownCard({

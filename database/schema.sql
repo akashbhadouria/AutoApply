@@ -206,3 +206,23 @@ CREATE TRIGGER field_mappings_set_updated_at
 BEFORE UPDATE ON field_mappings
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE IF NOT EXISTS system_settings (
+  key TEXT PRIMARY KEY,
+  label TEXT NOT NULL,
+  value TEXT NOT NULL,
+  value_type TEXT NOT NULL DEFAULT 'string',
+  category TEXT NOT NULL DEFAULT 'general',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT system_settings_value_type_check CHECK (
+    value_type IN ('string', 'boolean', 'number', 'json')
+  )
+);
+
+DROP TRIGGER IF EXISTS system_settings_set_updated_at ON system_settings;
+
+CREATE TRIGGER system_settings_set_updated_at
+BEFORE UPDATE ON system_settings
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();

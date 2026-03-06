@@ -13,6 +13,7 @@ import { getDashboardSummary } from "./dashboard.service.js";
 import { getProfileFields, removeProfileField, saveProfileField } from "./profile.service.js";
 import { changeReferralStatus, getReferrals, getReferralsForJob, getTimedOutPendingReferrals, saveReferral } from "./referral.service.js";
 import { getApplicationSessions, saveApplicationSession } from "./session.service.js";
+import { getSystemSettings, removeSystemSetting, saveSystemSetting } from "./settings.service.js";
 
 export const apiRouter = Router();
 
@@ -264,6 +265,33 @@ apiRouter.put("/api/notifications/:id/status", async (request, response, next) =
   try {
     const notification = await changeNotificationStatus(request.params.id, request.body);
     response.status(notification ? 200 : 404).json(notification ? { data: notification } : { error: "Not found" });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/settings", async (_request, response, next) => {
+  try {
+    const settings = await getSystemSettings();
+    response.json({ data: settings });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.put("/api/settings/:key", async (request, response, next) => {
+  try {
+    const setting = await saveSystemSetting(request.params.key, request.body);
+    response.status(200).json({ data: setting });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.delete("/api/settings/:key", async (request, response, next) => {
+  try {
+    const deleted = await removeSystemSetting(request.params.key);
+    response.status(deleted ? 204 : 404).send();
   } catch (error) {
     next(error);
   }

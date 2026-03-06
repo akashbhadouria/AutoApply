@@ -152,6 +152,16 @@ export interface DashboardSummary {
   }>;
 }
 
+export interface SystemSetting {
+  key: string;
+  label: string;
+  value: string;
+  valueType: "string" | "boolean" | "number" | "json";
+  category: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const backendUrl = process.env.BACKEND_URL ?? "http://localhost:4000";
 
 function getBackendUrl() {
@@ -507,6 +517,50 @@ export async function updateNotificationStatus(id: number, body: { status: Notif
   }
 
   return response.json();
+}
+
+export async function fetchSystemSettings(): Promise<SystemSetting[]> {
+  const response = await fetch(`${getBackendUrl()}/api/settings`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load settings");
+  }
+
+  const payload = (await response.json()) as { data: SystemSetting[] };
+  return payload.data;
+}
+
+export async function upsertSystemSetting(
+  key: string,
+  body: { label: string; value: string; valueType: SystemSetting["valueType"]; category: string },
+) {
+  const response = await fetch(`${getBackendUrl()}/api/settings/${key}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to save setting");
+  }
+
+  return response.json();
+}
+
+export async function removeSystemSetting(key: string) {
+  const response = await fetch(`${getBackendUrl()}/api/settings/${key}`, {
+    method: "DELETE",
+    cache: "no-store",
+  });
+
+  if (!response.ok && response.status !== 404) {
+    throw new Error("Failed to delete setting");
+  }
 }
 
 export async function fetchEvents(): Promise<Event[]> {

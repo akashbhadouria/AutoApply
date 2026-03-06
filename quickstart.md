@@ -47,9 +47,11 @@ Open:
 - `http://localhost:3000/jobs`
 - `http://localhost:3000/applications`
 - `http://localhost:3000/referrals`
+- `http://localhost:3000/notifications`
 - `http://localhost:3000/operations`
 - `http://localhost:3000/automation`
 - `http://localhost:3000/field-mappings`
+- `http://localhost:3000/settings`
 
 If you want to reseed demo data manually without restarting the stack:
 
@@ -111,6 +113,9 @@ If host database auth is inconsistent, pages now remain styled and show explicit
 - `GET /api/notifications`
 - `POST /api/notifications`
 - `PUT /api/notifications/:id/status`
+- `GET /api/settings`
+- `PUT /api/settings/:key`
+- `DELETE /api/settings/:key`
 - `GET /api/events`
 - `POST /api/events`
 - `GET /api/field-mappings`
@@ -126,6 +131,7 @@ If host database auth is inconsistent, pages now remain styled and show explicit
 - [docs/jobs-inventory.md](/home/akash/AutoApply/docs/jobs-inventory.md)
 - [docs/applications-tracker.md](/home/akash/AutoApply/docs/applications-tracker.md)
 - [docs/referrals-hub.md](/home/akash/AutoApply/docs/referrals-hub.md)
+- [docs/notifications.md](/home/akash/AutoApply/docs/notifications.md)
 - [docs/operations-layer.md](/home/akash/AutoApply/docs/operations-layer.md)
 - [docs/worker-architecture.md](/home/akash/AutoApply/docs/worker-architecture.md)
 - [docs/automation-control-plane.md](/home/akash/AutoApply/docs/automation-control-plane.md)
@@ -134,4 +140,5 @@ If host database auth is inconsistent, pages now remain styled and show explicit
 - [docs/referral-engine-worker.md](/home/akash/AutoApply/docs/referral-engine-worker.md)
 - [docs/field-mappings.md](/home/akash/AutoApply/docs/field-mappings.md)
 - [docs/browser-worker.md](/home/akash/AutoApply/docs/browser-worker.md)
+- [docs/settings.md](/home/akash/AutoApply/docs/settings.md)
 - [database/schema.sql](/home/akash/AutoApply/database/schema.sql)

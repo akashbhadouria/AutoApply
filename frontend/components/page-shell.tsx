@@ -12,9 +12,11 @@ const navigation = [
   { href: "/jobs", label: "Jobs" },
   { href: "/applications", label: "Applications" },
   { href: "/referrals", label: "Referrals" },
+  { href: "/notifications", label: "Notifications" },
   { href: "/operations", label: "Operations" },
   { href: "/automation", label: "Automation" },
   { href: "/field-mappings", label: "Field Mappings" },
+  { href: "/settings", label: "Settings" },
 ];
 
 export function FeaturePageShell({

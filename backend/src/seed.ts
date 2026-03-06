@@ -457,6 +457,31 @@ async function upsertFieldMappings() {
   }
 }
 
+async function upsertSystemSettings() {
+  const settings = [
+    { key: "email_enabled", label: "Email Enabled", value: "true", valueType: "boolean", category: "notifications" },
+    { key: "telegram_enabled", label: "Telegram Enabled", value: "true", valueType: "boolean", category: "notifications" },
+    { key: "whatsapp_enabled", label: "WhatsApp Enabled", value: "false", valueType: "boolean", category: "notifications" },
+    { key: "application_rate_limit_per_hour", label: "Application Rate Limit / Hour", value: "10", valueType: "number", category: "automation" },
+    { key: "referral_timeout_hours", label: "Referral Timeout Hours", value: "24", valueType: "number", category: "automation" },
+  ] as const;
+
+  for (const setting of settings) {
+    await pool.query(
+      `INSERT INTO system_settings (key, label, value, value_type, category)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (key)
+       DO UPDATE SET
+         label = EXCLUDED.label,
+         value = EXCLUDED.value,
+         value_type = EXCLUDED.value_type,
+         category = EXCLUDED.category,
+         updated_at = NOW()`,
+      [setting.key, setting.label, setting.value, setting.valueType, setting.category],
+    );
+  }
+}
+
 async function main() {
   try {
     await upsertProfileFields();
@@ -468,6 +493,7 @@ async function main() {
     await upsertNotifications(jobIds);
     await upsertEvents(jobIds);
     await upsertFieldMappings();
+    await upsertSystemSettings();
 
     console.log("Demo data seeded successfully.");
   } finally {

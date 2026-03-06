@@ -22,6 +22,7 @@ The first implemented feature is the `Profile Manager`, which provides:
 - normalized jobs ingestion with duplicate detection and source merging
 - application tracking linked to normalized jobs
 - contacts and referrals tracking with reusable outreach drafts
+- dedicated notifications and settings pages backed by persistent storage
 - notifications and resumable paused application session tracking
 - worker, queue, n8n, and agent scaffolding aligned with the target architecture
 - backend queue producer APIs and a manual automation control plane
