@@ -1,12 +1,13 @@
 # Quickstart
 
-This repository currently implements five foundational slices of the larger job-hunting automation system:
+This repository currently implements six foundational slices of the larger job-hunting automation system:
 
 - `Profile Manager`
 - `Jobs Inventory`
 - `Applications Tracker`
 - `Contacts + Referrals`
 - `Operations Layer`
+- `Automation Control Plane`
 
 ## Prerequisites
 
@@ -75,6 +76,8 @@ Open `http://localhost:3000/referrals`.
 
 Open `http://localhost:3000/operations`.
 
+Open `http://localhost:3000/automation`.
+
 ## 6. Run worker scaffolds
 
 ```bash
@@ -102,6 +105,8 @@ The worker runtime expects Redis on `REDIS_URL`.
 - `POST /api/application-sessions`
 - `GET /api/notifications`
 - `POST /api/notifications`
+- `GET /api/automation/queues`
+- `POST /api/automation/enqueue`
 
 ## Implemented docs
 
@@ -111,4 +116,5 @@ The worker runtime expects Redis on `REDIS_URL`.
 - [docs/referrals-hub.md](/home/akash/AutoApply/docs/referrals-hub.md)
 - [docs/operations-layer.md](/home/akash/AutoApply/docs/operations-layer.md)
 - [docs/worker-architecture.md](/home/akash/AutoApply/docs/worker-architecture.md)
+- [docs/automation-control-plane.md](/home/akash/AutoApply/docs/automation-control-plane.md)
 - [database/schema.sql](/home/akash/AutoApply/database/schema.sql)

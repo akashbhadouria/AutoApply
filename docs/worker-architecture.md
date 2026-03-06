@@ -29,6 +29,8 @@ This is deliberate:
 - Redis/BullMQ wiring is in place
 - future implementations can fill in behavior without rewriting topology
 
+The backend now exposes enqueue endpoints so queues can be populated without direct Redis access.
+
 ## Next implementation steps
 
 - make `job-scanner` publish normalized discoveries to the backend
@@ -36,4 +38,3 @@ This is deliberate:
 - make `application-queue` rate-limit queued applications
 - make `browser-automation` hand off to Playwright
 - make `notifications` deliver to dashboard, email, and Telegram/WhatsApp
-

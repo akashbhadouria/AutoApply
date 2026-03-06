@@ -42,6 +42,12 @@ export default function HomePage() {
           >
             Open Operations
           </Link>
+          <Link
+            className="inline-flex rounded-full border border-border bg-panel px-5 py-3 text-sm font-medium text-ink transition hover:bg-white"
+            href="/automation"
+          >
+            Open Automation
+          </Link>
         </div>
         <div className="rounded-[32px] border border-border bg-panel p-6 shadow-panel">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Implemented now</p>
@@ -54,6 +60,7 @@ export default function HomePage() {
             <li>Applications tracker linked to canonical jobs</li>
             <li>Contacts and referrals hub with reusable message drafts</li>
             <li>Notifications and resumable paused application sessions</li>
+            <li>Backend queue producers and automation control plane</li>
           </ul>
         </div>
       </section>

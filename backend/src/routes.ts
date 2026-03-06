@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { Router } from "express";
 import { ZodError } from "zod";
 
+import { enqueueAutomationJob, getAutomationQueues } from "./automation.service.js";
 import { getContacts, saveContact } from "./contact.service.js";
 import { getApplications, saveApplication } from "./application.service.js";
 import { getJobs, ingestDiscoveredJob } from "./job.service.js";
@@ -14,6 +15,19 @@ export const apiRouter = Router();
 
 apiRouter.get("/health", (_request, response) => {
   response.json({ status: "ok" });
+});
+
+apiRouter.get("/api/automation/queues", (_request, response) => {
+  response.json({ data: getAutomationQueues() });
+});
+
+apiRouter.post("/api/automation/enqueue", async (request, response, next) => {
+  try {
+    const job = await enqueueAutomationJob(request.body);
+    response.status(201).json({ data: job });
+  } catch (error) {
+    next(error);
+  }
 });
 
 apiRouter.get("/api/profile-fields", async (_request, response, next) => {

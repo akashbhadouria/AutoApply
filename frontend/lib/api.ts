@@ -91,6 +91,15 @@ export interface Notification {
   deliveredAt: string | null;
 }
 
+export interface AutomationQueue {
+  queueName: "job-scanner" | "referral-engine" | "application-queue" | "browser-automation" | "notifications";
+}
+
+export interface EnqueuedAutomationJob {
+  queueName: AutomationQueue["queueName"];
+  jobId: string;
+}
+
 const backendUrl = process.env.BACKEND_URL;
 
 function getBackendUrl() {
@@ -364,4 +373,37 @@ export async function createNotification(body: {
   }
 
   return response.json();
+}
+
+export async function fetchAutomationQueues(): Promise<AutomationQueue[]> {
+  const response = await fetch(`${getBackendUrl()}/api/automation/queues`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load automation queues");
+  }
+
+  const payload = (await response.json()) as { data: AutomationQueue[] };
+  return payload.data;
+}
+
+export async function enqueueAutomationJob(body: {
+  queueName: AutomationQueue["queueName"];
+  payload: Record<string, unknown>;
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/automation/enqueue`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to enqueue automation job");
+  }
+
+  return response.json() as Promise<{ data: EnqueuedAutomationJob }>;
 }
