@@ -9,6 +9,7 @@ import { getFieldMappings, saveFieldMapping } from "./field-mapping.service.js";
 import { getApplicationByJobId, getApplications, saveApplication } from "./application.service.js";
 import { getJobs, ingestDiscoveredJob, ingestDiscoveredJobsBatch } from "./job.service.js";
 import { changeNotificationStatus, getNotifications, saveNotification } from "./notification.service.js";
+import { getDashboardSummary } from "./dashboard.service.js";
 import { getProfileFields, removeProfileField, saveProfileField } from "./profile.service.js";
 import { getReferrals, getReferralsForJob, saveReferral } from "./referral.service.js";
 import { getApplicationSessions, saveApplicationSession } from "./session.service.js";
@@ -17,6 +18,15 @@ export const apiRouter = Router();
 
 apiRouter.get("/health", (_request, response) => {
   response.json({ status: "ok" });
+});
+
+apiRouter.get("/api/dashboard/summary", async (_request, response, next) => {
+  try {
+    const summary = await getDashboardSummary();
+    response.json({ data: summary });
+  } catch (error) {
+    next(error);
+  }
 });
 
 apiRouter.get("/api/automation/queues", (_request, response) => {

@@ -119,6 +119,39 @@ export interface EnqueuedAutomationJob {
   jobId: string;
 }
 
+export interface DashboardMetric {
+  label: string;
+  value: number;
+  detail: string;
+}
+
+export interface DashboardStatus {
+  label: string;
+  status: "healthy" | "degraded";
+  detail: string;
+}
+
+export interface DashboardSummary {
+  metrics: DashboardMetric[];
+  statuses: DashboardStatus[];
+  applicationBreakdown: Array<{ status: string; count: number }>;
+  referralBreakdown: Array<{ status: string; count: number }>;
+  recentJobs: Array<{
+    id: number;
+    company: string;
+    title: string;
+    location: string;
+    sourcePlatforms: string[];
+    discoveredAt: string;
+  }>;
+  recentEvents: Array<{
+    id: number;
+    eventType: string;
+    actor: string;
+    createdAt: string;
+  }>;
+}
+
 const backendUrl = process.env.BACKEND_URL ?? "http://localhost:4000";
 
 function getBackendUrl() {
@@ -135,6 +168,19 @@ export async function fetchProfileFields(): Promise<ProfileField[]> {
   }
 
   const payload = (await response.json()) as { data: ProfileField[] };
+  return payload.data;
+}
+
+export async function fetchDashboardSummary(): Promise<DashboardSummary> {
+  const response = await fetch(`${getBackendUrl()}/api/dashboard/summary`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load dashboard summary");
+  }
+
+  const payload = (await response.json()) as { data: DashboardSummary };
   return payload.data;
 }
 

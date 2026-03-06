@@ -73,6 +73,7 @@ If host database auth is inconsistent, pages now remain styled and show explicit
 ## Implemented endpoints
 
 - `GET /health`
+- `GET /api/dashboard/summary`
 - `GET /api/profile-fields`
 - `PUT /api/profile-fields/:key`
 - `DELETE /api/profile-fields/:key`
@@ -102,6 +103,7 @@ If host database auth is inconsistent, pages now remain styled and show explicit
 ## Implemented docs
 
 - [docs/profile-manager.md](/home/akash/AutoApply/docs/profile-manager.md)
+- [docs/dashboard.md](/home/akash/AutoApply/docs/dashboard.md)
 - [docs/jobs-inventory.md](/home/akash/AutoApply/docs/jobs-inventory.md)
 - [docs/applications-tracker.md](/home/akash/AutoApply/docs/applications-tracker.md)
 - [docs/referrals-hub.md](/home/akash/AutoApply/docs/referrals-hub.md)

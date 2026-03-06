@@ -14,6 +14,7 @@ That command brings up Dockerized PostgreSQL and Redis, applies the schema, and 
 
 The first implemented feature is the `Profile Manager`, which provides:
 
+- a live dashboard overview with runtime status and aggregate system metrics
 - a PostgreSQL schema for dynamic profile fields
 - an Express API for listing, upserting, and deleting fields
 - a Next.js dashboard page for editing those fields

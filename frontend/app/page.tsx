@@ -3,57 +3,97 @@ import Link from "next/link";
 import { BackgroundBeams } from "@/components/aceternity/background-beams";
 import { BentoGrid, BentoGridItem } from "@/components/aceternity/bento-grid";
 import { LampContainer } from "@/components/aceternity/lamp";
+import { Card } from "@/components/ui/card";
+import { fetchDashboardSummary, type DashboardSummary } from "@/lib/api";
 
 const routes = [
-  { href: "/profile", title: "Profile", description: "Canonical profile fields, salary data, links, and identity primitives." },
-  { href: "/jobs", title: "Jobs", description: "Normalized job ingestion with duplicate merging across platforms." },
-  { href: "/applications", title: "Applications", description: "Stateful tracking with queue-driven application decisions." },
-  { href: "/referrals", title: "Referrals", description: "Contacts, outreach drafts, and referral state tied to jobs." },
-  { href: "/operations", title: "Operations", description: "Notifications, paused sessions, and event audit trail." },
-  { href: "/automation", title: "Automation", description: "Queue producers and operator-triggered workflow runs." },
-  { href: "/field-mappings", title: "Field Mappings", description: "Self-learning ATS label persistence for future runs." },
+  { href: "/profile", title: "Profile", description: "Canonical identity data, salary fields, links, and ATS autofill primitives." },
+  { href: "/jobs", title: "Jobs", description: "Normalized inventory with source-platform merging and queue-driven ingestion." },
+  { href: "/applications", title: "Applications", description: "Application state attached to canonical jobs instead of fragmented trackers." },
+  { href: "/referrals", title: "Referrals", description: "Contacts, outreach drafts, and referral statuses tied to jobs." },
+  { href: "/operations", title: "Operations", description: "Paused sessions, notifications, and runtime event audit trail." },
+  { href: "/automation", title: "Automation", description: "Operator controls for queue producers and worker validation." },
+  { href: "/field-mappings", title: "Field Mappings", description: "Self-learning ATS label memory for future autofill runs." },
 ];
 
-export default function HomePage() {
+function BreakdownCard({
+  title,
+  items,
+  emptyState,
+}: {
+  title: string;
+  items: Array<{ status: string; count: number }>;
+  emptyState: string;
+}) {
   return (
-    <main className="relative min-h-screen overflow-hidden px-6 py-10">
-      <BackgroundBeams />
-      <div className="relative z-10 mx-auto max-w-7xl">
-        <LampContainer>
-          <div className="mx-auto max-w-5xl text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.42em] text-cyan-300">Job Hunter System</p>
-            <h1 className="mt-6 text-5xl font-semibold leading-tight text-white md:text-7xl">
-              Frontend automation, redesigned around Aceternity-style interface primitives.
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-slate-300">
-              This control surface now uses an Aceternity-inspired shell for the platform: luminous hero sections, bento navigation, dark glass cards, and motion-led visual hierarchy across the dashboard.
-            </p>
-            <div className="mx-auto mt-8 grid max-w-3xl gap-3 text-left sm:grid-cols-3">
-              <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl">
-                <p className="text-[11px] uppercase tracking-[0.24em] text-cyan-300">Run</p>
-                <p className="mt-2 text-sm text-slate-200">Use <span className="font-semibold text-white">npm run dev:stack</span> to start Docker-backed Postgres, Redis, backend, frontend, and workers.</p>
-              </div>
-              <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl">
-                <p className="text-[11px] uppercase tracking-[0.24em] text-cyan-300">Verify</p>
-                <p className="mt-2 text-sm text-slate-200">Every page now keeps the styled shell and surfaces clear runtime dependency errors.</p>
-              </div>
-              <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl">
-                <p className="text-[11px] uppercase tracking-[0.24em] text-cyan-300">Operate</p>
-                <p className="mt-2 text-sm text-slate-200">Jobs, applications, referrals, operations, automation, and field mappings all route through the same backend contracts.</p>
-              </div>
+    <Card className="p-6">
+      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">{title}</p>
+      {items.length === 0 ? (
+        <p className="mt-4 text-sm text-slate-400">{emptyState}</p>
+      ) : (
+        <div className="mt-4 space-y-3">
+          {items.map((item) => (
+            <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3" key={item.status}>
+              <span className="text-sm capitalize text-slate-200">{item.status.replaceAll("_", " ")}</span>
+              <span className="rounded-full bg-slate-950/80 px-3 py-1 text-sm font-medium text-cyan-100">{item.count}</span>
             </div>
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Link className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-5 py-3 text-sm font-medium text-cyan-100 transition hover:bg-cyan-400/20" href="/profile">
-                Open Profile
-              </Link>
-              <Link className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium text-slate-100 transition hover:bg-white/10" href="/automation">
-                Open Automation
-              </Link>
-            </div>
-          </div>
-        </LampContainer>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
 
-        <BentoGrid className="mt-8 md:auto-rows-[16rem]">
+function DashboardContent({ summary }: { summary: DashboardSummary }) {
+  return (
+    <>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {summary.metrics.map((metric) => (
+          <Card className="p-6" key={metric.label}>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">{metric.label}</p>
+            <p className="mt-4 text-4xl font-semibold text-white">{metric.value}</p>
+            <p className="mt-3 text-sm leading-6 text-slate-400">{metric.detail}</p>
+          </Card>
+        ))}
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+        <Card className="p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Runtime status</p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">System readiness at a glance.</h2>
+            </div>
+            <Link
+              className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-400/20"
+              href="/automation"
+            >
+              Open automation
+            </Link>
+          </div>
+
+          <div className="mt-6 space-y-3">
+            {summary.statuses.map((status) => (
+              <div className="flex items-start justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4" key={status.label}>
+                <div>
+                  <p className="text-sm font-medium text-white">{status.label}</p>
+                  <p className="mt-1 text-sm text-slate-400">{status.detail}</p>
+                </div>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
+                    status.status === "healthy"
+                      ? "bg-emerald-500/15 text-emerald-300"
+                      : "bg-amber-500/15 text-amber-300"
+                  }`}
+                >
+                  {status.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <BentoGrid className="md:auto-rows-[13rem]">
           {routes.map((route, index) => (
             <BentoGridItem
               className={index === 0 || index === 4 ? "md:col-span-2" : ""}
@@ -74,6 +114,154 @@ export default function HomePage() {
           ))}
         </BentoGrid>
       </div>
-    </main>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-3">
+        <BreakdownCard emptyState="No applications tracked yet." items={summary.applicationBreakdown} title="Application breakdown" />
+        <BreakdownCard emptyState="No referrals tracked yet." items={summary.referralBreakdown} title="Referral breakdown" />
+        <Card className="p-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Recent events</p>
+          {summary.recentEvents.length === 0 ? (
+            <p className="mt-4 text-sm text-slate-400">No worker or operator events have been recorded yet.</p>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {summary.recentEvents.map((event) => (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3" key={event.id}>
+                  <p className="text-sm font-medium text-white">{event.eventType}</p>
+                  <p className="mt-1 text-sm text-slate-400">{event.actor}</p>
+                  <p className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-500">
+                    {new Date(event.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+
+      <Card className="mt-6 p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Recent job discoveries</p>
+            <h2 className="mt-2 text-2xl font-semibold text-white">Most recent normalized jobs in the pipeline.</h2>
+          </div>
+          <Link className="text-sm font-medium text-cyan-300" href="/jobs">
+            View jobs
+          </Link>
+        </div>
+
+        {summary.recentJobs.length === 0 ? (
+          <p className="mt-6 text-sm text-slate-400">No jobs have been discovered yet. Trigger the job scanner from the Automation page.</p>
+        ) : (
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            {summary.recentJobs.map((job) => (
+              <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5" key={job.id}>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-lg font-semibold text-white">{job.company}</p>
+                    <p className="mt-1 text-sm text-slate-300">{job.title}</p>
+                  </div>
+                  <span className="rounded-full bg-slate-950/80 px-3 py-1 text-xs uppercase tracking-[0.18em] text-slate-300">
+                    {job.location}
+                  </span>
+                </div>
+                <p className="mt-4 text-sm text-slate-400">{job.sourcePlatforms.join(", ") || "No sources recorded"}</p>
+                <p className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">
+                  discovered {new Date(job.discoveredAt).toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </>
   );
+}
+
+function DashboardErrorState({ message }: { message: string }) {
+  return (
+    <div className="mt-6 grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+      <Card className="p-6">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-red-400">Dashboard unavailable</p>
+        <p className="mt-3 text-sm leading-7 text-slate-200">{message}</p>
+        <p className="mt-4 text-sm text-slate-400">
+          The shell is still healthy. The live dashboard summary could not be fetched from the backend.
+        </p>
+      </Card>
+
+      <Card className="p-6">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Recommended recovery</p>
+        <div className="mt-4 space-y-3 text-sm text-slate-200">
+          <p>Run <span className="font-semibold text-white">npm run dev:stack</span> to bring up the supported local runtime.</p>
+          <p>Verify <span className="font-semibold text-white">http://localhost:4000/health</span> returns a healthy response.</p>
+          <p>Once the backend summary endpoint is reachable, this page will render live metrics automatically.</p>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  try {
+    const summary = await fetchDashboardSummary();
+
+    return (
+      <main className="relative min-h-screen overflow-hidden px-6 py-10">
+        <BackgroundBeams />
+        <div className="relative z-10 mx-auto max-w-7xl">
+          <LampContainer>
+            <div className="mx-auto max-w-5xl text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.42em] text-cyan-300">Dashboard</p>
+              <h1 className="mt-6 text-5xl font-semibold leading-tight text-white md:text-7xl">
+                Personal job hunter operations console.
+              </h1>
+              <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-slate-300">
+                This dashboard is the live control surface for the system: normalized jobs, application state, referrals, queue readiness, ATS sessions, and runtime health in one place.
+              </p>
+              <div className="mx-auto mt-8 grid max-w-3xl gap-3 text-left sm:grid-cols-3">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl">
+                  <p className="text-[11px] uppercase tracking-[0.24em] text-cyan-300">Run</p>
+                  <p className="mt-2 text-sm text-slate-200">Use <span className="font-semibold text-white">npm run dev:stack</span> for the supported local runtime.</p>
+                </div>
+                <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl">
+                  <p className="text-[11px] uppercase tracking-[0.24em] text-cyan-300">Queue</p>
+                  <p className="mt-2 text-sm text-slate-200">Operators can validate worker flows directly from the automation page without touching Redis manually.</p>
+                </div>
+                <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl">
+                  <p className="text-[11px] uppercase tracking-[0.24em] text-cyan-300">Learn</p>
+                  <p className="mt-2 text-sm text-slate-200">Field mappings and paused ATS sessions keep improving future application runs.</p>
+                </div>
+              </div>
+            </div>
+          </LampContainer>
+
+          <DashboardContent summary={summary} />
+        </div>
+      </main>
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+
+    return (
+      <main className="relative min-h-screen overflow-hidden px-6 py-10">
+        <BackgroundBeams />
+        <div className="relative z-10 mx-auto max-w-7xl">
+          <LampContainer>
+            <div className="mx-auto max-w-5xl text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.42em] text-cyan-300">Dashboard</p>
+              <h1 className="mt-6 text-5xl font-semibold leading-tight text-white md:text-7xl">
+                Personal job hunter operations console.
+              </h1>
+              <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-slate-300">
+                The dashboard shell is available, but live summary data could not be loaded from the backend yet.
+              </p>
+            </div>
+          </LampContainer>
+
+          <DashboardErrorState message={message} />
+        </div>
+      </main>
+    );
+  }
 }
