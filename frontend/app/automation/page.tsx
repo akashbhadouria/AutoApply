@@ -1,5 +1,4 @@
-import { FeaturePageShell } from "@/components/page-shell";
-import { Card } from "@/components/ui/card";
+import { FeaturePageErrorState, FeaturePageShell } from "@/components/page-shell";
 import { fetchAutomationQueues } from "@/lib/api";
 
 import { AutomationManager } from "./automation-manager";
@@ -40,13 +39,15 @@ export default async function AutomationPage() {
         description="Automation is implemented, but this page cannot render queue metadata until the backend is reachable from the frontend runtime."
         title="Automation control plane is temporarily unavailable."
       >
-        <Card className="p-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-red-400">Runtime dependency error</p>
-          <p className="mt-3 text-sm text-ink">{message}</p>
-          <p className="mt-4 text-sm text-muted">
-            Verify <code>frontend/.env.local</code> contains <code>BACKEND_URL=http://localhost:4000</code>, then start the backend and retry.
-          </p>
-        </Card>
+        <FeaturePageErrorState
+          checks={[
+            "BACKEND_URL resolves to the running backend instance.",
+            "The backend health check returns 200 from http://localhost:4000/health.",
+            "Redis and workers are only required after queue metadata loads.",
+            "The one-command launcher npm run dev:stack will start the local stack against Dockerized Postgres and Redis.",
+          ]}
+          message={message}
+        />
       </FeaturePageShell>
     );
   }

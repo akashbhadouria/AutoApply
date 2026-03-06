@@ -119,13 +119,9 @@ export interface EnqueuedAutomationJob {
   jobId: string;
 }
 
-const backendUrl = process.env.BACKEND_URL;
+const backendUrl = process.env.BACKEND_URL ?? "http://localhost:4000";
 
 function getBackendUrl() {
-  if (!backendUrl) {
-    throw new Error("BACKEND_URL is not configured");
-  }
-
   return backendUrl;
 }
 

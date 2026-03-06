@@ -14,96 +14,61 @@ This repository currently implements seven foundational slices of the larger job
 
 - Node.js 20+
 - npm 10+
-- PostgreSQL 15+
+- Docker + Docker Compose
 
-## 1. Create the database
+## Recommended local startup
 
-Create a PostgreSQL database named `job_hunter`.
-
-Run the schema:
-
-```bash
-psql "$DATABASE_URL" -f database/schema.sql
-```
-
-## 2. Configure environment variables
-
-Backend:
-
-```bash
-cp backend/.env.example backend/.env
-```
-
-Frontend:
-
-```bash
-cp frontend/.env.example frontend/.env.local
-```
-
-Required values:
-
-- `DATABASE_URL`
-- `PORT`
-- `FRONTEND_ORIGIN`
-- `BACKEND_URL`
-
-## 3. Install dependencies
+Install dependencies once:
 
 ```bash
 npm install
-```
-
-## 4. Run the backend
-
-```bash
-npm run dev:backend
-```
-
-The API will start on `http://localhost:4000`.
-
-## 5. Run the frontend
-
-```bash
-npm run dev:frontend
-```
-
-The frontend is standardized on an Aceternity-style shell and component direction.
-
-Open `http://localhost:3000/profile`.
-
-Open `http://localhost:3000/jobs`.
-
-Open `http://localhost:3000/applications`.
-
-Open `http://localhost:3000/referrals`.
-
-Open `http://localhost:3000/operations`.
-
-Open `http://localhost:3000/automation`.
-
-The automation page is server-rendered and requires the backend to be reachable from the frontend runtime. If it fails to open, verify `frontend/.env.local` contains `BACKEND_URL=http://localhost:4000` and confirm `http://localhost:4000/health` responds before retrying.
-
-Open `http://localhost:3000/field-mappings`.
-
-## 6. Run worker scaffolds
-
-```bash
-cp workers/.env.example workers/.env
-npm run dev:workers
-```
-
-The worker runtime expects:
-
-- Redis on `REDIS_URL`
-- backend access on `BACKEND_URL`
-
-For Playwright browser analysis, install the browser runtime once:
-
-```bash
 npx playwright install chromium
 ```
 
-For local browser-worker validation, enqueue a `browser-automation` job against an `example.com` form URL from the Automation page. Those deterministic mock pages support autofill and controlled submit behavior.
+Then run the full local stack:
+
+```bash
+npm run dev:stack
+```
+
+That single command will:
+
+- start Dockerized PostgreSQL on `localhost:55432`
+- start Dockerized Redis on `localhost:56379`
+- apply `database/schema.sql`
+- start backend on `http://localhost:4000`
+- start frontend on `http://localhost:3000`
+- start workers against the same local dependencies
+
+Open:
+
+- `http://localhost:3000/profile`
+- `http://localhost:3000/jobs`
+- `http://localhost:3000/applications`
+- `http://localhost:3000/referrals`
+- `http://localhost:3000/operations`
+- `http://localhost:3000/automation`
+- `http://localhost:3000/field-mappings`
+
+## Manual startup
+
+If you do not want to use Docker, you can still use host services by creating:
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env.local
+cp workers/.env.example workers/.env
+```
+
+Then ensure your host PostgreSQL and Redis credentials actually match those files before running:
+
+```bash
+npm run dev:backend
+npm run dev:frontend
+npm run dev:workers
+```
+
+If host database auth is inconsistent, pages now remain styled and show explicit runtime dependency errors instead of dropping into raw error screens.
 
 ## Implemented endpoints
 

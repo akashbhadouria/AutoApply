@@ -4,6 +4,14 @@ This repository contains a production-oriented scaffold for a personal job hunte
 
 The frontend is now standardized on an Aceternity-inspired component system and page shell direction.
 
+The recommended local development path is now a single command:
+
+```bash
+npm run dev:stack
+```
+
+That command brings up Dockerized PostgreSQL and Redis, applies the schema, and starts backend, frontend, and workers together with consistent local credentials.
+
 The first implemented feature is the `Profile Manager`, which provides:
 
 - a PostgreSQL schema for dynamic profile fields
