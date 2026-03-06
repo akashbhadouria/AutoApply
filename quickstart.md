@@ -1,6 +1,9 @@
 # Quickstart
 
-This repository currently implements the `Profile Manager` feature as the first vertical slice of the larger job-hunting automation system.
+This repository currently implements two foundational slices of the larger job-hunting automation system:
+
+- `Profile Manager`
+- `Jobs Inventory`
 
 ## Prerequisites
 
@@ -61,15 +64,19 @@ npm run dev:frontend
 
 Open `http://localhost:3000/profile`.
 
+Open `http://localhost:3000/jobs`.
+
 ## Implemented endpoints
 
 - `GET /health`
 - `GET /api/profile-fields`
 - `PUT /api/profile-fields/:key`
 - `DELETE /api/profile-fields/:key`
+- `GET /api/jobs`
+- `POST /api/jobs/discover`
 
 ## Implemented docs
 
 - [docs/profile-manager.md](/home/akash/AutoApply/docs/profile-manager.md)
+- [docs/jobs-inventory.md](/home/akash/AutoApply/docs/jobs-inventory.md)
 - [database/schema.sql](/home/akash/AutoApply/database/schema.sql)
-

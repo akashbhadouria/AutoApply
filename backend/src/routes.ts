@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { Router } from "express";
 import { ZodError } from "zod";
 
+import { getJobs, ingestDiscoveredJob } from "./job.service.js";
 import { getProfileFields, removeProfileField, saveProfileField } from "./profile.service.js";
 
 export const apiRouter = Router();
@@ -37,6 +38,24 @@ apiRouter.delete("/api/profile-fields/:key", async (request, response, next) => 
   }
 });
 
+apiRouter.get("/api/jobs", async (_request, response, next) => {
+  try {
+    const jobs = await getJobs();
+    response.json({ data: jobs });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/jobs/discover", async (request, response, next) => {
+  try {
+    const job = await ingestDiscoveredJob(request.body);
+    response.status(201).json({ data: job });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export function errorHandler(error: unknown, _request: Request, response: Response, _next: () => void) {
   if (error instanceof ZodError) {
     response.status(400).json({
@@ -49,4 +68,3 @@ export function errorHandler(error: unknown, _request: Request, response: Respon
   console.error(error);
   response.status(500).json({ error: "Internal server error" });
 }
-

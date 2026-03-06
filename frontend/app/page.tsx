@@ -18,6 +18,12 @@ export default function HomePage() {
           >
             Open Profile Manager
           </Link>
+          <Link
+            className="inline-flex rounded-full border border-border bg-panel px-5 py-3 text-sm font-medium text-ink transition hover:bg-white"
+            href="/jobs"
+          >
+            Open Jobs Inventory
+          </Link>
         </div>
         <div className="rounded-[32px] border border-border bg-panel p-6 shadow-panel">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Implemented now</p>
@@ -26,10 +32,10 @@ export default function HomePage() {
             <li>Express API for upsert and delete flows</li>
             <li>Next.js dashboard page with inline management</li>
             <li>Docs and quickstart for local setup</li>
+            <li>Jobs inventory with duplicate detection and source merging</li>
           </ul>
         </div>
       </section>
     </main>
   );
 }
-
