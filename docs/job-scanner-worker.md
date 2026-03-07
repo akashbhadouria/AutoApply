@@ -7,7 +7,7 @@
 When a `job-scanner` job is enqueued, the worker:
 
 1. reads configured live source feeds from `JOB_SOURCE_FEEDS_JSON`
-2. fetches Greenhouse, Lever, or generic JSON feeds when configured
+2. fetches Greenhouse, Lever, Google Jobs-style, or generic JSON feeds when configured
 3. filters results by requested titles, locations, and recency window
 4. falls back to deterministic discoveries if no live jobs are found
 5. sends discoveries to the backend batch discovery endpoint
@@ -31,6 +31,12 @@ Set `JOB_SOURCE_FEEDS_JSON` in [workers/.env.example](/home/akash/AutoApply/work
     "provider": "lever",
     "platform": "company_site",
     "url": "https://api.lever.co/v0/postings/acme?mode=json"
+  },
+  {
+    "name": "google-jobs-feed",
+    "provider": "google_jobs",
+    "platform": "company_site",
+    "url": "https://example.com/google-jobs.json"
   }
 ]
 ```
@@ -39,7 +45,10 @@ Supported providers:
 
 - `greenhouse`
 - `lever`
+- `google_jobs`
 - `generic_json`
+
+`google_jobs` expects a Google Jobs-style JSON shape such as `jobs_results`, plus a few common fallback keys for location, apply link, and posted date.
 
 ## Why fallback still exists
 

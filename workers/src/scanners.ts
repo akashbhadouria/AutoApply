@@ -13,7 +13,7 @@ interface ScannedJob {
 
 interface ScannerRunSource {
   name: string;
-  provider: "deterministic" | "greenhouse" | "lever" | "generic_json";
+  provider: "deterministic" | "greenhouse" | "lever" | "generic_json" | "google_jobs";
   platform: ScannedJob["sourcePlatform"];
   mode: "live" | "fallback";
   discoveredCount: number;
@@ -244,6 +244,74 @@ function parseGenericJsonJobs(payload: unknown, feed: JobSourceFeedConfig): Scan
   });
 }
 
+function parseGoogleJobsJobs(payload: unknown, feed: JobSourceFeedConfig): ScannedJob[] {
+  const items =
+    payload &&
+    typeof payload === "object" &&
+    Array.isArray((payload as { jobs_results?: unknown[] }).jobs_results)
+      ? (payload as { jobs_results: unknown[] }).jobs_results
+      : payload &&
+          typeof payload === "object" &&
+          Array.isArray((payload as { jobs?: unknown[] }).jobs)
+        ? (payload as { jobs: unknown[] }).jobs
+        : [];
+
+  return items.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") {
+      return [];
+    }
+
+    const job = entry as Record<string, unknown>;
+    const title = extractStringRecordValue(job, ["title", "job_title", "position"]);
+    const jobUrl = extractStringRecordValue(job, ["jobUrl", "apply_link", "apply_options", "related_links"]);
+    const location = extractStringRecordValue(job, ["location", "detected_extensions", "job_location"]);
+    const company =
+      feed.company ??
+      extractStringRecordValue(job, ["company_name", "company", "employer_name"]) ??
+      feed.name;
+    const postedDate = normalizeIsoDate(
+      extractStringRecordValue(job, ["detected_extensions", "posted_at", "postedDate", "date"]) ??
+        (typeof job.timestamp === "number" ? job.timestamp : undefined),
+    );
+
+    const normalizedUrl =
+      typeof job.apply_options === "string"
+        ? job.apply_options
+        : Array.isArray(job.apply_options) && job.apply_options[0] && typeof job.apply_options[0] === "object"
+          ? extractStringRecordValue(job.apply_options[0] as Record<string, unknown>, ["link", "url"])
+          : Array.isArray(job.related_links) && job.related_links[0] && typeof job.related_links[0] === "object"
+            ? extractStringRecordValue(job.related_links[0] as Record<string, unknown>, ["link", "url"])
+            : jobUrl;
+
+    const normalizedLocation =
+      typeof job.detected_extensions === "object" && job.detected_extensions
+        ? extractStringRecordValue(job.detected_extensions as Record<string, unknown>, ["location"])
+        : location;
+    const normalizedPostedDate =
+      typeof job.detected_extensions === "object" && job.detected_extensions
+        ? normalizeIsoDate(
+            extractStringRecordValue(job.detected_extensions as Record<string, unknown>, ["posted_at", "schedule_type"]) ??
+              postedDate,
+          )
+        : postedDate;
+
+    if (!title || !normalizedUrl || !normalizedLocation || !normalizedPostedDate) {
+      return [];
+    }
+
+    return [
+      {
+        company,
+        title,
+        location: normalizedLocation,
+        jobUrl: normalizedUrl,
+        sourcePlatform: feed.platform,
+        postedDate: normalizedPostedDate,
+      } satisfies ScannedJob,
+    ];
+  });
+}
+
 async function fetchLiveFeedJobs(feed: JobSourceFeedConfig): Promise<ScannedJob[]> {
   const response = await fetch(feed.url, {
     headers: {
@@ -266,6 +334,8 @@ async function fetchLiveFeedJobs(feed: JobSourceFeedConfig): Promise<ScannedJob[
       return parseLeverJobs(payload, feed);
     case "generic_json":
       return parseGenericJsonJobs(payload, feed);
+    case "google_jobs":
+      return parseGoogleJobsJobs(payload, feed);
     default:
       return [];
   }

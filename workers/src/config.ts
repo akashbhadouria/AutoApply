@@ -4,7 +4,7 @@ loadEnv();
 
 export interface JobSourceFeedConfig {
   name: string;
-  provider: "greenhouse" | "lever" | "generic_json";
+  provider: "greenhouse" | "lever" | "generic_json" | "google_jobs";
   platform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
   url: string;
   company?: string;
@@ -34,7 +34,10 @@ function parseJobSourceFeeds(rawValue: string | undefined): JobSourceFeedConfig[
       }
 
       if (
-        (entry.provider !== "greenhouse" && entry.provider !== "lever" && entry.provider !== "generic_json") ||
+        (entry.provider !== "greenhouse" &&
+          entry.provider !== "lever" &&
+          entry.provider !== "generic_json" &&
+          entry.provider !== "google_jobs") ||
         (entry.platform !== "linkedin" &&
           entry.platform !== "instahyre" &&
           entry.platform !== "hirist" &&
