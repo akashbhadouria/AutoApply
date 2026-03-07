@@ -100,6 +100,8 @@ The notification worker can now perform optional live delivery for:
 - email via `EMAIL_WEBHOOK_URL`
 - WhatsApp via `WHATSAPP_WEBHOOK_URL`
 
+The `/referrals` page now supports direct status actions. Marking a referral as `replied` or `no_response` will automatically queue that job into `application-queue`.
+
 To inspect the current applied-application count in the active rate window:
 
 ```bash

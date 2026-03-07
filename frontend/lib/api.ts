@@ -518,6 +518,26 @@ export async function upsertReferral(body: {
   return response.json();
 }
 
+export async function updateReferralStatus(
+  id: number,
+  body: { status: Referral["status"]; repliedAt?: string },
+) {
+  const response = await fetch(`${getBackendUrl()}/api/referrals/${id}/status`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update referral status");
+  }
+
+  return response.json();
+}
+
 export async function fetchApplicationSessions(): Promise<ApplicationSession[]> {
   const response = await fetch(`${getBackendUrl()}/api/application-sessions`, {
     cache: "no-store",

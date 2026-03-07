@@ -21,6 +21,8 @@ For a queued referral job in `timeouts` mode, the worker:
 
 This implements the spec rule that pending referrals with no reply after the timeout window should transition to `no_response` and move into the application path automatically.
 
+The same application-handoff rule is now also enforced when an operator manually changes a referral to `replied` or `no_response` from the referrals UI.
+
 ## Timeout trigger
 
 Use this payload on the Automation page to run the timeout sweep manually:

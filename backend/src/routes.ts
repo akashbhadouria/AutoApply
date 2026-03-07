@@ -283,7 +283,67 @@ apiRouter.post("/api/referrals", async (request, response, next) => {
 apiRouter.put("/api/referrals/:id/status", async (request, response, next) => {
   try {
     const referral = await changeReferralStatus(request.params.id, request.body);
-    response.status(referral ? 200 : 404).json(referral ? { data: referral } : { error: "Not found" });
+    if (!referral) {
+      response.status(404).json({ error: "Not found" });
+      return;
+    }
+
+    await saveEvent({
+      eventType: "referral.status_changed",
+      actor: "referralsApi",
+      payload: {
+        referralId: referral.id,
+        jobId: referral.jobId,
+        contactId: referral.contactId,
+        status: referral.status,
+      },
+      relatedJobId: referral.jobId,
+    });
+
+    if (referral.status === "replied" || referral.status === "no_response") {
+      const queuedJob = await enqueueAutomationJob({
+        queueName: "application-queue",
+        payload: {
+          jobId: referral.jobId,
+          sourcePlatform: referral.jobSourcePlatform ?? "company_site",
+        },
+      });
+      await saveEvent({
+        eventType: "referral.application_queue_requested",
+        actor: "referralsApi",
+        payload: {
+          referralId: referral.id,
+          jobId: referral.jobId,
+          referralStatus: referral.status,
+          queueName: queuedJob.queueName,
+          queuedJobId: queuedJob.jobId,
+        },
+        relatedJobId: referral.jobId,
+      });
+      await saveNotification({
+        type: "referral_application_queue_requested",
+        title: "Referral moved into application flow",
+        message: `Referral ${referral.id} is ${referral.status}, so job ${referral.jobId} was queued for application processing.`,
+        channel: "dashboard",
+        status: "pending",
+        relatedJobId: referral.jobId,
+        relatedReferralId: referral.id,
+      });
+    }
+
+    if (referral.status === "referred") {
+      await saveNotification({
+        type: "referral_marked_referred",
+        title: "Referral marked as referred",
+        message: `Referral ${referral.id} is marked referred, so direct application should remain skipped for job ${referral.jobId}.`,
+        channel: "dashboard",
+        status: "pending",
+        relatedJobId: referral.jobId,
+        relatedReferralId: referral.id,
+      });
+    }
+
+    response.status(200).json({ data: referral });
   } catch (error) {
     next(error);
   }

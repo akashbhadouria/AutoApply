@@ -46,6 +46,10 @@ Returns referral records joined with job and contact context.
 
 Creates or updates a referral record for a given job and contact pair.
 
+### `PUT /api/referrals/:id/status`
+
+Updates a referral status. When a referral is marked `replied` or `no_response`, the backend also queues the linked job into the application flow.
+
 ## UI behavior
 
 The `/referrals` page allows the user to:
@@ -54,5 +58,6 @@ The `/referrals` page allows the user to:
 - select a normalized job and contact
 - save outreach and connection request drafts
 - update referral status over time
+- trigger application handoff automatically when a referral becomes `replied` or `no_response`
 
 This keeps the user in manual control of messaging while making the state machine explicit for later timeout and notification automation.

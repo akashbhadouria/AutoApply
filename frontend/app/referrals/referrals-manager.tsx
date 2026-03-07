@@ -66,6 +66,7 @@ export function ReferralsManager({
   const [isLoadingContact, setIsLoadingContact] = useState(false);
   const [isLoadingReferral, setIsLoadingReferral] = useState(false);
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
+  const [updatingReferralId, setUpdatingReferralId] = useState<number | null>(null);
   const [draftResult, setDraftResult] = useState<ReferralDraftResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -212,6 +213,32 @@ export function ReferralsManager({
       setError(generationError instanceof Error ? generationError.message : "Failed to generate referral draft");
     } finally {
       setIsGeneratingDraft(false);
+    }
+  }
+
+  async function handleReferralStatusUpdate(referralId: number, status: Referral["status"]) {
+    setError(null);
+    setUpdatingReferralId(referralId);
+
+    try {
+      const response = await fetch(`/api/referrals/${referralId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status,
+          repliedAt: status === "replied" ? new Date().toISOString() : undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Unable to update referral status");
+      }
+
+      await refreshReferrals();
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : "Failed to update referral status");
+    } finally {
+      setUpdatingReferralId(null);
     }
   }
 
@@ -430,12 +457,13 @@ export function ReferralsManager({
                   <TableHeaderCell>Role</TableHeaderCell>
                   <TableHeaderCell>Contact</TableHeaderCell>
                   <TableHeaderCell>Status</TableHeaderCell>
+                  <TableHeaderCell className="text-right">Action</TableHeaderCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {referrals.length === 0 ? (
                   <TableRow>
-                    <TableCell className="px-4 py-10 text-muted" colSpan={4}>
+                    <TableCell className="px-4 py-10 text-muted" colSpan={5}>
                       No referrals tracked yet.
                     </TableCell>
                   </TableRow>
@@ -446,6 +474,35 @@ export function ReferralsManager({
                       <TableCell>{referral.jobTitle}</TableCell>
                       <TableCell>{referral.contactName}</TableCell>
                       <TableCell className="capitalize">{referral.status}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            className="bg-transparent px-3 text-ink hover:bg-canvas hover:text-ink"
+                            disabled={updatingReferralId === referral.id || referral.status === "replied"}
+                            onClick={() => void handleReferralStatusUpdate(referral.id, "replied")}
+                            type="button"
+                          >
+                            {updatingReferralId === referral.id ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+                            Replied
+                          </Button>
+                          <Button
+                            className="bg-transparent px-3 text-ink hover:bg-canvas hover:text-ink"
+                            disabled={updatingReferralId === referral.id || referral.status === "referred"}
+                            onClick={() => void handleReferralStatusUpdate(referral.id, "referred")}
+                            type="button"
+                          >
+                            Referred
+                          </Button>
+                          <Button
+                            className="bg-transparent px-3 text-ink hover:bg-canvas hover:text-ink"
+                            disabled={updatingReferralId === referral.id || referral.status === "no_response"}
+                            onClick={() => void handleReferralStatusUpdate(referral.id, "no_response")}
+                            type="button"
+                          >
+                            No response
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
