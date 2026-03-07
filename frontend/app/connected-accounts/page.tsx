@@ -13,13 +13,13 @@ export default async function ConnectedAccountsPage() {
       <FeaturePageShell
         badge="AutoApply V1"
         bullets={[
-          "Account connection is a hard requirement for real outreach execution.",
-          "Approval mode is explicit instead of hidden in worker logic.",
-          "This is the first product surface for startup-grade identity orchestration.",
-          "LinkedIn and email can now be represented as operator-managed connections.",
+          "User ko bas real provider identifiers dene chahiye, complex dropdown setup nahi.",
+          "LinkedIn, Gmail, Telegram, aur WhatsApp targets yahin capture honge.",
+          "At least one connection target ke bina outreach layer useful nahi hai.",
+          "Save ke baad har provided identifier ko later actual connect/verify state me le jaa sakte ho.",
         ]}
-        description="Use this page to model how outreach-capable accounts connect to AutoApply before any real send path is introduced."
-        title="Connected accounts and approval policy."
+        description="Use this page to capture the real delivery identifiers that AutoApply can later connect and verify for outreach and notifications."
+        title="Connected account targets."
       >
         <ConnectedAccountsManager initialAccounts={accounts} />
       </FeaturePageShell>
@@ -29,13 +29,13 @@ export default async function ConnectedAccountsPage() {
       <FeaturePageShell
         badge="AutoApply V1"
         bullets={[
-          "This page depends on the new connected accounts entity.",
+          "This page depends on the connected accounts APIs.",
           "The surface is intentionally separate from generic settings.",
           "Use the dev stack after schema changes.",
           "The runtime banner above should show backend dependency status.",
         ]}
         description="The connected accounts page is implemented, but live account data could not be loaded."
-        title="Connected accounts are temporarily unavailable."
+        title="Connected account targets are temporarily unavailable."
       >
         <FeaturePageErrorState
           checks={[
