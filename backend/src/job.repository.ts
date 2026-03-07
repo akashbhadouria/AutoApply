@@ -18,6 +18,7 @@ function mapJobRow(row: Record<string, unknown>): JobRecord {
     freshnessStatus: String(row.freshness_status) as JobRecord["freshnessStatus"],
     jobPriority: String(row.job_priority) as JobRecord["jobPriority"],
     applyStrategy: String(row.apply_strategy) as JobRecord["applyStrategy"],
+    applyProvider: String(row.apply_provider),
     discoveredByWatcherId: row.discovered_by_watcher_id ? Number(row.discovered_by_watcher_id) : null,
     discoveredAt: new Date(String(row.discovered_at)).toISOString(),
     updatedAt: new Date(String(row.updated_at)).toISOString(),
@@ -42,6 +43,7 @@ export async function listJobs(): Promise<JobRecord[]> {
        jobs.freshness_status,
        jobs.job_priority,
        jobs.apply_strategy,
+       jobs.apply_provider,
        jobs.discovered_by_watcher_id,
        jobs.discovered_at,
        jobs.updated_at,
@@ -69,6 +71,7 @@ export async function listFreshJobs(): Promise<JobRecord[]> {
        jobs.freshness_status,
        jobs.job_priority,
        jobs.apply_strategy,
+       jobs.apply_provider,
        jobs.discovered_by_watcher_id,
        jobs.discovered_at,
        jobs.updated_at,
@@ -97,6 +100,7 @@ export async function findJobById(jobId: number): Promise<JobRecord | null> {
        jobs.freshness_status,
        jobs.job_priority,
        jobs.apply_strategy,
+       jobs.apply_provider,
        jobs.discovered_by_watcher_id,
        jobs.discovered_at,
        jobs.updated_at,
@@ -132,12 +136,13 @@ export async function discoverJob(input: DiscoverJobInput): Promise<JobRecord> {
          freshness_status,
          job_priority,
          apply_strategy,
+         apply_provider,
          discovered_by_watcher_id,
          normalized_company,
          normalized_title,
          normalized_location
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
        ON CONFLICT (normalized_company, normalized_title, normalized_location)
        DO UPDATE SET
          company = EXCLUDED.company,
@@ -157,6 +162,7 @@ export async function discoverJob(input: DiscoverJobInput): Promise<JobRecord> {
            ELSE jobs.job_priority
          END,
          apply_strategy = EXCLUDED.apply_strategy,
+         apply_provider = EXCLUDED.apply_provider,
          discovered_by_watcher_id = COALESCE(EXCLUDED.discovered_by_watcher_id, jobs.discovered_by_watcher_id),
          updated_at = NOW()
        RETURNING id`,
@@ -171,6 +177,7 @@ export async function discoverJob(input: DiscoverJobInput): Promise<JobRecord> {
         input.freshnessStatus ?? "standard",
         input.jobPriority ?? "normal",
         input.applyStrategy ?? "browser",
+        input.applyProvider ?? "custom",
         input.discoveredByWatcherId ?? null,
         normalizedCompany,
         normalizedTitle,
@@ -203,6 +210,7 @@ export async function discoverJob(input: DiscoverJobInput): Promise<JobRecord> {
          jobs.freshness_status,
          jobs.job_priority,
          jobs.apply_strategy,
+         jobs.apply_provider,
          jobs.discovered_by_watcher_id,
          jobs.discovered_at,
          jobs.updated_at,

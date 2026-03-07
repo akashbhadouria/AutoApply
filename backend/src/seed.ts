@@ -604,10 +604,42 @@ async function upsertSystemSettings() {
   }
 }
 
+async function upsertApplicationMethods() {
+  const methods = [
+    ["linkedin_easy_apply", "linkedin", true, false, false, 10, "LinkedIn direct apply style flow."],
+    ["greenhouse", "company_site", false, true, false, 20, "Greenhouse simple form capable."],
+    ["lever", "instahyre", false, true, false, 30, "Lever-style hosted form."],
+    ["workday", "company_site", false, false, true, 40, "Workday requires browser automation."],
+    ["smartrecruiters", "company_site", false, false, true, 50, "SmartRecruiters browser-first flow."],
+    ["taleo", "company_site", false, false, true, 60, "Taleo dynamic flow."],
+    ["custom", "company_site", false, false, true, 100, "Unknown provider fallback."],
+  ] as const;
+
+  for (const method of methods) {
+    await pool.query(
+      `INSERT INTO application_methods (
+         provider, source_platform, supports_api_apply, supports_http_form_apply, requires_browser, priority_rank, notes
+       )
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       ON CONFLICT (provider)
+       DO UPDATE SET
+         source_platform = EXCLUDED.source_platform,
+         supports_api_apply = EXCLUDED.supports_api_apply,
+         supports_http_form_apply = EXCLUDED.supports_http_form_apply,
+         requires_browser = EXCLUDED.requires_browser,
+         priority_rank = EXCLUDED.priority_rank,
+         notes = EXCLUDED.notes,
+         updated_at = NOW()`,
+      [...method],
+    );
+  }
+}
+
 async function main() {
   try {
     await upsertCurrentUser();
     await upsertProfileFields();
+    await upsertApplicationMethods();
     const jobIds = await upsertJobs();
     const contactIds = await upsertContacts();
     await upsertApplications(jobIds);

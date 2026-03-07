@@ -9,6 +9,7 @@ import {
   summarizeNotification,
 } from "./agent.service.js";
 import { getApplyAttemptsByJobId, saveApplyAttempt } from "./apply-attempt.service.js";
+import { getApplicationMethods } from "./application-method.service.js";
 import { enqueueAutomationJob, getAutomationQueues, pauseAutomationQueue, resumeAutomationQueue } from "./automation.service.js";
 import { getContacts, saveContact } from "./contact.service.js";
 import {
@@ -325,6 +326,15 @@ apiRouter.get("/api/applications", async (_request, response, next) => {
   try {
     const applications = await getApplications();
     response.json({ data: applications });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/application-methods", async (_request, response, next) => {
+  try {
+    const methods = await getApplicationMethods();
+    response.json({ data: methods });
   } catch (error) {
     next(error);
   }

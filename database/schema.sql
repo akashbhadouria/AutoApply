@@ -109,6 +109,29 @@ CREATE TABLE IF NOT EXISTS apply_attempts (
   )
 );
 
+CREATE TABLE IF NOT EXISTS application_methods (
+  id BIGSERIAL PRIMARY KEY,
+  provider TEXT NOT NULL UNIQUE,
+  source_platform TEXT NOT NULL,
+  supports_api_apply BOOLEAN NOT NULL DEFAULT FALSE,
+  supports_http_form_apply BOOLEAN NOT NULL DEFAULT FALSE,
+  requires_browser BOOLEAN NOT NULL DEFAULT TRUE,
+  priority_rank INTEGER NOT NULL DEFAULT 100,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT application_methods_source_platform_check CHECK (
+    source_platform IN ('linkedin', 'instahyre', 'hirist', 'naukri', 'company_site')
+  )
+);
+
+DROP TRIGGER IF EXISTS application_methods_set_updated_at ON application_methods;
+
+CREATE TRIGGER application_methods_set_updated_at
+BEFORE UPDATE ON application_methods
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
 CREATE TABLE IF NOT EXISTS contacts (
   id BIGSERIAL PRIMARY KEY,
   company TEXT NOT NULL,
@@ -392,6 +415,7 @@ ALTER TABLE jobs
   ADD COLUMN IF NOT EXISTS freshness_status TEXT NOT NULL DEFAULT 'standard',
   ADD COLUMN IF NOT EXISTS job_priority TEXT NOT NULL DEFAULT 'normal',
   ADD COLUMN IF NOT EXISTS apply_strategy TEXT NOT NULL DEFAULT 'browser',
+  ADD COLUMN IF NOT EXISTS apply_provider TEXT NOT NULL DEFAULT 'custom',
   ADD COLUMN IF NOT EXISTS discovered_by_watcher_id BIGINT REFERENCES job_feed_watchers(id) ON DELETE SET NULL;
 
 DO $$

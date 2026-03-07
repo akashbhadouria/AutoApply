@@ -13,6 +13,7 @@ export interface JobRecord {
   freshnessStatus: "fresh" | "recent" | "standard";
   jobPriority: "high" | "normal" | "low";
   applyStrategy: "api" | "http_form" | "browser";
+  applyProvider: string;
   discoveredByWatcherId: number | null;
   discoveredAt: string;
   updatedAt: string;

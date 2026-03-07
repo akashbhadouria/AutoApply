@@ -130,6 +130,8 @@ The application queue now executes the 3-tier apply engine for jobs that are rea
 - `browser` jobs go to Playwright
 - unsupported direct/http jobs automatically fall back to browser and record an apply attempt audit trail
 
+Provider capabilities are now stored in `application_methods`, and jobs also persist `applyProvider` so strategy selection can be provider-aware instead of source-only.
+
 To inspect the current applied-application count in the active rate window:
 
 ```bash
@@ -180,6 +182,7 @@ The frontend now also shows a global runtime banner so backend connectivity prob
 - `POST /api/jobs/discover`
 - `POST /api/jobs/discover/batch`
 - `GET /api/applications`
+- `GET /api/application-methods`
 - `GET /api/applications/rate-window`
 - `GET /api/applications/job/:jobId`
 - `POST /api/applications`

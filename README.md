@@ -41,6 +41,7 @@ The first implemented feature is the `Profile Manager`, which provides:
 - optional live notification delivery adapters for Telegram and webhook-based email/WhatsApp channels
 - referral status actions that can automatically hand jobs into the application queue
 - the application queue now routes jobs through `api`, `http_form`, or `browser` execution paths and writes apply-attempt audit records
+- application routing is now provider-aware through the `application_methods` registry and stored `applyProvider` metadata on jobs
 - a global runtime-integration banner that shows whether the frontend can currently reach the backend
 - `/health` now reports backend, PostgreSQL, and Redis dependency status instead of only a static ok response
 - the automation control plane can now pause and resume BullMQ queues directly from the UI

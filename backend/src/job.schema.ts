@@ -13,6 +13,7 @@ export const discoverJobSchema = z.object({
   freshnessStatus: z.enum(["fresh", "recent", "standard"]).optional(),
   jobPriority: z.enum(["high", "normal", "low"]).optional(),
   applyStrategy: z.enum(["api", "http_form", "browser"]).optional(),
+  applyProvider: z.string().trim().min(1).max(120).optional(),
   discoveredByWatcherId: z.coerce.number().int().positive().optional(),
 });
 

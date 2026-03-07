@@ -89,8 +89,23 @@ export async function fetchBackendJobById(jobId: number) {
       jobUrl: string;
       primarySourcePlatform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
       applyStrategy: "api" | "http_form" | "browser";
+      applyProvider: string;
     };
   }>;
+}
+
+export async function fetchBackendApplicationMethods() {
+  return request<{
+    data: Array<{
+      provider: string;
+      sourcePlatform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
+      supportsApiApply: boolean;
+      supportsHttpFormApply: boolean;
+      requiresBrowser: boolean;
+      priorityRank: number;
+      notes: string | null;
+    }>;
+  }>("/api/application-methods");
 }
 
 export async function fetchBackendApplicationRateWindow(hours = 1) {

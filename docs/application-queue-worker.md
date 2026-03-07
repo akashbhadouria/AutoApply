@@ -35,6 +35,8 @@ The worker now reads `applyStrategy` from the canonical job record:
 - `http_form`: run the lightweight HTTP-form adapter
 - `browser`: queue Playwright automation
 
+The job record now also carries `applyProvider`, and the worker checks the provider capability registry before deciding the final strategy. That means routing is no longer based only on source-platform guesses.
+
 If a lighter strategy reports `unsupported`, the worker records an apply attempt and falls back to browser automation automatically.
 
 Every execution path now also writes an `apply_attempts` record with:

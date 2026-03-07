@@ -2,6 +2,7 @@ import { Worker } from "bullmq";
 
 import {
   createBackendApplicationSession,
+  fetchBackendApplicationMethods,
   fetchBackendJobById,
   createBackendEvent,
   discoverBackendJobsBatch,
@@ -118,6 +119,57 @@ function inferApplyStrategy(sourcePlatform: "linkedin" | "instahyre" | "hirist" 
   return "browser" as const;
 }
 
+function inferApplyProvider(params: {
+  sourcePlatform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
+  jobUrl: string;
+}) {
+  const lower = params.jobUrl.toLowerCase();
+  if (params.sourcePlatform === "linkedin" || lower.includes("linkedin")) {
+    return "linkedin_easy_apply";
+  }
+  if (lower.includes("greenhouse")) {
+    return "greenhouse";
+  }
+  if (lower.includes("lever")) {
+    return "lever";
+  }
+  if (lower.includes("workday")) {
+    return "workday";
+  }
+  if (lower.includes("smartrecruiters")) {
+    return "smartrecruiters";
+  }
+  if (lower.includes("taleo")) {
+    return "taleo";
+  }
+  return params.sourcePlatform === "instahyre" ? "lever" : "custom";
+}
+
+function deriveStrategyFromMethod(
+  method:
+    | {
+        supportsApiApply: boolean;
+        supportsHttpFormApply: boolean;
+        requiresBrowser: boolean;
+      }
+    | undefined,
+  fallback: "api" | "http_form" | "browser",
+) {
+  if (!method) {
+    return fallback;
+  }
+  if (method.supportsApiApply) {
+    return "api" as const;
+  }
+  if (method.supportsHttpFormApply) {
+    return "http_form" as const;
+  }
+  if (method.requiresBrowser) {
+    return "browser" as const;
+  }
+  return fallback;
+}
+
 function inferFreshness(postedDate: string) {
   const parsed = Date.parse(postedDate);
   if (Number.isNaN(parsed)) {
@@ -187,6 +239,10 @@ export function startWorkers() {
               firstSeenAt: new Date().toISOString(),
               freshnessStatus: freshness.freshnessStatus,
               jobPriority: freshness.jobPriority,
+              applyProvider: inferApplyProvider({
+                sourcePlatform: discoveredJob.sourcePlatform,
+                jobUrl: discoveredJob.jobUrl,
+              }),
               applyStrategy: inferApplyStrategy(discoveredJob.sourcePlatform),
               discoveredByWatcherId: watcher.id,
             };
@@ -456,8 +512,9 @@ export function startWorkers() {
     queueNames.applicationQueue,
     async (job) => {
       logWorkerStart(queueNames.applicationQueue, job.data);
-      const [jobRecordResponse, existingApplication, referralsResponse, settingsResponse, rateWindowResponse] = await Promise.all([
+      const [jobRecordResponse, methodsResponse, existingApplication, referralsResponse, settingsResponse, rateWindowResponse] = await Promise.all([
         fetchBackendJobById(job.data.jobId),
+        fetchBackendApplicationMethods(),
         fetchBackendApplicationByJobId(job.data.jobId),
         fetchBackendReferralsByJobId(job.data.jobId),
         fetchBackendSettings(),
@@ -469,7 +526,11 @@ export function startWorkers() {
       const hasPendingReferral = referralsResponse.data.some((referral) => referral.status === "pending");
       const settings = new Map(settingsResponse.data.map((setting) => [setting.key, setting.value]));
       const hourlyLimit = parseNumberSetting(settings.get("application_rate_limit_per_hour"), 10);
-      const applyStrategy = jobRecord?.applyStrategy ?? inferApplyStrategy(job.data.sourcePlatform);
+      const method = methodsResponse.data.find((entry) => entry.provider === jobRecord?.applyProvider);
+      const applyStrategy = deriveStrategyFromMethod(
+        method,
+        jobRecord?.applyStrategy ?? inferApplyStrategy(job.data.sourcePlatform),
+      );
 
       if (!jobRecord) {
         throw new Error(`Job ${job.data.jobId} could not be loaded for application processing.`);
@@ -551,7 +612,7 @@ export function startWorkers() {
         await saveBackendApplyAttempt({
           jobId: job.data.jobId,
           strategy: "browser",
-          provider: job.data.sourcePlatform,
+          provider: jobRecord.applyProvider,
           status: "queued",
           requestPayload: {
             formUrl: buildMockApplicationFormUrl(job.data.jobId, job.data.sourcePlatform),
@@ -588,7 +649,7 @@ export function startWorkers() {
         await saveBackendApplyAttempt({
           jobId: job.data.jobId,
           strategy: applyStrategy,
-          provider: executionResult.provider,
+          provider: jobRecord.applyProvider || executionResult.provider,
           status: executionResult.status,
           externalReference: executionResult.externalReference,
           requestPayload: {
@@ -605,7 +666,7 @@ export function startWorkers() {
           await saveBackendApplyAttempt({
             jobId: job.data.jobId,
             strategy: "browser",
-            provider: job.data.sourcePlatform,
+            provider: jobRecord.applyProvider,
             status: "queued",
             requestPayload: {
               formUrl: buildMockApplicationFormUrl(job.data.jobId, job.data.sourcePlatform),
@@ -628,6 +689,7 @@ export function startWorkers() {
               sourcePlatform: job.data.sourcePlatform,
               fromStrategy: applyStrategy,
               toStrategy: "browser",
+              provider: jobRecord.applyProvider,
             },
             relatedJobId: job.data.jobId,
           });
@@ -639,7 +701,7 @@ export function startWorkers() {
               jobId: job.data.jobId,
               sourcePlatform: job.data.sourcePlatform,
               strategy: applyStrategy,
-              provider: executionResult.provider,
+              provider: jobRecord.applyProvider || executionResult.provider,
               externalReference: executionResult.externalReference,
               durationMs: executionResult.durationMs,
             },
