@@ -69,6 +69,15 @@ export async function fetchBackendApplicationByJobId(jobId: number) {
   }>;
 }
 
+export async function fetchBackendApplicationRateWindow(hours = 1) {
+  return request<{
+    data: {
+      appliedCount: number;
+      oldestAppliedAt: string | null;
+    };
+  }>(`/api/applications/rate-window?hours=${hours}`);
+}
+
 export async function fetchBackendReferralsByJobId(jobId: number) {
   return request<{
     data: Array<{

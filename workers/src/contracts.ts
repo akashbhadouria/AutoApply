@@ -21,6 +21,7 @@ export interface ReferralJobData {
 export interface ApplicationQueueJobData {
   jobId: number;
   sourcePlatform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
+  throttledCount?: number;
 }
 
 export interface BrowserAutomationJobData {

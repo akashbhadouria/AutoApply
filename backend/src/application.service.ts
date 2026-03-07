@@ -1,4 +1,4 @@
-import { findApplicationByJobId, listApplications, upsertApplication } from "./application.repository.js";
+import { findApplicationByJobId, getApplicationRateWindowSnapshot, listApplications, upsertApplication } from "./application.repository.js";
 import { upsertApplicationSchema } from "./application.schema.js";
 import { z } from "zod";
 
@@ -14,4 +14,9 @@ export async function getApplicationByJobId(jobId: string) {
 export async function saveApplication(payload: unknown) {
   const input = upsertApplicationSchema.parse(payload);
   return upsertApplication(input);
+}
+
+export async function getApplicationRateWindow(hours?: string) {
+  const normalizedHours = hours ? z.coerce.number().int().positive().parse(hours) : 1;
+  return getApplicationRateWindowSnapshot(normalizedHours);
 }

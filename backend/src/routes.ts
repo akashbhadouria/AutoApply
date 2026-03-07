@@ -6,7 +6,7 @@ import { enqueueAutomationJob, getAutomationQueues } from "./automation.service.
 import { getContacts, saveContact } from "./contact.service.js";
 import { getEvents, saveEvent } from "./event.service.js";
 import { getFieldMappings, saveFieldMapping } from "./field-mapping.service.js";
-import { getApplicationByJobId, getApplications, saveApplication } from "./application.service.js";
+import { getApplicationByJobId, getApplicationRateWindow, getApplications, saveApplication } from "./application.service.js";
 import { getJobs, ingestDiscoveredJob, ingestDiscoveredJobsBatch } from "./job.service.js";
 import { changeNotificationStatus, getNotificationById, getNotifications, saveNotification } from "./notification.service.js";
 import { getDashboardSummary } from "./dashboard.service.js";
@@ -137,6 +137,17 @@ apiRouter.get("/api/applications", async (_request, response, next) => {
   try {
     const applications = await getApplications();
     response.json({ data: applications });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/applications/rate-window", async (request, response, next) => {
+  try {
+    const snapshot = await getApplicationRateWindow(
+      typeof request.query.hours === "string" ? request.query.hours : undefined,
+    );
+    response.json({ data: snapshot });
   } catch (error) {
     next(error);
   }

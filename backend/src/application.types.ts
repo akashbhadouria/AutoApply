@@ -16,3 +16,7 @@ export interface ApplicationRecord {
   updatedAt: string;
 }
 
+export interface ApplicationRateWindowSnapshot {
+  appliedCount: number;
+  oldestAppliedAt: string | null;
+}

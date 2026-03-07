@@ -12,6 +12,7 @@ For a queued application job, the worker:
 4. creates or updates the application record accordingly
 5. enqueues browser automation when the application can proceed
 6. writes events and notifications describing the outcome
+7. defers jobs when the hourly application rate limit has been reached
 
 ## Decision rules
 
@@ -19,6 +20,7 @@ For a queued application job, the worker:
 - referred: skip
 - pending referral exists: keep application in `pending`
 - replied or no_response referrals do not block application processing
+- if the hourly application cap is reached: requeue the job with a delay instead of applying immediately
 - otherwise: mark as `applied` and enqueue browser automation
 
 This preserves the system rule that referral success should block manual application, while unresolved referral activity can still hold the application in a waiting state.
@@ -28,3 +30,13 @@ This preserves the system rule that referral success should block manual applica
 For local validation, the worker now sends browser automation to deterministic `example.com` provider-aware ATS mocks instead of a dead placeholder domain. That keeps the application queue testable with the current Playwright worker.
 
 The original source platform is also forwarded into browser automation so the application record keeps the discovery source instead of being overwritten during ATS submission.
+
+## Rate limiting
+
+The worker now reads `application_rate_limit_per_hour` from persisted system settings.
+
+When the applied-count snapshot for the last hour is already at or above that limit:
+
+- the worker emits `application_queue.rate_limited`
+- a dashboard notification is created
+- the job is requeued with a calculated delay until the next slot should open

@@ -1,6 +1,6 @@
 import { pool } from "./db.js";
 import type { UpsertApplicationInput } from "./application.schema.js";
-import type { ApplicationRecord } from "./application.types.js";
+import type { ApplicationRateWindowSnapshot, ApplicationRecord } from "./application.types.js";
 
 function mapApplicationRow(row: Record<string, unknown>): ApplicationRecord {
   return {
@@ -75,4 +75,24 @@ export async function upsertApplication(input: UpsertApplicationInput): Promise<
   const record = await pool.query(`${applicationSelect} WHERE applications.id = $1`, [applicationId]);
 
   return mapApplicationRow(record.rows[0]);
+}
+
+export async function getApplicationRateWindowSnapshot(windowHours: number): Promise<ApplicationRateWindowSnapshot> {
+  const result = await pool.query<{ applied_count: string; oldest_applied_at: string | null }>(
+    `SELECT
+       COUNT(*)::text AS applied_count,
+       MIN(applied_date)::text AS oldest_applied_at
+     FROM applications
+     WHERE applied = TRUE
+       AND applied_date IS NOT NULL
+       AND applied_date >= NOW() - ($1::text || ' hours')::interval`,
+    [windowHours],
+  );
+
+  const row = result.rows[0];
+
+  return {
+    appliedCount: Number(row.applied_count),
+    oldestAppliedAt: row.oldest_applied_at ? new Date(row.oldest_applied_at).toISOString() : null,
+  };
 }

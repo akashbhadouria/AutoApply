@@ -30,3 +30,5 @@ This page is for operator-level runtime controls. It does not replace infrastruc
 ## Current runtime usage
 
 The notification worker already uses settings from this page to decide whether a channel is enabled for delivery simulation.
+
+The application queue worker also uses `application_rate_limit_per_hour` to defer application jobs when the hourly cap has been reached.

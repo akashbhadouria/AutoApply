@@ -78,6 +78,12 @@ To manually process a notification delivery from the Automation page, enqueue `n
 
 The notification worker now respects settings like `email_enabled`, `telegram_enabled`, and `whatsapp_enabled`.
 
+To inspect the current applied-application count in the active rate window:
+
+```bash
+curl http://localhost:4000/api/applications/rate-window
+```
+
 ## Manual startup
 
 If you do not want to use Docker, you can still use host services by creating:
@@ -109,6 +115,7 @@ If host database auth is inconsistent, pages now remain styled and show explicit
 - `POST /api/jobs/discover`
 - `POST /api/jobs/discover/batch`
 - `GET /api/applications`
+- `GET /api/applications/rate-window`
 - `GET /api/applications/job/:jobId`
 - `POST /api/applications`
 - `GET /api/contacts`

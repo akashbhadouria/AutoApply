@@ -6,6 +6,7 @@ import {
   discoverBackendJobsBatch,
   createBackendNotification,
   fetchBackendApplicationByJobId,
+  fetchBackendApplicationRateWindow,
   fetchBackendContacts,
   fetchBackendFieldMappings,
   fetchBackendNotificationById,
@@ -84,6 +85,15 @@ function parseBooleanSetting(rawValue: string | undefined, defaultValue: boolean
   }
 
   return defaultValue;
+}
+
+function parseNumberSetting(rawValue: string | undefined, defaultValue: number) {
+  if (rawValue === undefined) {
+    return defaultValue;
+  }
+
+  const parsed = Number(rawValue);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : defaultValue;
 }
 
 export function startWorkers() {
@@ -225,13 +235,17 @@ export function startWorkers() {
     queueNames.applicationQueue,
     async (job) => {
       logWorkerStart(queueNames.applicationQueue, job.data);
-      const [existingApplication, referralsResponse] = await Promise.all([
+      const [existingApplication, referralsResponse, settingsResponse, rateWindowResponse] = await Promise.all([
         fetchBackendApplicationByJobId(job.data.jobId),
         fetchBackendReferralsByJobId(job.data.jobId),
+        fetchBackendSettings(),
+        fetchBackendApplicationRateWindow(1),
       ]);
       const appliedRecord = existingApplication?.data ?? null;
       const hasSuccessfulReferral = referralsResponse.data.some((referral) => referral.status === "referred");
       const hasPendingReferral = referralsResponse.data.some((referral) => referral.status === "pending");
+      const settings = new Map(settingsResponse.data.map((setting) => [setting.key, setting.value]));
+      const hourlyLimit = parseNumberSetting(settings.get("application_rate_limit_per_hour"), 10);
 
       if (appliedRecord?.applied) {
         await createBackendEvent({
@@ -253,6 +267,44 @@ export function startWorkers() {
           payload: {
             jobId: job.data.jobId,
           },
+          relatedJobId: job.data.jobId,
+        });
+        return;
+      }
+
+      if (!hasPendingReferral && rateWindowResponse.data.appliedCount >= hourlyLimit) {
+        const oldestAppliedAt = rateWindowResponse.data.oldestAppliedAt
+          ? new Date(rateWindowResponse.data.oldestAppliedAt).getTime()
+          : Date.now();
+        const retryDelayMs = Math.max(oldestAppliedAt + 60 * 60 * 1000 - Date.now() + 5_000, 60_000);
+        const throttledCount = (job.data.throttledCount ?? 0) + 1;
+
+        await applicationQueue.add(queueNames.applicationQueue, {
+          ...job.data,
+          throttledCount,
+        }, {
+          delay: retryDelayMs,
+        });
+
+        await createBackendEvent({
+          eventType: "application_queue.rate_limited",
+          actor: "applicationQueueWorker",
+          payload: {
+            jobId: job.data.jobId,
+            sourcePlatform: job.data.sourcePlatform,
+            appliedCountLastHour: rateWindowResponse.data.appliedCount,
+            hourlyLimit,
+            retryDelayMs,
+            throttledCount,
+          },
+          relatedJobId: job.data.jobId,
+        });
+        await createBackendNotification({
+          type: "application_rate_limited",
+          title: "Application queue throttled",
+          message: `Job ${job.data.jobId} was deferred because the hourly application cap of ${hourlyLimit} has been reached.`,
+          channel: "dashboard",
+          status: "pending",
           relatedJobId: job.data.jobId,
         });
         return;
