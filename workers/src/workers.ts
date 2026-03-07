@@ -367,10 +367,16 @@ export function startWorkers() {
         fetchBackendProfileFields(),
         fetchBackendFieldMappings(),
       ]);
+      const resumePath =
+        job.data.resumePath ??
+        profileFieldsResponse.data.find((field) =>
+          ["resume_path", "resume_file", "resume_local_path"].includes(field.key),
+        )?.value;
       const automationResult = await runAtsAutofill({
         formUrl: job.data.formUrl,
         profileFields: profileFieldsResponse.data,
         fieldMappings: fieldMappingsResponse.data,
+        resumePath,
       });
 
       if (automationResult.missingRequiredField) {
@@ -435,7 +441,7 @@ export function startWorkers() {
           jobId: job.data.jobId,
           formUrl: job.data.formUrl,
           provider: automationResult.provider,
-          resumePath: job.data.resumePath ?? null,
+          resumePath: resumePath ?? null,
           analyzedFieldCount: automationResult.analyzedFields.length,
           filledFieldCount: Object.keys(automationResult.filledFields).length,
           submitted: automationResult.submitted,

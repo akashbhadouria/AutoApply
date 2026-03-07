@@ -1,6 +1,6 @@
 import { access } from "node:fs/promises";
 
-import { chromium } from "playwright";
+import { chromium, type Locator, type Page } from "playwright";
 
 interface AtsField {
   label: string;
@@ -14,21 +14,34 @@ type AtsFieldType = AtsField["type"];
 type AtsProvider = "workday" | "greenhouse" | "lever" | "smartrecruiters" | "taleo" | "custom";
 
 const builtInMappings: Record<string, string> = {
+  name: "name",
   "full name": "name",
   email: "email",
+  "email address": "email",
   phone: "phone",
   "phone number": "phone",
+  mobile: "phone",
   linkedin: "linkedin",
   "linkedin profile": "linkedin",
+  "linkedin url": "linkedin",
   portfolio: "portfolio",
+  website: "portfolio",
   "resume link": "resume_link",
+  resume: "resume_path",
+  cv: "resume_path",
+  "resume upload": "resume_path",
   "notice period": "notice_period",
   "current salary": "current_salary",
   "expected salary": "expected_salary",
+  "work authorization": "work_authorization",
 };
 
 function normalizeLabel(label: string) {
   return label.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function normalizeValue(value: string) {
+  return value.trim().toLowerCase();
 }
 
 function detectAtsProvider(formUrl: string): AtsProvider {
@@ -37,19 +50,15 @@ function detectAtsProvider(formUrl: string): AtsProvider {
   if (lower.includes("workday")) {
     return "workday";
   }
-
   if (lower.includes("greenhouse")) {
     return "greenhouse";
   }
-
   if (lower.includes("lever")) {
     return "lever";
   }
-
   if (lower.includes("smartrecruiters")) {
     return "smartrecruiters";
   }
-
   if (lower.includes("taleo")) {
     return "taleo";
   }
@@ -115,6 +124,51 @@ function mockAtsPageContent(provider: AtsProvider) {
     `;
   }
 
+  if (provider === "smartrecruiters") {
+    return `
+      <form id="application-form" data-provider="smartrecruiters">
+        <label for="sr-name">Full Name</label><input id="sr-name" name="name" required />
+        <label for="sr-email">Email Address</label><input id="sr-email" type="email" name="email" required />
+        <label for="sr-auth">Work Authorization</label>
+        <select id="sr-auth" name="work_authorization" required>
+          <option value="">Select</option>
+          <option>Authorized</option>
+          <option>Requires sponsorship</option>
+        </select>
+        <label for="sr-resume">Resume</label><input id="sr-resume" type="file" name="resume" required />
+        <button id="sr-submit" type="submit">Submit application</button>
+      </form>
+      <script>
+        document.getElementById("application-form")?.addEventListener("submit", function(event) {
+          event.preventDefault();
+          document.body.setAttribute("data-submitted", "true");
+        });
+      </script>
+    `;
+  }
+
+  if (provider === "taleo") {
+    return `
+      <form id="application-form" data-provider="taleo">
+        <label for="taleo-name">Full Name</label><input id="taleo-name" name="name" required />
+        <label for="taleo-email">Email Address</label><input id="taleo-email" type="email" name="email" required />
+        <fieldset>
+          <legend>Work Authorization</legend>
+          <label><input type="radio" name="work_authorization" value="Authorized" required /> Authorized</label>
+          <label><input type="radio" name="work_authorization" value="Requires sponsorship" required /> Requires sponsorship</label>
+        </fieldset>
+        <label for="taleo-expected">Expected Salary</label><input id="taleo-expected" name="expected_salary" required />
+        <button id="taleo-submit" type="submit">Submit</button>
+      </form>
+      <script>
+        document.getElementById("application-form")?.addEventListener("submit", function(event) {
+          event.preventDefault();
+          document.body.setAttribute("data-submitted", "true");
+        });
+      </script>
+    `;
+  }
+
   return `
     <form id="application-form" data-provider="${provider}">
       <label>Full Name <input id="name" name="name" required /></label>
@@ -151,16 +205,29 @@ async function collectAtsFields(page: Awaited<ReturnType<typeof openAtsPage>>["p
   const fields = await page.locator("input, textarea, select").evaluateAll((elements) =>
     elements.map((element, index) => {
       const htmlElement = element as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+      const describedById = htmlElement.getAttribute("aria-describedby");
+      const describedBy =
+        describedById && document.getElementById(describedById)?.textContent?.trim()
+          ? document.getElementById(describedById)?.textContent?.trim()
+          : null;
+      const parentText =
+        htmlElement.closest("label, fieldset, [data-automation-id], .application-question")?.textContent?.trim() ?? null;
       const labelText =
         htmlElement.labels?.[0]?.textContent?.trim() ||
         htmlElement.getAttribute("aria-label") ||
+        describedBy ||
+        parentText ||
         htmlElement.getAttribute("placeholder") ||
         htmlElement.getAttribute("name") ||
         "unknown field";
       const tag = htmlElement.tagName.toLowerCase();
       const inputType = tag === "input" ? (htmlElement as HTMLInputElement).type || "text" : tag;
       const normalizedType: AtsFieldType =
-        inputType === "email" || inputType === "tel" || inputType === "checkbox" || inputType === "radio" || inputType === "file"
+        inputType === "email" ||
+        inputType === "tel" ||
+        inputType === "checkbox" ||
+        inputType === "radio" ||
+        inputType === "file"
           ? inputType
           : inputType === "textarea"
             ? "textarea"
@@ -177,7 +244,10 @@ async function collectAtsFields(page: Awaited<ReturnType<typeof openAtsPage>>["p
 
       return {
         label: labelText,
-        required: htmlElement.hasAttribute("required") || htmlElement.getAttribute("aria-required") === "true",
+        required:
+          htmlElement.hasAttribute("required") ||
+          htmlElement.getAttribute("aria-required") === "true" ||
+          /\*/.test(labelText),
         type: normalizedType,
         selector,
       };
@@ -248,10 +318,118 @@ async function fileExists(path: string) {
   }
 }
 
+function resolveResumePath(profileFields: Array<{ key: string; value: string }>, providedResumePath?: string) {
+  if (providedResumePath) {
+    return providedResumePath;
+  }
+
+  const profileFieldMap = new Map(profileFields.map((field) => [field.key, field.value]));
+  return (
+    profileFieldMap.get("resume_path") ??
+    profileFieldMap.get("resume_file") ??
+    profileFieldMap.get("resume_local_path") ??
+    undefined
+  );
+}
+
+function extractNameFromSelector(selector: string) {
+  const match = selector.match(/\[name="([^"]+)"\]/);
+  return match ? match[1] : null;
+}
+
+async function fillSelect(locator: Locator, value: string) {
+  const normalizedTarget = normalizeValue(value);
+
+  await locator.selectOption({ label: value }).catch(async () => {
+    await locator.selectOption({ value }).catch(async () => {
+      const options = await locator.locator("option").evaluateAll((elements: Element[]) =>
+        elements.map((element) => ({
+          label: (element.textContent ?? "").trim(),
+          value: (element as HTMLOptionElement).value,
+        })),
+      );
+      const matched = options.find((option) => {
+        const label = normalizeValue(option.label);
+        const optionValue = normalizeValue(option.value);
+        return label === normalizedTarget || optionValue === normalizedTarget || label.includes(normalizedTarget);
+      });
+
+      if (!matched) {
+        throw new Error(`No matching select option for ${value}`);
+      }
+
+      await locator.selectOption(matched.value);
+    });
+  });
+}
+
+async function fillRadioOrCheckbox(
+  page: Page,
+  field: AtsField,
+  value: string,
+) {
+  const fieldName = extractNameFromSelector(field.selector);
+  if (!fieldName) {
+    await page.locator(field.selector).first().check();
+    return;
+  }
+
+  const candidates = page.locator(`input[name="${fieldName}"]`);
+  const candidateCount = await candidates.count();
+  const normalizedTarget = normalizeValue(value);
+
+  for (let index = 0; index < candidateCount; index += 1) {
+    const candidate = candidates.nth(index);
+    const candidateValue = normalizeValue((await candidate.getAttribute("value")) ?? "");
+    const parentText = normalizeValue((await candidate.locator("xpath=ancestor::label[1]").textContent().catch(() => "")) ?? "");
+
+    if (
+      candidateValue === normalizedTarget ||
+      parentText === normalizedTarget ||
+      parentText.includes(normalizedTarget)
+    ) {
+      await candidate.check();
+      return;
+    }
+  }
+
+  if (candidateCount > 0) {
+    await candidates.first().check();
+  }
+}
+
+async function clickProviderSubmit(page: Page, provider: AtsProvider) {
+  const submitSelectors: Record<AtsProvider, string[]> = {
+    workday: [
+      "#wd-submit",
+      'button[data-automation-id="bottom-navigation-next-button"]',
+      'button[data-automation-id="bottom-navigation-continue-button"]',
+      'button[data-automation-id="bottom-navigation-submit-button"]',
+      'button[type="submit"]',
+    ],
+    greenhouse: ["#gh-submit", "#submit_app", 'button[type="submit"]', 'input[type="submit"]'],
+    lever: ["#lever-submit", '[data-qa="btn-submit"]', 'button[type="submit"]'],
+    smartrecruiters: ["#sr-submit", '[data-testid="apply-button"]', 'button[type="submit"]'],
+    taleo: ["#taleo-submit", 'button[type="submit"]', 'input[type="submit"]'],
+    custom: ['button[type="submit"]', 'input[type="submit"]'],
+  };
+
+  for (const selector of submitSelectors[provider]) {
+    const submitButton = page.locator(selector).first();
+    if ((await submitButton.count()) > 0) {
+      await submitButton.click();
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export async function runAtsAutofill(params: {
   formUrl: string;
   profileFields: Array<{ key: string; value: string }>;
   fieldMappings: Array<{ rawLabel: string; normalizedLabel: string; profileKey: string }>;
+  resumePath?: string;
 }) {
   const { browser, page, provider } = await openAtsPage(params.formUrl);
 
@@ -262,6 +440,7 @@ export async function runAtsAutofill(params: {
       profileFields: params.profileFields,
       fieldMappings: params.fieldMappings,
     });
+    const resumePath = resolveResumePath(params.profileFields, params.resumePath);
 
     const filledFields: Record<string, string> = {};
     let unresolvedRequiredField: {
@@ -272,13 +451,12 @@ export async function runAtsAutofill(params: {
 
     for (const field of mapped.resolvedFields) {
       const locator = page.locator(field.selector).first();
-      const hasElement = (await locator.count()) > 0;
-
-      if (!hasElement) {
+      if ((await locator.count()) === 0) {
         continue;
       }
 
-      if (!field.value) {
+      const fieldValue = field.type === "file" ? (resumePath ?? field.value ?? null) : field.value;
+      if (!fieldValue) {
         if (field.required && !unresolvedRequiredField) {
           unresolvedRequiredField = {
             label: field.label,
@@ -290,7 +468,7 @@ export async function runAtsAutofill(params: {
       }
 
       if (field.type === "file") {
-        const canUpload = await fileExists(field.value);
+        const canUpload = await fileExists(fieldValue);
         if (!canUpload) {
           if (field.required && !unresolvedRequiredField) {
             unresolvedRequiredField = {
@@ -302,55 +480,30 @@ export async function runAtsAutofill(params: {
           continue;
         }
 
-        await locator.setInputFiles(field.value);
-        filledFields[field.normalizedLabel] = field.value;
+        await locator.setInputFiles(fieldValue);
+        filledFields[field.normalizedLabel] = fieldValue;
         continue;
       }
 
-      if (field.type === "checkbox") {
-        await locator.check();
-        filledFields[field.normalizedLabel] = "true";
-        continue;
-      }
-
-      if (field.type === "radio") {
-        await locator.check();
-        filledFields[field.normalizedLabel] = String(field.value);
+      if (field.type === "checkbox" || field.type === "radio") {
+        await fillRadioOrCheckbox(page, field, fieldValue);
+        filledFields[field.normalizedLabel] = String(fieldValue);
         continue;
       }
 
       if (field.type === "select") {
-        await locator.selectOption({ label: String(field.value) }).catch(async () => {
-          await locator.selectOption(String(field.value));
-        });
-        filledFields[field.normalizedLabel] = String(field.value);
+        await fillSelect(locator, String(fieldValue));
+        filledFields[field.normalizedLabel] = String(fieldValue);
         continue;
       }
 
-      await locator.fill(String(field.value));
-      filledFields[field.normalizedLabel] = String(field.value);
+      await locator.fill(String(fieldValue));
+      filledFields[field.normalizedLabel] = String(fieldValue);
     }
 
     let submitted = false;
-
-    const submitSelectors: Record<AtsProvider, string[]> = {
-      workday: ['#wd-submit', 'button[data-automation-id="bottom-navigation-next-button"]', 'button[type="submit"]'],
-      greenhouse: ['#gh-submit', '#submit_app', 'button[type="submit"]'],
-      lever: ['#lever-submit', 'button[type="submit"]'],
-      smartrecruiters: ['button[type="submit"]'],
-      taleo: ['button[type="submit"]'],
-      custom: ['button[type="submit"]', 'input[type="submit"]'],
-    };
-
     if (!unresolvedRequiredField) {
-      for (const selector of submitSelectors[provider]) {
-        const submitButton = page.locator(selector).first();
-        if ((await submitButton.count()) > 0) {
-          await submitButton.click();
-          submitted = true;
-          break;
-        }
-      }
+      submitted = await clickProviderSubmit(page, provider);
 
       if (!submitted && params.formUrl.includes("example.com")) {
         submitted = true;
