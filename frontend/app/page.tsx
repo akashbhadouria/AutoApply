@@ -3,8 +3,9 @@ import Link from "next/link";
 import { BackgroundBeams } from "@/components/aceternity/background-beams";
 import { BentoGrid, BentoGridItem } from "@/components/aceternity/bento-grid";
 import { LampContainer } from "@/components/aceternity/lamp";
+import { RuntimeHealthBanner } from "@/components/runtime-health-banner";
 import { Card } from "@/components/ui/card";
-import { fetchDashboardSummary, type DashboardSummary } from "@/lib/api";
+import { fetchBackendRuntimeStatus, fetchDashboardSummary, type DashboardSummary } from "@/lib/api";
 
 const routes = [
   { href: "/profile", title: "Profile", description: "Canonical identity data, salary fields, links, and ATS autofill primitives." },
@@ -288,6 +289,8 @@ function DashboardErrorState({ message }: { message: string }) {
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  const runtimeStatus = await fetchBackendRuntimeStatus();
+
   try {
     const summary = await fetchDashboardSummary();
 
@@ -295,6 +298,8 @@ export default async function HomePage() {
       <main className="relative min-h-screen overflow-hidden px-6 py-10">
         <BackgroundBeams />
         <div className="relative z-10 mx-auto max-w-7xl">
+          <RuntimeHealthBanner initialStatus={runtimeStatus} />
+
           <LampContainer>
             <div className="mx-auto max-w-5xl text-center">
               <p className="text-xs font-semibold uppercase tracking-[0.42em] text-cyan-300">Dashboard</p>
@@ -332,6 +337,8 @@ export default async function HomePage() {
       <main className="relative min-h-screen overflow-hidden px-6 py-10">
         <BackgroundBeams />
         <div className="relative z-10 mx-auto max-w-7xl">
+          <RuntimeHealthBanner initialStatus={runtimeStatus} />
+
           <LampContainer>
             <div className="mx-auto max-w-5xl text-center">
               <p className="text-xs font-semibold uppercase tracking-[0.42em] text-cyan-300">Dashboard</p>

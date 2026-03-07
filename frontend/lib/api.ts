@@ -253,10 +253,46 @@ export interface NotificationSummaryResult {
   promptArtifact: PromptArtifact;
 }
 
+export interface BackendRuntimeStatus {
+  backendUrl: string;
+  backendStatus: "healthy" | "degraded";
+  detail: string;
+}
+
 const backendUrl = process.env.BACKEND_URL ?? "http://localhost:4000";
 
 function getBackendUrl() {
   return backendUrl;
+}
+
+export async function fetchBackendRuntimeStatus(): Promise<BackendRuntimeStatus> {
+  try {
+    const response = await fetch(`${getBackendUrl()}/health`, {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return {
+        backendUrl: getBackendUrl(),
+        backendStatus: "degraded",
+        detail: `Backend health check returned HTTP ${response.status}.`,
+      };
+    }
+
+    return {
+      backendUrl: getBackendUrl(),
+      backendStatus: "healthy",
+      detail: "Frontend and backend are connected. Live data routes should be available.",
+    };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "Unknown connection error";
+
+    return {
+      backendUrl: getBackendUrl(),
+      backendStatus: "degraded",
+      detail: `Frontend cannot reach the backend runtime. ${detail}`,
+    };
+  }
 }
 
 export async function fetchProfileFields(): Promise<ProfileField[]> {

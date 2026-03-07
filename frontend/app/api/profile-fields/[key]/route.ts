@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { removeProfileField, upsertProfileField } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 interface RouteContext {
   params: Promise<{ key: string }>;
 }
@@ -32,4 +34,3 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     );
   }
 }
-

@@ -127,6 +127,7 @@ npm run dev:workers
 ```
 
 If host database auth is inconsistent, pages now remain styled and show explicit runtime dependency errors instead of dropping into raw error screens.
+The frontend now also shows a global runtime banner so backend connectivity problems are visible immediately on every major page.
 
 ## Implemented endpoints
 

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { discoverJob, fetchJobs } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const data = await fetchJobs();

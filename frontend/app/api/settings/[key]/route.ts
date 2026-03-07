@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { removeSystemSetting, upsertSystemSetting } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 interface RouteContext {
   params: Promise<{ key: string }>;
 }

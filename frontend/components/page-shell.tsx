@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { BackgroundBeams } from "@/components/aceternity/background-beams";
 import { BentoGrid, BentoGridItem } from "@/components/aceternity/bento-grid";
 import { LampContainer } from "@/components/aceternity/lamp";
+import { RuntimeHealthBanner } from "@/components/runtime-health-banner";
 import { Card } from "@/components/ui/card";
 
 const navigation = [
@@ -36,6 +37,8 @@ export function FeaturePageShell({
     <main className="relative min-h-screen overflow-hidden px-6 py-10">
       <BackgroundBeams />
       <div className="relative z-10 mx-auto max-w-7xl">
+        <RuntimeHealthBanner />
+
         <Card className="mb-6 overflow-hidden border-white/15 bg-slate-950/55 p-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>

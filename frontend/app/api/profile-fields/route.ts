@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 import { fetchProfileFields } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const data = await fetchProfileFields();
@@ -13,4 +15,3 @@ export async function GET() {
     );
   }
 }
-
