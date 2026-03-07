@@ -12,6 +12,8 @@ const navigation = [
   { href: "/onboarding", label: "Onboarding" },
   { href: "/connected-accounts", label: "Accounts" },
   { href: "/job-watchers", label: "Watchers" },
+  { href: "/fresh-jobs", label: "Fresh Jobs" },
+  { href: "/outreach-inbox", label: "Outreach" },
   { href: "/profile", label: "Profile" },
   { href: "/jobs", label: "Jobs" },
   { href: "/applications", label: "Applications" },

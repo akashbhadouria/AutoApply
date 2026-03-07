@@ -18,6 +18,7 @@ The first implemented feature is the `Profile Manager`, which provides:
 - AutoApply V1 onboarding for the current user and targeting preferences
 - connected accounts for outreach-capable providers
 - job watchers for per-user discovery rules and near-real-time watcher runs
+- fresh jobs and outreach inbox operator surfaces
 - a live dashboard overview with runtime status and aggregate system metrics
 - a PostgreSQL schema for dynamic profile fields
 - an Express API for listing, upserting, and deleting fields

@@ -24,12 +24,12 @@ import {
 import { getEvents, saveEvent } from "./event.service.js";
 import { getFieldMappings, saveFieldMapping } from "./field-mapping.service.js";
 import { getApplicationByJobId, getApplicationRateWindow, getApplications, saveApplication } from "./application.service.js";
-import { getJobs, ingestDiscoveredJob, ingestDiscoveredJobsBatch } from "./job.service.js";
+import { getFreshJobs, getJobs, ingestDiscoveredJob, ingestDiscoveredJobsBatch } from "./job.service.js";
 import { changeNotificationStatus, getNotificationById, getNotifications, saveNotification } from "./notification.service.js";
 import { getDashboardSummary } from "./dashboard.service.js";
 import { getServiceHealthSummary } from "./health.service.js";
 import { getProfileFields, removeProfileField, saveProfileField } from "./profile.service.js";
-import { changeReferralStatus, getReferrals, getReferralsForJob, getTimedOutPendingReferrals, saveReferral } from "./referral.service.js";
+import { changeReferralStatus, getPendingReferrals, getReferrals, getReferralsForJob, getTimedOutPendingReferrals, saveReferral } from "./referral.service.js";
 import {
   getApplicationSession,
   getApplicationSessions,
@@ -284,6 +284,15 @@ apiRouter.get("/api/jobs", async (_request, response, next) => {
   }
 });
 
+apiRouter.get("/api/jobs/fresh", async (_request, response, next) => {
+  try {
+    const jobs = await getFreshJobs();
+    response.json({ data: jobs });
+  } catch (error) {
+    next(error);
+  }
+});
+
 apiRouter.post("/api/jobs/discover", async (request, response, next) => {
   try {
     const job = await ingestDiscoveredJob(request.body);
@@ -361,6 +370,15 @@ apiRouter.post("/api/contacts", async (request, response, next) => {
 apiRouter.get("/api/referrals", async (_request, response, next) => {
   try {
     const referrals = await getReferrals();
+    response.json({ data: referrals });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/referrals/pending", async (_request, response, next) => {
+  try {
+    const referrals = await getPendingReferrals();
     response.json({ data: referrals });
   } catch (error) {
     next(error);

@@ -55,6 +55,34 @@ export async function listJobs(): Promise<JobRecord[]> {
   return result.rows.map(mapJobRow);
 }
 
+export async function listFreshJobs(): Promise<JobRecord[]> {
+  const result = await pool.query(
+    `SELECT
+       jobs.id,
+       jobs.company,
+       jobs.title,
+       jobs.location,
+       jobs.job_url,
+       jobs.primary_source_platform,
+       jobs.posted_date,
+       jobs.first_seen_at,
+       jobs.freshness_status,
+       jobs.job_priority,
+       jobs.apply_strategy,
+       jobs.discovered_by_watcher_id,
+       jobs.discovered_at,
+       jobs.updated_at,
+       ARRAY_REMOVE(ARRAY_AGG(job_sources.source_platform ORDER BY job_sources.source_platform), NULL) AS source_platforms
+     FROM jobs
+     LEFT JOIN job_sources ON job_sources.job_id = jobs.id
+     WHERE jobs.freshness_status = 'fresh'
+     GROUP BY jobs.id
+     ORDER BY jobs.first_seen_at DESC, jobs.id DESC`,
+  );
+
+  return result.rows.map(mapJobRow);
+}
+
 export async function discoverJob(input: DiscoverJobInput): Promise<JobRecord> {
   const normalizedCompany = normalizeIdentityPart(input.company);
   const normalizedTitle = normalizeIdentityPart(input.title);

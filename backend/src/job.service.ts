@@ -1,8 +1,12 @@
-import { discoverJob, listJobs } from "./job.repository.js";
+import { discoverJob, listFreshJobs, listJobs } from "./job.repository.js";
 import { discoverJobsBatchSchema, discoverJobSchema } from "./job.schema.js";
 
 export async function getJobs() {
   return listJobs();
+}
+
+export async function getFreshJobs() {
+  return listFreshJobs();
 }
 
 export async function ingestDiscoveredJob(payload: unknown) {

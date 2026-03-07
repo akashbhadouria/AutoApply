@@ -1,9 +1,13 @@
 import { updateReferralStatusSchema, upsertReferralSchema } from "./referral.schema.js";
-import { listReferrals, listReferralsByJobId, listTimedOutPendingReferrals, updateReferralStatus, upsertReferral } from "./referral.repository.js";
+import { listPendingReferrals, listReferrals, listReferralsByJobId, listTimedOutPendingReferrals, updateReferralStatus, upsertReferral } from "./referral.repository.js";
 import { z } from "zod";
 
 export async function getReferrals() {
   return listReferrals();
+}
+
+export async function getPendingReferrals() {
+  return listPendingReferrals();
 }
 
 export async function getReferralsForJob(jobId: string) {

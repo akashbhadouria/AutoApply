@@ -11,6 +11,8 @@ const routes = [
   { href: "/onboarding", title: "Onboarding", description: "Founder and candidate setup flow for identity, resume, and launch readiness." },
   { href: "/connected-accounts", title: "Connected Accounts", description: "LinkedIn, email, Telegram, and WhatsApp connection state with approval mode." },
   { href: "/job-watchers", title: "Job Watchers", description: "Per-user near-real-time source watchers with polling, titles, and locations." },
+  { href: "/fresh-jobs", title: "Fresh Jobs", description: "High-priority jobs detected inside the instant-response window." },
+  { href: "/outreach-inbox", title: "Outreach Inbox", description: "Pending referral requests and approval-oriented outreach workflow." },
   { href: "/profile", title: "Profile", description: "Canonical identity data, salary fields, links, and ATS autofill primitives." },
   { href: "/jobs", title: "Jobs", description: "Normalized inventory with source-platform merging and queue-driven ingestion." },
   { href: "/applications", title: "Applications", description: "Application state attached to canonical jobs instead of fragmented trackers." },

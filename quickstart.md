@@ -48,6 +48,8 @@ Open:
 - `http://localhost:3000/onboarding`
 - `http://localhost:3000/connected-accounts`
 - `http://localhost:3000/job-watchers`
+- `http://localhost:3000/fresh-jobs`
+- `http://localhost:3000/outreach-inbox`
 - `http://localhost:3000/profile`
 - `http://localhost:3000/jobs`
 - `http://localhost:3000/applications`
@@ -154,6 +156,7 @@ The frontend now also shows a global runtime banner so backend connectivity prob
 - `PUT /api/profile-fields/:key`
 - `DELETE /api/profile-fields/:key`
 - `GET /api/jobs`
+- `GET /api/jobs/fresh`
 - `POST /api/jobs/discover`
 - `POST /api/jobs/discover/batch`
 - `GET /api/applications`
@@ -163,6 +166,7 @@ The frontend now also shows a global runtime banner so backend connectivity prob
 - `GET /api/contacts`
 - `POST /api/contacts`
 - `GET /api/referrals`
+- `GET /api/referrals/pending`
 - `GET /api/referrals/timeouts`
 - `GET /api/referrals/job/:jobId`
 - `POST /api/referrals`
@@ -194,6 +198,8 @@ The frontend now also shows a global runtime banner so backend connectivity prob
 - [docs/onboarding.md](/home/akash/AutoApply/docs/onboarding.md)
 - [docs/connected-accounts.md](/home/akash/AutoApply/docs/connected-accounts.md)
 - [docs/job-watchers.md](/home/akash/AutoApply/docs/job-watchers.md)
+- [docs/fresh-jobs.md](/home/akash/AutoApply/docs/fresh-jobs.md)
+- [docs/outreach-inbox.md](/home/akash/AutoApply/docs/outreach-inbox.md)
 - [docs/dashboard.md](/home/akash/AutoApply/docs/dashboard.md)
 - [docs/demo-seed.md](/home/akash/AutoApply/docs/demo-seed.md)
 - [docs/jobs-inventory.md](/home/akash/AutoApply/docs/jobs-inventory.md)

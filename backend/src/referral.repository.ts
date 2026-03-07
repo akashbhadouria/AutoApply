@@ -53,6 +53,16 @@ export async function listReferrals(): Promise<ReferralRecord[]> {
   return result.rows.map(mapReferralRow);
 }
 
+export async function listPendingReferrals(): Promise<ReferralRecord[]> {
+  const result = await pool.query(
+    `${referralSelect}
+     WHERE referrals.status = 'pending'
+     ORDER BY referrals.updated_at DESC, referrals.id DESC`,
+  );
+
+  return result.rows.map(mapReferralRow);
+}
+
 export async function listReferralsByJobId(jobId: number): Promise<ReferralRecord[]> {
   const result = await pool.query(
     `${referralSelect}

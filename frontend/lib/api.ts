@@ -637,6 +637,19 @@ export async function fetchJobs(): Promise<Job[]> {
   return payload.data;
 }
 
+export async function fetchFreshJobs(): Promise<Job[]> {
+  const response = await fetch(`${getBackendUrl()}/api/jobs/fresh`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load fresh jobs");
+  }
+
+  const payload = (await response.json()) as { data: Job[] };
+  return payload.data;
+}
+
 export async function discoverJob(body: {
   company: string;
   title: string;
@@ -785,6 +798,19 @@ export async function fetchReferrals(): Promise<Referral[]> {
 
   if (!response.ok) {
     throw new Error("Failed to load referrals");
+  }
+
+  const payload = (await response.json()) as { data: Referral[] };
+  return payload.data;
+}
+
+export async function fetchPendingReferrals(): Promise<Referral[]> {
+  const response = await fetch(`${getBackendUrl()}/api/referrals/pending`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load pending referrals");
   }
 
   const payload = (await response.json()) as { data: Referral[] };
