@@ -26,3 +26,7 @@ Settings live in the `system_settings` table with:
 - `DELETE /api/settings/:key`
 
 This page is for operator-level runtime controls. It does not replace infrastructure secrets or deployment environment variables.
+
+## Current runtime usage
+
+The notification worker already uses settings from this page to decide whether a channel is enabled for delivery simulation.

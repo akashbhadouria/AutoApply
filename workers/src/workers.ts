@@ -8,8 +8,10 @@ import {
   fetchBackendApplicationByJobId,
   fetchBackendContacts,
   fetchBackendFieldMappings,
+  fetchBackendNotificationById,
   fetchBackendProfileFields,
   fetchBackendReferralsByJobId,
+  fetchBackendSettings,
   fetchBackendTimedOutReferrals,
   saveBackendApplication,
   saveBackendFieldMapping,
@@ -66,6 +68,22 @@ function buildMockApplicationFormUrl(jobId: number, sourcePlatform: ApplicationQ
           : "workday";
 
   return `https://example.com/${provider}/apply?jobId=${jobId}`;
+}
+
+function parseBooleanSetting(rawValue: string | undefined, defaultValue: boolean) {
+  if (rawValue === undefined) {
+    return defaultValue;
+  }
+
+  const normalized = rawValue.trim().toLowerCase();
+  if (normalized === "true") {
+    return true;
+  }
+  if (normalized === "false") {
+    return false;
+  }
+
+  return defaultValue;
 }
 
 export function startWorkers() {
@@ -375,7 +393,61 @@ export function startWorkers() {
     queueNames.notifications,
     async (job) => {
       logWorkerStart(queueNames.notifications, job.data);
-      await updateBackendNotificationStatus(job.data.notificationId, {
+      const [notificationResponse, settingsResponse] = await Promise.all([
+        fetchBackendNotificationById(job.data.notificationId),
+        fetchBackendSettings(),
+      ]);
+
+      if (!notificationResponse) {
+        await createBackendEvent({
+          eventType: "notification.missing",
+          actor: "notificationWorker",
+          payload: {
+            notificationId: job.data.notificationId,
+          },
+        });
+        return;
+      }
+
+      const notification = notificationResponse.data;
+      if (notification.status !== "pending") {
+        await createBackendEvent({
+          eventType: "notification.skipped_already_processed",
+          actor: "notificationWorker",
+          payload: {
+            notificationId: notification.id,
+            channel: notification.channel,
+            currentStatus: notification.status,
+          },
+        });
+        return;
+      }
+
+      const settings = new Map(settingsResponse.data.map((setting) => [setting.key, setting.value]));
+      const settingKey = `${notification.channel}_enabled`;
+      const channelEnabled = parseBooleanSetting(
+        settings.get(settingKey),
+        notification.channel === "dashboard",
+      );
+
+      if (!channelEnabled) {
+        await updateBackendNotificationStatus(notification.id, {
+          status: "failed",
+        });
+        await createBackendEvent({
+          eventType: "notification.delivery_blocked",
+          actor: "notificationWorker",
+          payload: {
+            notificationId: notification.id,
+            channel: notification.channel,
+            reason: "channel_disabled",
+            settingKey,
+          },
+        });
+        return;
+      }
+
+      await updateBackendNotificationStatus(notification.id, {
         status: "delivered",
         deliveredAt: new Date().toISOString(),
       });
@@ -383,7 +455,9 @@ export function startWorkers() {
         eventType: "notification.delivered",
         actor: "notificationWorker",
         payload: {
-          notificationId: job.data.notificationId,
+          notificationId: notification.id,
+          channel: notification.channel,
+          transport: "simulated",
         },
       });
     },

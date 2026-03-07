@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { createNotificationSchema, updateNotificationStatusSchema } from "./notification.schema.js";
-import { createNotification, listNotifications, updateNotificationStatus } from "./notification.repository.js";
+import { createNotification, findNotificationById, listNotifications, updateNotificationStatus } from "./notification.repository.js";
 
 export async function getNotifications() {
   return listNotifications();
@@ -10,6 +10,11 @@ export async function getNotifications() {
 export async function saveNotification(payload: unknown) {
   const input = createNotificationSchema.parse(payload);
   return createNotification(input);
+}
+
+export async function getNotificationById(id: string) {
+  const normalizedId = z.coerce.number().int().positive().parse(id);
+  return findNotificationById(normalizedId);
 }
 
 export async function changeNotificationStatus(id: string, payload: unknown) {

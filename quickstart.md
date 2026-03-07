@@ -68,6 +68,16 @@ To manually run the referral-timeout sweep from the Automation page, enqueue `re
 }
 ```
 
+To manually process a notification delivery from the Automation page, enqueue `notifications` with a real notification ID:
+
+```json
+{
+  "notificationId": 17
+}
+```
+
+The notification worker now respects settings like `email_enabled`, `telegram_enabled`, and `whatsapp_enabled`.
+
 ## Manual startup
 
 If you do not want to use Docker, you can still use host services by creating:

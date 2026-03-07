@@ -26,6 +26,7 @@ const emptyForm: SettingFormState = {
 };
 
 const suggestedSettings: Array<Pick<SettingFormState, "key" | "label" | "value" | "valueType" | "category">> = [
+  { key: "dashboard_enabled", label: "Dashboard Enabled", value: "true", valueType: "boolean", category: "notifications" },
   { key: "email_enabled", label: "Email Enabled", value: "true", valueType: "boolean", category: "notifications" },
   { key: "telegram_enabled", label: "Telegram Enabled", value: "true", valueType: "boolean", category: "notifications" },
   { key: "whatsapp_enabled", label: "WhatsApp Enabled", value: "false", valueType: "boolean", category: "notifications" },

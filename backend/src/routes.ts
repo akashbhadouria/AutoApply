@@ -8,7 +8,7 @@ import { getEvents, saveEvent } from "./event.service.js";
 import { getFieldMappings, saveFieldMapping } from "./field-mapping.service.js";
 import { getApplicationByJobId, getApplications, saveApplication } from "./application.service.js";
 import { getJobs, ingestDiscoveredJob, ingestDiscoveredJobsBatch } from "./job.service.js";
-import { changeNotificationStatus, getNotifications, saveNotification } from "./notification.service.js";
+import { changeNotificationStatus, getNotificationById, getNotifications, saveNotification } from "./notification.service.js";
 import { getDashboardSummary } from "./dashboard.service.js";
 import { getProfileFields, removeProfileField, saveProfileField } from "./profile.service.js";
 import { changeReferralStatus, getReferrals, getReferralsForJob, getTimedOutPendingReferrals, saveReferral } from "./referral.service.js";
@@ -247,6 +247,15 @@ apiRouter.get("/api/notifications", async (_request, response, next) => {
   try {
     const notifications = await getNotifications();
     response.json({ data: notifications });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/notifications/:id", async (request, response, next) => {
+  try {
+    const notification = await getNotificationById(request.params.id);
+    response.status(notification ? 200 : 404).json(notification ? { data: notification } : { error: "Not found" });
   } catch (error) {
     next(error);
   }

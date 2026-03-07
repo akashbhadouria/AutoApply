@@ -37,6 +37,27 @@ export async function listNotifications(): Promise<NotificationRecord[]> {
   return result.rows.map(mapNotificationRow);
 }
 
+export async function findNotificationById(id: number): Promise<NotificationRecord | null> {
+  const result = await pool.query(
+    `SELECT
+       id,
+       type,
+       title,
+       message,
+       channel,
+       status,
+       related_job_id,
+       related_referral_id,
+       created_at,
+       delivered_at
+     FROM notifications
+     WHERE id = $1`,
+    [id],
+  );
+
+  return result.rows[0] ? mapNotificationRow(result.rows[0]) : null;
+}
+
 export async function createNotification(input: CreateNotificationInput): Promise<NotificationRecord> {
   const result = await pool.query(
     `INSERT INTO notifications (

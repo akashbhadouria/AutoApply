@@ -124,6 +124,41 @@ export async function fetchBackendProfileFields() {
   }>("/api/profile-fields");
 }
 
+export async function fetchBackendSettings() {
+  return request<{
+    data: Array<{
+      key: string;
+      value: string;
+      valueType: "string" | "boolean" | "number" | "json";
+      category: string;
+    }>;
+  }>("/api/settings");
+}
+
+export async function fetchBackendNotificationById(notificationId: number) {
+  const response = await fetch(`${env.backendUrl}/api/notifications/${notificationId}`);
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`Backend request failed: ${response.status} /api/notifications/${notificationId}`);
+  }
+
+  return response.json() as Promise<{
+    data: {
+      id: number;
+      type: string;
+      title: string;
+      message: string;
+      channel: "dashboard" | "email" | "telegram" | "whatsapp";
+      status: "pending" | "delivered" | "failed";
+      deliveredAt: string | null;
+    };
+  }>;
+}
+
 export async function fetchBackendFieldMappings() {
   return request<{
     data: Array<{
