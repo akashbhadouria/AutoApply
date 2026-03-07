@@ -338,6 +338,23 @@ export async function createBackendApplicationSession(body: {
   });
 }
 
+export async function fetchBackendApplicationSessions() {
+  return request<{
+    data: Array<{
+      id: number;
+      jobId: number;
+      company: string;
+      title: string;
+      formUrl: string;
+      filledFields: Record<string, string>;
+      missingField: string;
+      status: "paused" | "ready_to_resume" | "completed";
+      createdAt: string;
+      updatedAt: string;
+    }>;
+  }>("/api/application-sessions");
+}
+
 export async function discoverBackendJobsBatch(body: {
   jobs: Array<{
     company: string;

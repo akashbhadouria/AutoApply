@@ -3,6 +3,7 @@ import { Worker } from "bullmq";
 import {
   createBackendApplicationSession,
   createBackendJobDiscoveryEvent,
+  fetchBackendApplicationSessions,
   fetchBackendApplicationMethods,
   fetchBackendJobById,
   fetchBackendJobFeedCursor,
@@ -217,6 +218,8 @@ export function startWorkers() {
   let notificationSchedulerRunning = false;
   let referralTimeoutSchedulerTimer: NodeJS.Timeout | null = null;
   let referralTimeoutSchedulerRunning = false;
+  let resumeSessionSchedulerTimer: NodeJS.Timeout | null = null;
+  let resumeSessionSchedulerRunning = false;
   let watcherSchedulerTimer: NodeJS.Timeout | null = null;
   let watcherSchedulerRunning = false;
 
@@ -1142,6 +1145,51 @@ export function startWorkers() {
     }
   }
 
+  async function scheduleReadySessions() {
+    if (resumeSessionSchedulerRunning) {
+      return;
+    }
+
+    resumeSessionSchedulerRunning = true;
+    try {
+      const sessionsResponse = await fetchBackendApplicationSessions();
+      const resumableSessions = sessionsResponse.data.filter((session) => session.status === "ready_to_resume");
+
+      for (const session of resumableSessions) {
+        await enqueueBrowserAutomationJob(
+          {
+            jobId: session.jobId,
+            formUrl: session.formUrl,
+          },
+          {
+            jobId: `resume-session:${session.id}`,
+          },
+        );
+      }
+
+      if (resumableSessions.length > 0) {
+        await createBackendEvent({
+          eventType: "resume_session_scheduler.enqueued",
+          actor: "resumeSessionScheduler",
+          payload: {
+            resumableCount: resumableSessions.length,
+            sessionIds: resumableSessions.map((session) => session.id),
+          },
+        });
+      }
+    } catch (error) {
+      await createBackendEvent({
+        eventType: "resume_session_scheduler.failed",
+        actor: "resumeSessionScheduler",
+        payload: {
+          error: error instanceof Error ? error.message : "Unknown resume session scheduler error",
+        },
+      });
+    } finally {
+      resumeSessionSchedulerRunning = false;
+    }
+  }
+
   if (env.watcherSchedulerEnabled) {
     watcherSchedulerTimer = setInterval(() => {
       void scheduleDueWatchers();
@@ -1163,6 +1211,13 @@ export function startWorkers() {
     void scheduleReferralTimeoutSweep();
   }
 
+  if (env.resumeSessionSchedulerEnabled) {
+    resumeSessionSchedulerTimer = setInterval(() => {
+      void scheduleReadySessions();
+    }, Math.max(env.resumeSessionSchedulerTickMs, 10_000));
+    void scheduleReadySessions();
+  }
+
   return {
     async close() {
       if (notificationSchedulerTimer) {
@@ -1170,6 +1225,9 @@ export function startWorkers() {
       }
       if (referralTimeoutSchedulerTimer) {
         clearInterval(referralTimeoutSchedulerTimer);
+      }
+      if (resumeSessionSchedulerTimer) {
+        clearInterval(resumeSessionSchedulerTimer);
       }
       if (watcherSchedulerTimer) {
         clearInterval(watcherSchedulerTimer);

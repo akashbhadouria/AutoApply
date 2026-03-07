@@ -65,3 +65,12 @@ The `/operations` page allows the user to:
 - review the event audit stream created by workers
 
 This creates the operational substrate for browser workers, self-learning field mapping, and n8n notification delivery.
+
+## Resume scheduler
+
+When `RESUME_SESSION_SCHEDULER_ENABLED=true`, the workers process:
+
+- polls saved application sessions
+- finds sessions in `ready_to_resume`
+- re-enqueues them into `browser-automation` with deduped job ids
+- writes scheduler events for successful enqueue activity and failures
