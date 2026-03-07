@@ -1,6 +1,6 @@
 # Quickstart
 
-This repository currently implements seven foundational slices of the larger job-hunting automation system:
+This repository currently implements eight foundational slices of the larger job-hunting automation system:
 
 - `Profile Manager`
 - `Jobs Inventory`
@@ -9,6 +9,7 @@ This repository currently implements seven foundational slices of the larger job
 - `Operations Layer`
 - `Automation Control Plane`
 - `ATS Self-Learning Layer`
+- `OpenClaw-Compatible Agent Layer`
 
 ## Prerequisites
 
@@ -80,6 +81,11 @@ To manually process a notification delivery from the Automation page, enqueue `n
 
 The notification worker now respects settings like `email_enabled`, `telegram_enabled`, and `whatsapp_enabled`.
 
+The referrals and field-mappings pages now include backend-powered agent actions:
+
+- `Generate agent draft` on `/referrals`
+- `Suggest mapping` on `/field-mappings`
+
 To inspect the current applied-application count in the active rate window:
 
 ```bash
@@ -139,6 +145,10 @@ If host database auth is inconsistent, pages now remain styled and show explicit
 - `POST /api/events`
 - `GET /api/field-mappings`
 - `POST /api/field-mappings`
+- `POST /api/agents/referral-draft`
+- `POST /api/agents/field-mapping-suggestion`
+- `POST /api/agents/job-summary`
+- `POST /api/agents/notification-summary`
 - `GET /api/automation/queues`
 - `POST /api/automation/enqueue`
 
@@ -161,4 +171,5 @@ If host database auth is inconsistent, pages now remain styled and show explicit
 - [docs/field-mappings.md](/home/akash/AutoApply/docs/field-mappings.md)
 - [docs/browser-worker.md](/home/akash/AutoApply/docs/browser-worker.md)
 - [docs/settings.md](/home/akash/AutoApply/docs/settings.md)
+- [docs/agents.md](/home/akash/AutoApply/docs/agents.md)
 - [database/schema.sql](/home/akash/AutoApply/database/schema.sql)

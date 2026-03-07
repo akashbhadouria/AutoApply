@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/table";
-import type { Contact, Job, Referral } from "@/lib/api";
+import type { Contact, Job, ProfileField, Referral, ReferralDraftResult } from "@/lib/api";
 
 interface ContactFormState {
   company: string;
@@ -49,24 +49,41 @@ const emptyReferralForm: ReferralFormState = {
 
 export function ReferralsManager({
   initialContacts,
+  initialProfileFields,
   initialReferrals,
   jobs,
 }: {
   initialContacts: Contact[];
+  initialProfileFields: ProfileField[];
   initialReferrals: Referral[];
   jobs: Job[];
 }) {
   const [contacts, setContacts] = useState(initialContacts);
   const [referrals, setReferrals] = useState(initialReferrals);
+  const [profileFields, setProfileFields] = useState(initialProfileFields);
   const [contactForm, setContactForm] = useState<ContactFormState>(emptyContactForm);
   const [referralForm, setReferralForm] = useState<ReferralFormState>(emptyReferralForm);
   const [isLoadingContact, setIsLoadingContact] = useState(false);
   const [isLoadingReferral, setIsLoadingReferral] = useState(false);
+  const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
+  const [draftResult, setDraftResult] = useState<ReferralDraftResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const jobOptions = useMemo(
     () => jobs.map((job) => ({ id: job.id, label: `${job.company} - ${job.title} - ${job.location}` })),
     [jobs],
+  );
+  const profileFieldMap = useMemo(
+    () => new Map(profileFields.map((field) => [field.key, field.value])),
+    [profileFields],
+  );
+  const selectedJob = useMemo(
+    () => jobs.find((job) => job.id === Number(referralForm.jobId)) ?? null,
+    [jobs, referralForm.jobId],
+  );
+  const selectedContact = useMemo(
+    () => contacts.find((contact) => contact.id === Number(referralForm.contactId)) ?? null,
+    [contacts, referralForm.contactId],
   );
 
   async function refreshContacts() {
@@ -152,10 +169,57 @@ export function ReferralsManager({
     }
   }
 
+  async function handleGenerateDraft() {
+    if (!selectedJob || !selectedContact) {
+      setError("Select both a job and a contact before generating a draft.");
+      return;
+    }
+
+    setError(null);
+    setIsGeneratingDraft(true);
+
+    try {
+      const primarySkills = ["React", "TypeScript", "UI engineering"];
+      const response = await fetch("/api/agents/referral-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company: selectedJob.company,
+          jobTitle: selectedJob.title,
+          location: selectedJob.location,
+          contactFirstName: selectedContact.firstName,
+          contactTitle: selectedContact.title,
+          userName: profileFieldMap.get("name") ?? "Candidate",
+          resumeLink: profileFieldMap.get("resume_link") ?? undefined,
+          portfolioLink: profileFieldMap.get("portfolio") ?? undefined,
+          yearsOfExperience: profileFieldMap.get("years_experience") ?? undefined,
+          primarySkills,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Unable to generate referral draft");
+      }
+
+      const payload = (await response.json()) as { data: ReferralDraftResult };
+      setDraftResult(payload.data);
+      setReferralForm((current) => ({
+        ...current,
+        outreachMessage: payload.data.outreachMessage,
+        connectionRequestMessage: payload.data.connectionRequestMessage,
+      }));
+    } catch (generationError) {
+      setError(generationError instanceof Error ? generationError.message : "Failed to generate referral draft");
+    } finally {
+      setIsGeneratingDraft(false);
+    }
+  }
+
   useEffect(() => {
     setContacts(initialContacts);
     setReferrals(initialReferrals);
-  }, [initialContacts, initialReferrals]);
+    setProfileFields(initialProfileFields);
+  }, [initialContacts, initialProfileFields, initialReferrals]);
 
   return (
     <div className="space-y-6">
@@ -261,6 +325,11 @@ export function ReferralsManager({
 
             {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
+            <Button className="w-full" disabled={isGeneratingDraft} onClick={handleGenerateDraft} type="button">
+              {isGeneratingDraft ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+              Generate agent draft
+            </Button>
+
             <Button className="w-full" disabled={isLoadingReferral} type="submit">
               {isLoadingReferral ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
               Save referral
@@ -268,6 +337,49 @@ export function ReferralsManager({
           </form>
         </Card>
       </div>
+
+      <Card className="p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-2">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">Agent Drafting</p>
+            <h2 className="text-2xl font-semibold text-ink">OpenClaw-compatible prompts, deterministic output today.</h2>
+          </div>
+          <div className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-100">
+            Profile fields available: {profileFields.length}
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+          <div className="space-y-3 rounded-[24px] border border-white/10 bg-slate-950/60 p-5">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Draft context</p>
+            <div className="space-y-2 text-sm text-slate-300">
+              <p>Job: {selectedJob ? `${selectedJob.company} - ${selectedJob.title}` : "Select a job above"}</p>
+              <p>Contact: {selectedContact ? `${selectedContact.fullName} - ${selectedContact.title}` : "Select a contact above"}</p>
+              <p>Resume: {profileFieldMap.get("resume_link") ?? "Missing from profile"}</p>
+              <p>Portfolio: {profileFieldMap.get("portfolio") ?? "Missing from profile"}</p>
+            </div>
+          </div>
+
+          <div className="space-y-4 rounded-[24px] border border-white/10 bg-slate-950/60 p-5">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Latest result</p>
+              {draftResult ? (
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.18em] text-slate-300">
+                  {draftResult.provider}
+                </span>
+              ) : null}
+            </div>
+            <p className="text-sm text-slate-300">
+              {draftResult?.summary ?? "Generate a draft to fill the outreach fields with a backend-produced result."}
+            </p>
+            {draftResult ? (
+              <div className="rounded-[20px] border border-white/10 bg-black/20 p-4 text-xs text-slate-400">
+                Prompt template: {draftResult.promptArtifact.templateName}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
         <Card className="overflow-hidden p-2">

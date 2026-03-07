@@ -28,5 +28,6 @@ The first implemented feature is the `Profile Manager`, which provides:
 - importable n8n workflows aligned with the current backend queue contracts
 - backend queue producer APIs and a manual automation control plane
 - Playwright-backed browser analysis and persistent field mapping storage
+- backend-powered agent endpoints and UI flows for referral drafts and ATS field mapping suggestions
 
 See [quickstart.md](/home/akash/AutoApply/quickstart.md) to run the current slice locally.

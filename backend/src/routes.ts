@@ -2,6 +2,12 @@ import type { Request, Response } from "express";
 import { Router } from "express";
 import { ZodError } from "zod";
 
+import {
+  generateReferralDraft,
+  suggestFieldMapping,
+  summarizeJobDescription,
+  summarizeNotification,
+} from "./agent.service.js";
 import { enqueueAutomationJob, getAutomationQueues } from "./automation.service.js";
 import { getContacts, saveContact } from "./contact.service.js";
 import { getEvents, saveEvent } from "./event.service.js";
@@ -38,6 +44,42 @@ apiRouter.post("/api/automation/enqueue", async (request, response, next) => {
   try {
     const job = await enqueueAutomationJob(request.body);
     response.status(201).json({ data: job });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/agents/referral-draft", async (request, response, next) => {
+  try {
+    const result = await generateReferralDraft(request.body);
+    response.status(200).json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/agents/field-mapping-suggestion", async (request, response, next) => {
+  try {
+    const result = await suggestFieldMapping(request.body);
+    response.status(200).json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/agents/job-summary", async (request, response, next) => {
+  try {
+    const result = await summarizeJobDescription(request.body);
+    response.status(200).json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/agents/notification-summary", async (request, response, next) => {
+  try {
+    const result = await summarizeNotification(request.body);
+    response.status(200).json({ data: result });
   } catch (error) {
     next(error);
   }

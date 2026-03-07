@@ -162,6 +162,45 @@ export interface SystemSetting {
   updatedAt: string;
 }
 
+export interface PromptArtifact {
+  templateName: string;
+  prompt: string;
+  input: Record<string, unknown>;
+}
+
+export interface ReferralDraftResult {
+  provider: "template";
+  outreachMessage: string;
+  connectionRequestMessage: string;
+  summary: string;
+  promptArtifact: PromptArtifact;
+}
+
+export interface FieldMappingSuggestionResult {
+  provider: "template";
+  normalizedLabel: string;
+  suggestedProfileKey: string;
+  confidence: "high" | "medium" | "low";
+  rationale: string;
+  promptArtifact: PromptArtifact;
+}
+
+export interface JobSummaryResult {
+  provider: "template";
+  summary: string;
+  topSignals: string[];
+  risks: string[];
+  promptArtifact: PromptArtifact;
+}
+
+export interface NotificationSummaryResult {
+  provider: "template";
+  severity: "high" | "medium" | "low";
+  summary: string;
+  recommendedAction: string;
+  promptArtifact: PromptArtifact;
+}
+
 const backendUrl = process.env.BACKEND_URL ?? "http://localhost:4000";
 
 function getBackendUrl() {
@@ -663,4 +702,97 @@ export async function enqueueAutomationJob(body: {
   }
 
   return response.json() as Promise<{ data: EnqueuedAutomationJob }>;
+}
+
+export async function generateReferralDraft(body: {
+  company: string;
+  jobTitle: string;
+  location?: string;
+  contactFirstName: string;
+  contactTitle?: string;
+  userName: string;
+  resumeLink?: string;
+  portfolioLink?: string;
+  yearsOfExperience?: string;
+  primarySkills?: string[];
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/agents/referral-draft`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to generate referral draft");
+  }
+
+  return response.json() as Promise<{ data: ReferralDraftResult }>;
+}
+
+export async function suggestFieldMapping(body: {
+  rawLabel: string;
+  company?: string;
+  jobTitle?: string;
+  existingProfileKeys: string[];
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/agents/field-mapping-suggestion`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to suggest field mapping");
+  }
+
+  return response.json() as Promise<{ data: FieldMappingSuggestionResult }>;
+}
+
+export async function summarizeJobDescription(body: {
+  company: string;
+  jobTitle: string;
+  jobDescription: string;
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/agents/job-summary`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to summarize job description");
+  }
+
+  return response.json() as Promise<{ data: JobSummaryResult }>;
+}
+
+export async function summarizeNotification(body: {
+  type: string;
+  title: string;
+  message: string;
+  channel: Notification["channel"];
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/agents/notification-summary`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to summarize notification");
+  }
+
+  return response.json() as Promise<{ data: NotificationSummaryResult }>;
 }

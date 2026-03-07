@@ -29,3 +29,5 @@ Each mapping stores:
 4. the label can then be stored as a new field mapping
 
 This is the persistence layer that makes the automation system progressively smarter over time.
+
+The page now also includes a backend-powered suggestion flow so an operator can generate a candidate canonical key before saving the mapping manually.

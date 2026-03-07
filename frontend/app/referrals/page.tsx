@@ -1,5 +1,5 @@
 import { FeaturePageErrorState, FeaturePageShell } from "@/components/page-shell";
-import { fetchContacts, fetchJobs, fetchReferrals } from "@/lib/api";
+import { fetchContacts, fetchJobs, fetchProfileFields, fetchReferrals } from "@/lib/api";
 
 import { ReferralsManager } from "./referrals-manager";
 
@@ -7,7 +7,12 @@ export const dynamic = "force-dynamic";
 
 export default async function ReferralsPage() {
   try {
-    const [contacts, referrals, jobs] = await Promise.all([fetchContacts(), fetchReferrals(), fetchJobs()]);
+    const [contacts, referrals, jobs, profileFields] = await Promise.all([
+      fetchContacts(),
+      fetchReferrals(),
+      fetchJobs(),
+      fetchProfileFields(),
+    ]);
 
     return (
       <FeaturePageShell
@@ -21,7 +26,12 @@ export default async function ReferralsPage() {
         description="This creates a central place to track outreach targets, save message drafts, and monitor referral state without mixing that data into raw job discovery."
         title="Contacts and referrals organized around canonical jobs."
       >
-        <ReferralsManager initialContacts={contacts} initialReferrals={referrals} jobs={jobs} />
+        <ReferralsManager
+          initialContacts={contacts}
+          initialProfileFields={profileFields}
+          initialReferrals={referrals}
+          jobs={jobs}
+        />
       </FeaturePageShell>
     );
   } catch (error) {

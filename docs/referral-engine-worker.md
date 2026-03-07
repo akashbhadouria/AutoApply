@@ -42,4 +42,4 @@ The current draft logic is deterministic and uses:
 - optional `resume_link` or `resume` profile field
 - optional `name` profile field
 
-This is a stable pre-AI implementation. OpenClaw-generated drafts can later replace the template layer without changing the referral persistence contract.
+This worker still creates deterministic draft records, but the referrals UI now also exposes a backend agent endpoint for generating OpenClaw-compatible outreach content without changing the referral persistence contract.

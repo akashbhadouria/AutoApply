@@ -1,20 +1,33 @@
 # Referral Message Agent
 
-Use OpenClaw or a similar agent runner for:
+Purpose:
 
-- referral message drafts
-- connection request drafts
+- generate one referral outreach draft
+- generate one connection request draft
 
 Inputs:
 
-- job title
 - company
+- job title
+- location
 - contact first name
-- profile fields such as resume link, portfolio link, and years of experience
+- contact title
+- user name
+- resume link
+- portfolio link
+- years of experience
+- primary skills
 
 Constraints:
 
 - do not send messages automatically
-- keep message tone concise and professional
-- produce one outreach draft and one connection request draft
+- keep tone concise, professional, and specific to the job
+- assume the user is a frontend engineer unless the input clearly says otherwise
+- avoid exaggerated claims, flattery, or generic filler
+- keep the connection request short enough for a networking invite
 
+Output:
+
+- outreach message
+- connection request message
+- one-line rationale for why the draft fits the context
