@@ -349,6 +349,40 @@ BEFORE UPDATE ON connected_accounts
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 
+CREATE TABLE IF NOT EXISTS outreach_attempts (
+  id BIGSERIAL PRIMARY KEY,
+  referral_id BIGINT NOT NULL REFERENCES referrals(id) ON DELETE CASCADE,
+  connected_account_id BIGINT REFERENCES connected_accounts(id) ON DELETE SET NULL,
+  channel TEXT NOT NULL,
+  approval_status TEXT NOT NULL DEFAULT 'pending_approval',
+  execution_status TEXT NOT NULL DEFAULT 'drafted',
+  message_subject TEXT,
+  message_body TEXT NOT NULL,
+  external_reference TEXT,
+  error_message TEXT,
+  requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  approved_at TIMESTAMPTZ,
+  sent_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT outreach_attempts_channel_check CHECK (
+    channel IN ('linkedin', 'email', 'telegram', 'whatsapp')
+  ),
+  CONSTRAINT outreach_attempts_approval_status_check CHECK (
+    approval_status IN ('pending_approval', 'approved', 'rejected', 'not_required')
+  ),
+  CONSTRAINT outreach_attempts_execution_status_check CHECK (
+    execution_status IN ('drafted', 'queued', 'sent', 'failed', 'cancelled')
+  )
+);
+
+DROP TRIGGER IF EXISTS outreach_attempts_set_updated_at ON outreach_attempts;
+
+CREATE TRIGGER outreach_attempts_set_updated_at
+BEFORE UPDATE ON outreach_attempts
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
 CREATE TABLE IF NOT EXISTS job_feed_watchers (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

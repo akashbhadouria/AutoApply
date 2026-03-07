@@ -8,6 +8,7 @@ The connected accounts slice adds a first-class model for outreach-capable ident
 - connection status
 - approval mode
 - account identifier storage
+- an audit-friendly account link for future outreach attempts
 
 ## Endpoints
 
@@ -17,3 +18,5 @@ The connected accounts slice adds a first-class model for outreach-capable ident
 ## UI behavior
 
 The `/connected-accounts` page is the first step toward real outreach execution. It does not auto-send yet, but it establishes the contract that future messaging and approvals will use.
+
+The backend now also supports outreach attempts that can optionally point at one connected account, so approval and send flows can be audited before real auto-send is enabled.

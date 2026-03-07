@@ -213,6 +213,11 @@ The frontend now also shows a global runtime banner so backend connectivity prob
 - `GET /api/referrals/job/:jobId`
 - `POST /api/referrals`
 - `PUT /api/referrals/:id/status`
+- `GET /api/outreach-attempts`
+- `GET /api/outreach-attempts/referral/:referralId`
+- `POST /api/outreach-attempts`
+- `PUT /api/outreach-attempts/:id/approval`
+- `PUT /api/outreach-attempts/:id/status`
 - `GET /api/application-sessions`
 - `POST /api/application-sessions`
 - `GET /api/notifications`

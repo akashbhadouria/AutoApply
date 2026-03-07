@@ -34,6 +34,13 @@ import { getFieldMappings, saveFieldMapping } from "./field-mapping.service.js";
 import { getApplicationByJobId, getApplicationRateWindow, getApplications, saveApplication } from "./application.service.js";
 import { getFreshJobs, getJobById, getJobs, ingestDiscoveredJob, ingestDiscoveredJobsBatch } from "./job.service.js";
 import { changeNotificationStatus, getNotificationById, getNotifications, saveNotification } from "./notification.service.js";
+import {
+  changeOutreachAttemptApproval,
+  changeOutreachAttemptStatus,
+  getOutreachAttempts,
+  getOutreachAttemptsByReferralId,
+  saveOutreachAttempt,
+} from "./outreach-attempt.service.js";
 import { getDashboardSummary } from "./dashboard.service.js";
 import { getServiceHealthSummary } from "./health.service.js";
 import { getProfileFields, removeProfileField, saveProfileField } from "./profile.service.js";
@@ -515,6 +522,56 @@ apiRouter.get("/api/referrals/job/:jobId", async (request, response, next) => {
   try {
     const referrals = await getReferralsForJob(request.params.jobId);
     response.json({ data: referrals });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/outreach-attempts", async (request, response, next) => {
+  try {
+    const attempts = await getOutreachAttempts({
+      limit: typeof request.query.limit === "string" ? request.query.limit : undefined,
+      approvalStatus: typeof request.query.approvalStatus === "string" ? request.query.approvalStatus : undefined,
+      executionStatus: typeof request.query.executionStatus === "string" ? request.query.executionStatus : undefined,
+      channel: typeof request.query.channel === "string" ? request.query.channel : undefined,
+    });
+    response.json({ data: attempts });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/outreach-attempts/referral/:referralId", async (request, response, next) => {
+  try {
+    const attempts = await getOutreachAttemptsByReferralId(request.params.referralId);
+    response.json({ data: attempts });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/outreach-attempts", async (request, response, next) => {
+  try {
+    const attempt = await saveOutreachAttempt(request.body);
+    response.status(201).json({ data: attempt });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.put("/api/outreach-attempts/:id/approval", async (request, response, next) => {
+  try {
+    const attempt = await changeOutreachAttemptApproval(request.params.id, request.body);
+    response.status(attempt ? 200 : 404).json(attempt ? { data: attempt } : { error: "Not found" });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.put("/api/outreach-attempts/:id/status", async (request, response, next) => {
+  try {
+    const attempt = await changeOutreachAttemptStatus(request.params.id, request.body);
+    response.status(attempt ? 200 : 404).json(attempt ? { data: attempt } : { error: "Not found" });
   } catch (error) {
     next(error);
   }

@@ -61,3 +61,22 @@ The `/referrals` page allows the user to:
 - trigger application handoff automatically when a referral becomes `replied` or `no_response`
 
 This keeps the user in manual control of messaging while making the state machine explicit for later timeout and notification automation.
+
+## Outreach execution foundation
+
+Referrals can now also feed an `outreach_attempts` audit layer through:
+
+- `GET /api/outreach-attempts`
+- `GET /api/outreach-attempts/referral/:referralId`
+- `POST /api/outreach-attempts`
+- `PUT /api/outreach-attempts/:id/approval`
+- `PUT /api/outreach-attempts/:id/status`
+
+This is the first backend step toward approval-based sending:
+
+- draft an outreach send attempt
+- attach an optional connected account
+- mark it approved or rejected
+- record whether it was queued, sent, failed, or cancelled
+
+The messaging itself is still user-controlled, but the product now has a durable execution trail for future LinkedIn/email sending flows.
