@@ -8,6 +8,7 @@ interface AtsField {
   required: boolean;
   type: "text" | "email" | "tel" | "textarea" | "select" | "checkbox" | "radio" | "file";
   selector: string;
+  visible: boolean;
 }
 
 type AtsFieldType = AtsField["type"];
@@ -70,14 +71,28 @@ function mockAtsPageContent(provider: AtsProvider) {
   if (provider === "workday") {
     return `
       <form id="application-form" data-provider="workday">
-        <label>Full Name <input id="wd-name" name="name" required /></label>
-        <label>Email <input id="wd-email" type="email" name="email" required /></label>
-        <label>Phone Number <input id="wd-phone" type="tel" name="phone" required /></label>
-        <label>Current Salary <input id="wd-current-salary" name="current_salary" required /></label>
-        <label>Resume <input id="wd-resume" type="file" name="resume" required /></label>
-        <button id="wd-submit" type="submit">Submit</button>
+        <section id="wd-step-1" data-step="1">
+          <label>Full Name <input id="wd-name" name="name" required /></label>
+          <label>Email <input id="wd-email" type="email" name="email" required /></label>
+          <label>Phone Number <input id="wd-phone" type="tel" name="phone" required /></label>
+          <button id="wd-next" data-automation-id="bottom-navigation-next-button" type="button">Next</button>
+        </section>
+        <section id="wd-step-2" data-step="2" style="display:none">
+          <label>Current Salary <input id="wd-current-salary" name="current_salary" required /></label>
+          <label>Resume <input id="wd-resume" type="file" name="resume" required /></label>
+          <button id="wd-submit" data-automation-id="bottom-navigation-submit-button" type="submit">Submit</button>
+        </section>
       </form>
       <script>
+        document.getElementById("wd-next")?.addEventListener("click", function() {
+          const step1 = document.getElementById("wd-step-1");
+          const step2 = document.getElementById("wd-step-2");
+          if (step1 && step2) {
+            step1.style.display = "none";
+            step2.style.display = "block";
+            document.body.setAttribute("data-workday-step", "2");
+          }
+        });
         document.getElementById("application-form")?.addEventListener("submit", function(event) {
           event.preventDefault();
           document.body.setAttribute("data-submitted", "true");
@@ -241,6 +256,11 @@ async function collectAtsFields(page: Awaited<ReturnType<typeof openAtsPage>>["p
         : name
           ? `[name="${name}"]`
           : `${tag}:nth-of-type(${index + 1})`;
+      const visible =
+        !(htmlElement as HTMLElement).hasAttribute("hidden") &&
+        getComputedStyle(htmlElement as HTMLElement).display !== "none" &&
+        getComputedStyle(htmlElement as HTMLElement).visibility !== "hidden" &&
+        (htmlElement as HTMLElement).getClientRects().length > 0;
 
       return {
         label: labelText,
@@ -250,6 +270,7 @@ async function collectAtsFields(page: Awaited<ReturnType<typeof openAtsPage>>["p
           /\*/.test(labelText),
         type: normalizedType,
         selector,
+        visible,
       };
     }),
   );
@@ -330,6 +351,10 @@ function resolveResumePath(profileFields: Array<{ key: string; value: string }>,
     profileFieldMap.get("resume_local_path") ??
     undefined
   );
+}
+
+function getVisibleFields(fields: AtsField[]) {
+  return fields.filter((field) => field.visible);
 }
 
 function extractNameFromSelector(selector: string) {
@@ -425,6 +450,35 @@ async function clickProviderSubmit(page: Page, provider: AtsProvider) {
   return false;
 }
 
+async function clickProviderContinue(page: Page, provider: AtsProvider) {
+  const continueSelectors: Record<AtsProvider, string[]> = {
+    workday: [
+      '#wd-next',
+      'button[data-automation-id="bottom-navigation-next-button"]',
+      'button[data-automation-id="bottom-navigation-continue-button"]',
+    ],
+    greenhouse: [],
+    lever: [],
+    smartrecruiters: [],
+    taleo: [],
+    custom: [],
+  };
+
+  for (const selector of continueSelectors[provider]) {
+    const button = page.locator(selector).first();
+    if ((await button.count()) > 0) {
+      await button.click();
+      return true;
+    }
+  }
+
+  return false;
+}
+
+async function isSubmitted(page: Page) {
+  return page.evaluate(() => document.body.getAttribute("data-submitted") === "true");
+}
+
 export async function runAtsAutofill(params: {
   formUrl: string;
   profileFields: Array<{ key: string; value: string }>;
@@ -434,42 +488,36 @@ export async function runAtsAutofill(params: {
   const { browser, page, provider } = await openAtsPage(params.formUrl);
 
   try {
-    const fields = await collectAtsFields(page);
-    const mapped = mapAtsFields({
-      fields,
-      profileFields: params.profileFields,
-      fieldMappings: params.fieldMappings,
-    });
     const resumePath = resolveResumePath(params.profileFields, params.resumePath);
-
     const filledFields: Record<string, string> = {};
     let unresolvedRequiredField: {
       label: string;
       normalizedLabel: string;
       profileKey: string | null;
     } | null = null;
+    let analyzedFields: AtsField[] = [];
+    let stepsCompleted = 0;
+    let submitted = false;
 
-    for (const field of mapped.resolvedFields) {
-      const locator = page.locator(field.selector).first();
-      if ((await locator.count()) === 0) {
-        continue;
-      }
+    for (let step = 0; step < 4; step += 1) {
+      const currentFields = getVisibleFields(await collectAtsFields(page));
+      analyzedFields = [...analyzedFields, ...currentFields.filter((field) => !analyzedFields.some((seen) => seen.selector === field.selector))];
+      const mapped = mapAtsFields({
+        fields: currentFields,
+        profileFields: params.profileFields,
+        fieldMappings: params.fieldMappings,
+      });
 
-      const fieldValue = field.type === "file" ? (resumePath ?? field.value ?? null) : field.value;
-      if (!fieldValue) {
-        if (field.required && !unresolvedRequiredField) {
-          unresolvedRequiredField = {
-            label: field.label,
-            normalizedLabel: field.normalizedLabel,
-            profileKey: field.profileKey,
-          };
+      unresolvedRequiredField = null;
+
+      for (const field of mapped.resolvedFields) {
+        const locator = page.locator(field.selector).first();
+        if ((await locator.count()) === 0) {
+          continue;
         }
-        continue;
-      }
 
-      if (field.type === "file") {
-        const canUpload = await fileExists(fieldValue);
-        if (!canUpload) {
+        const fieldValue = field.type === "file" ? (resumePath ?? field.value ?? null) : field.value;
+        if (!fieldValue) {
           if (field.required && !unresolvedRequiredField) {
             unresolvedRequiredField = {
               label: field.label,
@@ -480,42 +528,66 @@ export async function runAtsAutofill(params: {
           continue;
         }
 
-        await locator.setInputFiles(fieldValue);
-        filledFields[field.normalizedLabel] = fieldValue;
-        continue;
-      }
+        if (field.type === "file") {
+          const canUpload = await fileExists(fieldValue);
+          if (!canUpload) {
+            if (field.required && !unresolvedRequiredField) {
+              unresolvedRequiredField = {
+                label: field.label,
+                normalizedLabel: field.normalizedLabel,
+                profileKey: field.profileKey,
+              };
+            }
+            continue;
+          }
 
-      if (field.type === "checkbox" || field.type === "radio") {
-        await fillRadioOrCheckbox(page, field, fieldValue);
+          await locator.setInputFiles(fieldValue);
+          filledFields[field.normalizedLabel] = fieldValue;
+          continue;
+        }
+
+        if (field.type === "checkbox" || field.type === "radio") {
+          await fillRadioOrCheckbox(page, field, fieldValue);
+          filledFields[field.normalizedLabel] = String(fieldValue);
+          continue;
+        }
+
+        if (field.type === "select") {
+          await fillSelect(locator, String(fieldValue));
+          filledFields[field.normalizedLabel] = String(fieldValue);
+          continue;
+        }
+
+        await locator.fill(String(fieldValue));
         filledFields[field.normalizedLabel] = String(fieldValue);
-        continue;
       }
 
-      if (field.type === "select") {
-        await fillSelect(locator, String(fieldValue));
-        filledFields[field.normalizedLabel] = String(fieldValue);
-        continue;
+      if (unresolvedRequiredField) {
+        break;
       }
 
-      await locator.fill(String(fieldValue));
-      filledFields[field.normalizedLabel] = String(fieldValue);
-    }
-
-    let submitted = false;
-    if (!unresolvedRequiredField) {
       submitted = await clickProviderSubmit(page, provider);
-
-      if (!submitted && params.formUrl.includes("example.com")) {
-        submitted = true;
+      if (submitted) {
+        if (!(await isSubmitted(page)) && params.formUrl.includes("example.com")) {
+          submitted = true;
+        }
+        break;
       }
+
+      const continued = await clickProviderContinue(page, provider);
+      if (!continued) {
+        break;
+      }
+      stepsCompleted += 1;
     }
 
     return {
       provider,
-      analyzedFields: fields,
+      analyzedFields,
       filledFields,
       missingRequiredField: unresolvedRequiredField,
       submitted,
+      stepsCompleted,
     };
   } finally {
     await page.close();

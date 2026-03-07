@@ -444,6 +444,7 @@ export function startWorkers() {
           resumePath: resumePath ?? null,
           analyzedFieldCount: automationResult.analyzedFields.length,
           filledFieldCount: Object.keys(automationResult.filledFields).length,
+          stepsCompleted: automationResult.stepsCompleted,
           submitted: automationResult.submitted,
           missingField: automationResult.missingRequiredField?.label ?? null,
         },
