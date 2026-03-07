@@ -89,6 +89,35 @@ export interface JobFeedWatcher {
   updatedAt: string;
 }
 
+export interface JobWatcherActivity {
+  watcherId: number;
+  watcherName: string;
+  sourcePlatform: JobFeedWatcher["sourcePlatform"];
+  provider: JobFeedWatcher["provider"];
+  status: JobFeedWatcher["status"];
+  pollingIntervalSeconds: number;
+  lastRunAt: string | null;
+  lastSuccessAt: string | null;
+  lastError: string | null;
+  lastSeenTimestamp: string | null;
+  recentDiscoveryCount: number;
+  recentFreshCount: number;
+}
+
+export interface RecentJobDiscoveryEvent {
+  id: number;
+  watcherId: number | null;
+  watcherName: string;
+  sourcePlatform: JobFeedWatcher["sourcePlatform"];
+  provider: JobFeedWatcher["provider"];
+  jobId: number | null;
+  eventType: "job_discovered" | "fresh_job_detected";
+  payload: Record<string, unknown>;
+  company: string | null;
+  title: string | null;
+  createdAt: string;
+}
+
 export interface Application {
   id: number;
   jobId: number;
@@ -131,6 +160,30 @@ export interface Referral {
   repliedAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface OutreachAttempt {
+  id: number;
+  referralId: number;
+  connectedAccountId: number | null;
+  channel: "linkedin" | "email" | "telegram" | "whatsapp";
+  approvalStatus: "pending_approval" | "approved" | "rejected" | "not_required";
+  executionStatus: "drafted" | "queued" | "sent" | "failed" | "cancelled";
+  messageSubject: string | null;
+  messageBody: string;
+  externalReference: string | null;
+  errorMessage: string | null;
+  requestedAt: string;
+  approvedAt: string | null;
+  sentAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  company: string;
+  jobTitle: string;
+  contactName: string;
+  contactRole: string;
+  connectedAccountLabel: string | null;
+  connectedAccountProvider: ConnectedAccount["provider"] | null;
 }
 
 export interface ApplicationSession {
@@ -536,6 +589,46 @@ export async function fetchJobFeedWatchers(): Promise<JobFeedWatcher[]> {
   return payload.data;
 }
 
+export async function fetchJobWatcherActivities(): Promise<JobWatcherActivity[]> {
+  const response = await fetch(`${getBackendUrl()}/api/me/job-watchers/activity`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load watcher activity");
+  }
+
+  const payload = (await response.json()) as { data: JobWatcherActivity[] };
+  return payload.data;
+}
+
+export async function fetchRecentJobDiscoveryEvents(input?: {
+  limit?: number;
+  eventType?: RecentJobDiscoveryEvent["eventType"];
+}): Promise<RecentJobDiscoveryEvent[]> {
+  const query = new URLSearchParams();
+  if (input?.limit) {
+    query.set("limit", String(input.limit));
+  }
+  if (input?.eventType) {
+    query.set("eventType", input.eventType);
+  }
+
+  const response = await fetch(
+    `${getBackendUrl()}/api/me/job-watchers/discovery-events/recent${query.size > 0 ? `?${query.toString()}` : ""}`,
+    {
+      cache: "no-store",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to load recent job discovery events");
+  }
+
+  const payload = (await response.json()) as { data: RecentJobDiscoveryEvent[] };
+  return payload.data;
+}
+
 export async function createJobFeedWatcher(body: {
   name: string;
   sourcePlatform: JobFeedWatcher["sourcePlatform"];
@@ -873,6 +966,128 @@ export async function updateReferralStatus(
   }
 
   return response.json();
+}
+
+export async function fetchOutreachAttempts(input?: {
+  limit?: number;
+  approvalStatus?: OutreachAttempt["approvalStatus"];
+  executionStatus?: OutreachAttempt["executionStatus"];
+  channel?: OutreachAttempt["channel"];
+}): Promise<OutreachAttempt[]> {
+  const query = new URLSearchParams();
+  if (input?.limit) {
+    query.set("limit", String(input.limit));
+  }
+  if (input?.approvalStatus) {
+    query.set("approvalStatus", input.approvalStatus);
+  }
+  if (input?.executionStatus) {
+    query.set("executionStatus", input.executionStatus);
+  }
+  if (input?.channel) {
+    query.set("channel", input.channel);
+  }
+
+  const response = await fetch(
+    `${getBackendUrl()}/api/outreach-attempts${query.size > 0 ? `?${query.toString()}` : ""}`,
+    {
+      cache: "no-store",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to load outreach attempts");
+  }
+
+  const payload = (await response.json()) as { data: OutreachAttempt[] };
+  return payload.data;
+}
+
+export async function fetchOutreachAttemptsByReferralId(referralId: number): Promise<OutreachAttempt[]> {
+  const response = await fetch(`${getBackendUrl()}/api/outreach-attempts/referral/${referralId}`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load outreach attempts for referral");
+  }
+
+  const payload = (await response.json()) as { data: OutreachAttempt[] };
+  return payload.data;
+}
+
+export async function createOutreachAttempt(body: {
+  referralId: number;
+  connectedAccountId?: number;
+  channel: OutreachAttempt["channel"];
+  approvalStatus?: OutreachAttempt["approvalStatus"];
+  executionStatus?: OutreachAttempt["executionStatus"];
+  messageSubject?: string;
+  messageBody: string;
+  externalReference?: string;
+  errorMessage?: string;
+  approvedAt?: string;
+  sentAt?: string;
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/outreach-attempts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to create outreach attempt");
+  }
+
+  return response.json() as Promise<{ data: OutreachAttempt }>;
+}
+
+export async function updateOutreachAttemptApproval(
+  id: number,
+  body: { approvalStatus: "approved" | "rejected" | "not_required"; approvedAt?: string },
+) {
+  const response = await fetch(`${getBackendUrl()}/api/outreach-attempts/${id}/approval`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update outreach approval");
+  }
+
+  return response.json() as Promise<{ data: OutreachAttempt }>;
+}
+
+export async function updateOutreachAttemptStatus(
+  id: number,
+  body: {
+    executionStatus: OutreachAttempt["executionStatus"];
+    externalReference?: string;
+    errorMessage?: string;
+    sentAt?: string;
+  },
+) {
+  const response = await fetch(`${getBackendUrl()}/api/outreach-attempts/${id}/status`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update outreach execution");
+  }
+
+  return response.json() as Promise<{ data: OutreachAttempt }>;
 }
 
 export async function fetchApplicationSessions(): Promise<ApplicationSession[]> {

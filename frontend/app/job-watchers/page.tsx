@@ -1,5 +1,5 @@
 import { FeaturePageErrorState, FeaturePageShell } from "@/components/page-shell";
-import { fetchJobFeedWatchers } from "@/lib/api";
+import { fetchJobFeedWatchers, fetchJobWatcherActivities, fetchRecentJobDiscoveryEvents } from "@/lib/api";
 
 import { JobWatchersManager } from "./job-watchers-manager";
 
@@ -7,7 +7,11 @@ export const dynamic = "force-dynamic";
 
 export default async function JobWatchersPage() {
   try {
-    const watchers = await fetchJobFeedWatchers();
+    const [watchers, activities, recentEvents] = await Promise.all([
+      fetchJobFeedWatchers(),
+      fetchJobWatcherActivities(),
+      fetchRecentJobDiscoveryEvents({ limit: 12 }),
+    ]);
 
     return (
       <FeaturePageShell
@@ -21,7 +25,11 @@ export default async function JobWatchersPage() {
         description="Create and manage user-level job watchers that define which titles and locations AutoApply should monitor continuously."
         title="Job watchers for near-real-time discovery."
       >
-        <JobWatchersManager initialWatchers={watchers} />
+        <JobWatchersManager
+          initialActivities={activities}
+          initialRecentEvents={recentEvents}
+          initialWatchers={watchers}
+        />
       </FeaturePageShell>
     );
   } catch (error) {
@@ -40,6 +48,8 @@ export default async function JobWatchersPage() {
         <FeaturePageErrorState
           checks={[
             "GET /api/me/job-watchers returns watcher data.",
+            "GET /api/me/job-watchers/activity returns activity snapshots.",
+            "GET /api/me/job-watchers/discovery-events/recent returns recent watcher events.",
             "database/schema.sql has been applied.",
             "The backend is healthy and reachable.",
             "Use npm run dev:stack after schema changes.",

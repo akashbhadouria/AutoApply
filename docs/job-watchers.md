@@ -47,6 +47,8 @@ The `/job-watchers` page lets the operator:
 - create watcher rules
 - activate or pause watchers
 - run a watcher immediately
+- inspect per-watcher cursor health and recent discovery counts
+- inspect the latest cross-watcher discovery stream with event-type filtering
 
 The backend now also exposes two focused operator feeds for redesigned UI work:
 

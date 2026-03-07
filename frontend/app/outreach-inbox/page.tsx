@@ -1,5 +1,5 @@
 import { FeaturePageErrorState, FeaturePageShell } from "@/components/page-shell";
-import { fetchPendingReferrals } from "@/lib/api";
+import { fetchConnectedAccounts, fetchOutreachAttempts, fetchPendingReferrals } from "@/lib/api";
 
 import { OutreachInboxManager } from "./outreach-inbox-manager";
 
@@ -7,7 +7,11 @@ export const dynamic = "force-dynamic";
 
 export default async function OutreachInboxPage() {
   try {
-    const referrals = await fetchPendingReferrals();
+    const [referrals, connectedAccounts, outreachAttempts] = await Promise.all([
+      fetchPendingReferrals(),
+      fetchConnectedAccounts(),
+      fetchOutreachAttempts({ limit: 30 }),
+    ]);
 
     return (
       <FeaturePageShell
@@ -21,7 +25,11 @@ export default async function OutreachInboxPage() {
         description="Review pending referral requests, mark outcomes quickly, and hand jobs into the application path when referral momentum is weak."
         title="Outreach inbox for pending referral work."
       >
-        <OutreachInboxManager initialReferrals={referrals} />
+        <OutreachInboxManager
+          initialConnectedAccounts={connectedAccounts}
+          initialOutreachAttempts={outreachAttempts}
+          initialReferrals={referrals}
+        />
       </FeaturePageShell>
     );
   } catch (error) {
@@ -40,6 +48,8 @@ export default async function OutreachInboxPage() {
         <FeaturePageErrorState
           checks={[
             "GET /api/referrals/pending returns data.",
+            "GET /api/outreach-attempts returns approval/send audits.",
+            "GET /api/me/connected-accounts returns account options.",
             "There are pending referrals in the seeded or live database.",
             "Use /referrals or watcher-triggered referral jobs to create drafts.",
             "Use npm run dev:stack after pulling the latest changes.",
