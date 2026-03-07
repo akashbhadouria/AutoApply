@@ -12,6 +12,15 @@ This slice stores one application record per normalized job.
 
 `applications` references `jobs.id` and enforces a unique application per job.
 
+`apply_attempts` stores execution-level audit records for the 3-tier engine:
+
+- strategy
+- provider
+- status
+- request and response summaries
+- duration
+- external reference when available
+
 Tracked fields:
 
 - `source_platform`
@@ -45,6 +54,19 @@ Request body:
 }
 ```
 
+### `GET /api/apply-attempts`
+
+Returns recent apply-attempt audit records with optional filters:
+
+- `status`
+- `strategy`
+- `provider`
+- `limit`
+
+### `GET /api/apply-attempts/job/:jobId`
+
+Returns the execution history for one normalized job.
+
 ## UI behavior
 
 The `/applications` page allows the user to:
@@ -53,5 +75,8 @@ The `/applications` page allows the user to:
 - assign or update application status
 - mark the job as applied
 - review current application state in one table
+- inspect which strategy actually ran for recent application attempts
+- filter audit history by status and strategy
+- focus one job and inspect its execution trail
 
 Future automation workers can update the same endpoint after browser-assisted application flows finish.

@@ -132,6 +132,21 @@ export interface Application {
   updatedAt: string;
 }
 
+export interface ApplyAttempt {
+  id: number;
+  jobId: number;
+  strategy: "api" | "http_form" | "browser";
+  provider: string;
+  status: "queued" | "submitted" | "failed" | "unsupported";
+  externalReference: string | null;
+  requestPayload: Record<string, unknown>;
+  responseSummary: Record<string, unknown>;
+  durationMs: number | null;
+  createdAt: string;
+  company: string;
+  title: string;
+}
+
 export interface Contact {
   id: number;
   company: string;
@@ -844,6 +859,51 @@ export async function upsertApplication(body: {
   }
 
   return response.json();
+}
+
+export async function fetchApplyAttempts(input?: {
+  limit?: number;
+  status?: ApplyAttempt["status"];
+  strategy?: ApplyAttempt["strategy"];
+  provider?: string;
+}): Promise<ApplyAttempt[]> {
+  const query = new URLSearchParams();
+  if (input?.limit) {
+    query.set("limit", String(input.limit));
+  }
+  if (input?.status) {
+    query.set("status", input.status);
+  }
+  if (input?.strategy) {
+    query.set("strategy", input.strategy);
+  }
+  if (input?.provider) {
+    query.set("provider", input.provider);
+  }
+
+  const response = await fetch(`${getBackendUrl()}/api/apply-attempts${query.size > 0 ? `?${query.toString()}` : ""}`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load apply attempts");
+  }
+
+  const payload = (await response.json()) as { data: ApplyAttempt[] };
+  return payload.data;
+}
+
+export async function fetchApplyAttemptsByJobId(jobId: number): Promise<ApplyAttempt[]> {
+  const response = await fetch(`${getBackendUrl()}/api/apply-attempts/job/${jobId}`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load apply attempts for job");
+  }
+
+  const payload = (await response.json()) as { data: ApplyAttempt[] };
+  return payload.data;
 }
 
 export async function fetchContacts(): Promise<Contact[]> {
