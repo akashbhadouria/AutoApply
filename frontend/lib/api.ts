@@ -123,9 +123,27 @@ export interface AutomationQueueStats {
   isPaused: boolean;
 }
 
+export interface AutomationQueueRetryPolicy {
+  attempts: number;
+  backoffType: "fixed";
+  backoffDelayMs: number;
+  removeOnComplete: number;
+  removeOnFail: number;
+}
+
+export interface AutomationFailedJobSummary {
+  id: string;
+  name: string;
+  attemptsMade: number;
+  failedReason: string;
+  finishedOn: string | null;
+}
+
 export interface AutomationQueue {
   queueName: "job-scanner" | "referral-engine" | "application-queue" | "browser-automation" | "notifications";
   stats: AutomationQueueStats;
+  retryPolicy: AutomationQueueRetryPolicy;
+  recentFailures: AutomationFailedJobSummary[];
 }
 
 export interface EnqueuedAutomationJob {

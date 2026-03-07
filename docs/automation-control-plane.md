@@ -26,6 +26,8 @@ Returns the registered queue names plus live BullMQ stats:
 - waiting children
 - connected worker count
 - pause state
+- retry policy
+- recent retained failed jobs
 
 ### `POST /api/automation/enqueue`
 
@@ -50,6 +52,8 @@ The `/automation` page is a manual control harness that:
 
 - lists queue names
 - shows queue health and backlog snapshots
+- shows queue retry/backoff policy
+- shows recent failed jobs retained in BullMQ
 - allows custom JSON payloads
 - confirms the enqueued queue and job id
 

@@ -1,4 +1,4 @@
-import { queueRegistry } from "./automation.queue.js";
+import { getQueueJobOptions, queueRetryPolicies, queueRegistry } from "./automation.queue.js";
 import { enqueueAutomationJobSchema } from "./automation.schema.js";
 import type { AutomationQueueSnapshot, EnqueuedAutomationJob } from "./automation.types.js";
 
@@ -13,6 +13,7 @@ export async function getAutomationQueues(): Promise<AutomationQueueSnapshot[]> 
         queue.getWorkersCount(),
         queue.isPaused(),
       ]);
+      const failedJobs = await queue.getFailed(0, 2);
 
       return {
         queueName,
@@ -28,6 +29,14 @@ export async function getAutomationQueues(): Promise<AutomationQueueSnapshot[]> 
           workerCount,
           isPaused,
         },
+        retryPolicy: queueRetryPolicies[queueName],
+        recentFailures: failedJobs.map((job) => ({
+          id: String(job.id),
+          name: job.name,
+          attemptsMade: job.attemptsMade,
+          failedReason: job.failedReason ?? "Unknown failure",
+          finishedOn: job.finishedOn ? new Date(job.finishedOn).toISOString() : null,
+        })),
       } satisfies AutomationQueueSnapshot;
     }),
   );
@@ -36,7 +45,7 @@ export async function getAutomationQueues(): Promise<AutomationQueueSnapshot[]> 
 export async function enqueueAutomationJob(payload: unknown): Promise<EnqueuedAutomationJob> {
   const input = enqueueAutomationJobSchema.parse(payload);
   const queue = queueRegistry[input.queueName];
-  const job = await queue.add(input.queueName, input.payload);
+  const job = await queue.add(input.queueName, input.payload, getQueueJobOptions(input.queueName));
 
   return {
     queueName: input.queueName,

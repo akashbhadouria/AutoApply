@@ -175,9 +175,39 @@ export function AutomationManager({ queues }: { queues: AutomationQueue[] }) {
               <p>Backlog: {selectedQueueSnapshot.stats.waiting + selectedQueueSnapshot.stats.delayed}</p>
               <p>Waiting children: {selectedQueueSnapshot.stats.waitingChildren}</p>
               <p>Prioritized: {selectedQueueSnapshot.stats.prioritized}</p>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Retry policy</p>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-300">
+                  <p>attempts: {selectedQueueSnapshot.retryPolicy.attempts}</p>
+                  <p>backoff: {selectedQueueSnapshot.retryPolicy.backoffDelayMs}ms</p>
+                  <p>remove complete: {selectedQueueSnapshot.retryPolicy.removeOnComplete}</p>
+                  <p>remove fail: {selectedQueueSnapshot.retryPolicy.removeOnFail}</p>
+                </div>
+              </div>
             </div>
           ) : (
             <p className="mt-4 text-sm text-muted">No queue selected.</p>
+          )}
+        </Card>
+
+        <Card className="p-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Recent failed jobs</p>
+          {selectedQueueSnapshot && selectedQueueSnapshot.recentFailures.length > 0 ? (
+            <div className="mt-4 space-y-3">
+              {selectedQueueSnapshot.recentFailures.map((failure) => (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4" key={failure.id}>
+                  <p className="text-sm font-medium text-ink">{failure.name}</p>
+                  <p className="mt-2 text-xs text-slate-300">job id: {failure.id}</p>
+                  <p className="mt-1 text-xs text-slate-300">attempts made: {failure.attemptsMade}</p>
+                  <p className="mt-1 text-xs text-slate-300">{failure.failedReason}</p>
+                  <p className="mt-2 text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                    {failure.finishedOn ? new Date(failure.finishedOn).toLocaleString() : "finish time unavailable"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-muted">No failed jobs retained for the selected queue.</p>
           )}
         </Card>
 

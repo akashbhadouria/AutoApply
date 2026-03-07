@@ -30,7 +30,7 @@ import type {
 } from "./contracts.js";
 import { getConnectionOptions } from "./connection.js";
 import { queueNames } from "./contracts.js";
-import { applicationQueue, browserAutomationQueue } from "./queues.js";
+import { enqueueApplicationQueueJob, enqueueBrowserAutomationJob } from "./queues.js";
 import { scanDiscoveredJobs } from "./scanners.js";
 
 function logWorkerStart(name: string, data: unknown) {
@@ -147,7 +147,7 @@ export function startWorkers() {
           await updateBackendReferralStatus(referral.id, {
             status: "no_response",
           });
-          await applicationQueue.add(queueNames.applicationQueue, {
+          await enqueueApplicationQueueJob({
             jobId: referral.jobId,
             sourcePlatform: referral.jobSourcePlatform,
           });
@@ -285,7 +285,7 @@ export function startWorkers() {
         const retryDelayMs = Math.max(oldestAppliedAt + 60 * 60 * 1000 - Date.now() + 5_000, 60_000);
         const throttledCount = (job.data.throttledCount ?? 0) + 1;
 
-        await applicationQueue.add(queueNames.applicationQueue, {
+        await enqueueApplicationQueueJob({
           ...job.data,
           throttledCount,
         }, {
@@ -326,7 +326,7 @@ export function startWorkers() {
       });
 
       if (nextStatus === "applied") {
-        await browserAutomationQueue.add(queueNames.browserAutomation, {
+        await enqueueBrowserAutomationJob({
           jobId: job.data.jobId,
           formUrl: buildMockApplicationFormUrl(job.data.jobId, job.data.sourcePlatform),
           sourcePlatform: job.data.sourcePlatform,
