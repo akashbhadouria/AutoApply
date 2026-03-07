@@ -45,3 +45,9 @@ export interface EnqueuedAutomationJob {
   queueName: AutomationQueueName;
   jobId: string;
 }
+
+export interface AutomationQueueControlResult {
+  queueName: AutomationQueueName;
+  action: "pause" | "resume";
+  isPaused: boolean;
+}

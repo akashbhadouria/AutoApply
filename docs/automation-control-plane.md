@@ -46,6 +46,14 @@ Example body:
 }
 ```
 
+### `POST /api/automation/queues/:queueName/pause`
+
+Pauses the selected BullMQ queue so new jobs stop being claimed by workers.
+
+### `POST /api/automation/queues/:queueName/resume`
+
+Resumes a previously paused BullMQ queue.
+
 ## UI behavior
 
 The `/automation` page is a manual control harness that:
@@ -54,6 +62,7 @@ The `/automation` page is a manual control harness that:
 - shows queue health and backlog snapshots
 - shows queue retry/backoff policy
 - shows recent failed jobs retained in BullMQ
+- allows operators to pause and resume queues directly
 - allows custom JSON payloads
 - confirms the enqueued queue and job id
 

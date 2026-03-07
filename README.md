@@ -38,5 +38,6 @@ The first implemented feature is the `Profile Manager`, which provides:
 - referral status actions that can automatically hand jobs into the application queue
 - a global runtime-integration banner that shows whether the frontend can currently reach the backend
 - `/health` now reports backend, PostgreSQL, and Redis dependency status instead of only a static ok response
+- the automation control plane can now pause and resume BullMQ queues directly from the UI
 
 See [quickstart.md](/home/akash/AutoApply/quickstart.md) to run the current slice locally.

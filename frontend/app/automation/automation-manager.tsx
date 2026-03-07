@@ -29,6 +29,7 @@ export function AutomationManager({ queues }: { queues: AutomationQueue[] }) {
   const [lastJob, setLastJob] = useState<EnqueuedAutomationJob | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [queueAction, setQueueAction] = useState<AutomationQueue["queueName"] | null>(null);
   const [queueSnapshots, setQueueSnapshots] = useState(queues);
   const hasQueues = queues.length > 0;
   const selectedQueueSnapshot = useMemo(
@@ -77,6 +78,27 @@ export function AutomationManager({ queues }: { queues: AutomationQueue[] }) {
       setError(submissionError instanceof Error ? submissionError.message : "Failed to enqueue job");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleQueueControl(queueName: AutomationQueue["queueName"], action: "pause" | "resume") {
+    setError(null);
+    setQueueAction(queueName);
+
+    try {
+      const response = await fetch(`/api/automation/queues/${queueName}/${action}`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Unable to ${action} queue`);
+      }
+
+      await refreshQueues();
+    } catch (queueError) {
+      setError(queueError instanceof Error ? queueError.message : `Failed to ${action} queue`);
+    } finally {
+      setQueueAction(null);
     }
   }
 
@@ -156,6 +178,26 @@ export function AutomationManager({ queues }: { queues: AutomationQueue[] }) {
                     <p>delayed: {queue.stats.delayed}</p>
                     <p>completed: {queue.stats.completed}</p>
                     <p>workers: {queue.stats.workerCount}</p>
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <Button
+                      className="bg-transparent px-3 text-ink hover:bg-canvas hover:text-ink"
+                      disabled={queueAction === queue.queueName || queue.stats.isPaused}
+                      onClick={() => void handleQueueControl(queue.queueName, "pause")}
+                      type="button"
+                    >
+                      {queueAction === queue.queueName ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+                      Pause
+                    </Button>
+                    <Button
+                      className="bg-transparent px-3 text-ink hover:bg-canvas hover:text-ink"
+                      disabled={queueAction === queue.queueName || !queue.stats.isPaused}
+                      onClick={() => void handleQueueControl(queue.queueName, "resume")}
+                      type="button"
+                    >
+                      {queueAction === queue.queueName ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+                      Resume
+                    </Button>
                   </div>
                 </div>
               ))}

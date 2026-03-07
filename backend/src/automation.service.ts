@@ -1,6 +1,11 @@
 import { getQueueJobOptions, queueRetryPolicies, queueRegistry } from "./automation.queue.js";
 import { enqueueAutomationJobSchema } from "./automation.schema.js";
-import type { AutomationQueueSnapshot, EnqueuedAutomationJob } from "./automation.types.js";
+import type {
+  AutomationQueueControlResult,
+  AutomationQueueName,
+  AutomationQueueSnapshot,
+  EnqueuedAutomationJob,
+} from "./automation.types.js";
 
 export async function getAutomationQueues(): Promise<AutomationQueueSnapshot[]> {
   const queueNames = Object.keys(queueRegistry) as Array<keyof typeof queueRegistry>;
@@ -50,5 +55,27 @@ export async function enqueueAutomationJob(payload: unknown): Promise<EnqueuedAu
   return {
     queueName: input.queueName,
     jobId: String(job.id),
+  };
+}
+
+export async function pauseAutomationQueue(queueName: AutomationQueueName): Promise<AutomationQueueControlResult> {
+  const queue = queueRegistry[queueName];
+  await queue.pause();
+
+  return {
+    queueName,
+    action: "pause",
+    isPaused: await queue.isPaused(),
+  };
+}
+
+export async function resumeAutomationQueue(queueName: AutomationQueueName): Promise<AutomationQueueControlResult> {
+  const queue = queueRegistry[queueName];
+  await queue.resume();
+
+  return {
+    queueName,
+    action: "resume",
+    isPaused: await queue.isPaused(),
   };
 }

@@ -91,6 +91,7 @@ The referrals and field-mappings pages now include backend-powered agent actions
 The job scanner can now consume live company ATS feeds if the workers environment defines `JOB_SOURCE_FEEDS_JSON`. Without that configuration, it falls back to deterministic discovery data so local development stays stable.
 
 The `/automation` page now also shows live queue backlog and worker snapshots from BullMQ, including waiting, active, delayed, failed, connected-worker counts, retry policy, and recent retained failed jobs.
+It now also supports direct queue `Pause` and `Resume` controls for operator testing and incident handling.
 
 The `/operations` page can now re-queue paused ATS sessions directly back into `browser-automation` through a `Resume` action.
 
@@ -169,6 +170,8 @@ The frontend now also shows a global runtime banner so backend connectivity prob
 - `POST /api/agents/notification-summary`
 - `GET /api/automation/queues`
 - `POST /api/automation/enqueue`
+- `POST /api/automation/queues/:queueName/pause`
+- `POST /api/automation/queues/:queueName/resume`
 
 ## Implemented docs
 

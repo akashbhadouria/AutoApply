@@ -8,7 +8,7 @@ import {
   summarizeJobDescription,
   summarizeNotification,
 } from "./agent.service.js";
-import { enqueueAutomationJob, getAutomationQueues } from "./automation.service.js";
+import { enqueueAutomationJob, getAutomationQueues, pauseAutomationQueue, resumeAutomationQueue } from "./automation.service.js";
 import { getContacts, saveContact } from "./contact.service.js";
 import { getEvents, saveEvent } from "./event.service.js";
 import { getFieldMappings, saveFieldMapping } from "./field-mapping.service.js";
@@ -61,6 +61,24 @@ apiRouter.post("/api/automation/enqueue", async (request, response, next) => {
   try {
     const job = await enqueueAutomationJob(request.body);
     response.status(201).json({ data: job });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/automation/queues/:queueName/pause", async (request, response, next) => {
+  try {
+    const result = await pauseAutomationQueue(request.params.queueName as Parameters<typeof pauseAutomationQueue>[0]);
+    response.status(200).json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/automation/queues/:queueName/resume", async (request, response, next) => {
+  try {
+    const result = await resumeAutomationQueue(request.params.queueName as Parameters<typeof resumeAutomationQueue>[0]);
+    response.status(200).json({ data: result });
   } catch (error) {
     next(error);
   }

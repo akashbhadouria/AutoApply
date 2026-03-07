@@ -151,6 +151,12 @@ export interface EnqueuedAutomationJob {
   jobId: string;
 }
 
+export interface AutomationQueueControlResult {
+  queueName: AutomationQueue["queueName"];
+  action: "pause" | "resume";
+  isPaused: boolean;
+}
+
 export interface DashboardMetric {
   label: string;
   value: number;
@@ -851,6 +857,32 @@ export async function enqueueAutomationJob(body: {
   }
 
   return response.json() as Promise<{ data: EnqueuedAutomationJob }>;
+}
+
+export async function pauseAutomationQueue(queueName: string) {
+  const response = await fetch(`${getBackendUrl()}/api/automation/queues/${queueName}/pause`, {
+    method: "POST",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to pause automation queue");
+  }
+
+  return response.json() as Promise<{ data: AutomationQueueControlResult }>;
+}
+
+export async function resumeAutomationQueue(queueName: string) {
+  const response = await fetch(`${getBackendUrl()}/api/automation/queues/${queueName}/resume`, {
+    method: "POST",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to resume automation queue");
+  }
+
+  return response.json() as Promise<{ data: AutomationQueueControlResult }>;
 }
 
 export async function generateReferralDraft(body: {
