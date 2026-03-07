@@ -41,8 +41,9 @@ import type {
 } from "./contracts.js";
 import { getConnectionOptions } from "./connection.js";
 import { queueNames } from "./contracts.js";
+import { env } from "./config.js";
 import { deliverNotification, getNotificationTransportStatus } from "./notification-delivery.js";
-import { enqueueApplicationQueueJob, enqueueBrowserAutomationJob, enqueueReferralEngineJob } from "./queues.js";
+import { enqueueApplicationQueueJob, enqueueBrowserAutomationJob, enqueueJobFeedWatcherJob, enqueueReferralEngineJob } from "./queues.js";
 import { scanDiscoveredJobs } from "./scanners.js";
 
 function logWorkerStart(name: string, data: unknown) {
@@ -205,6 +206,8 @@ function inferFreshness(postedDate: string) {
 
 export function startWorkers() {
   const connection = getConnectionOptions();
+  let watcherSchedulerTimer: NodeJS.Timeout | null = null;
+  let watcherSchedulerRunning = false;
 
   const jobFeedWatcherWorker = new Worker<JobFeedWatcherJobData>(
     queueNames.jobFeedWatcher,
@@ -991,8 +994,71 @@ export function startWorkers() {
     { connection },
   );
 
+  async function scheduleDueWatchers() {
+    if (watcherSchedulerRunning) {
+      return;
+    }
+
+    watcherSchedulerRunning = true;
+    try {
+      const watchersResponse = await fetchBackendJobFeedWatchers();
+      const now = Date.now();
+
+      for (const watcher of watchersResponse.data) {
+        if (watcher.status !== "active") {
+          continue;
+        }
+
+        const lastRunAt = watcher.lastRunAt ? Date.parse(watcher.lastRunAt) : 0;
+        const nextRunAt = lastRunAt + Math.max(watcher.pollingIntervalSeconds, 30) * 1000;
+        if (lastRunAt && nextRunAt > now) {
+          continue;
+        }
+
+        await enqueueJobFeedWatcherJob(
+          {
+            watcherId: watcher.id,
+          },
+          {
+            jobId: `watcher:${watcher.id}`,
+          },
+        );
+        await createBackendEvent({
+          eventType: "job_feed_watcher.scheduled",
+          actor: "watcherScheduler",
+          payload: {
+            watcherId: watcher.id,
+            watcherName: watcher.name,
+            pollingIntervalSeconds: watcher.pollingIntervalSeconds,
+            lastRunAt: watcher.lastRunAt,
+          },
+        });
+      }
+    } catch (error) {
+      await createBackendEvent({
+        eventType: "job_feed_watcher.scheduler_failed",
+        actor: "watcherScheduler",
+        payload: {
+          error: error instanceof Error ? error.message : "Unknown scheduler error",
+        },
+      });
+    } finally {
+      watcherSchedulerRunning = false;
+    }
+  }
+
+  if (env.watcherSchedulerEnabled) {
+    watcherSchedulerTimer = setInterval(() => {
+      void scheduleDueWatchers();
+    }, Math.max(env.watcherSchedulerTickMs, 5_000));
+    void scheduleDueWatchers();
+  }
+
   return {
     async close() {
+      if (watcherSchedulerTimer) {
+        clearInterval(watcherSchedulerTimer);
+      }
       await Promise.all([
         jobFeedWatcherWorker.close(),
         jobScannerWorker.close(),

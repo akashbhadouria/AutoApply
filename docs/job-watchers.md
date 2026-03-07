@@ -10,6 +10,7 @@ The AutoApply V1 watcher slice adds user-level discovery rules and a dedicated w
 - search titles and locations
 - watcher status
 - manual watcher run through the automation queue
+- automatic watcher scheduling inside the workers process
 
 ## Endpoints
 
@@ -25,6 +26,7 @@ The AutoApply V1 watcher slice adds user-level discovery rules and a dedicated w
 
 The `job-feed-watcher` queue now:
 
+- is automatically fed by a scheduler loop when watcher scheduling is enabled
 - loads active watcher records
 - runs discovery for their title/location rules
 - loads the last saved watcher cursor before each sweep
@@ -45,3 +47,12 @@ The `/job-watchers` page lets the operator:
 - run a watcher immediately
 
 This is the bridge between the old scanner prototype and a real near-real-time discovery system.
+
+## Scheduler behavior
+
+When `WATCHER_SCHEDULER_ENABLED=true`, the workers process:
+
+- polls active watchers on a short interval
+- compares `last_run_at` to each watcher's `polling_interval_seconds`
+- enqueues due watchers automatically with deduped job ids
+- writes scheduler events for successful enqueue decisions and scheduler failures

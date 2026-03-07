@@ -64,6 +64,8 @@ export const env = {
   emailWebhookUrl: process.env.EMAIL_WEBHOOK_URL,
   jobSourceFeeds: parseJobSourceFeeds(process.env.JOB_SOURCE_FEEDS_JSON),
   redisUrl: process.env.REDIS_URL ?? "redis://localhost:6379",
+  watcherSchedulerEnabled: process.env.WATCHER_SCHEDULER_ENABLED !== "false",
+  watcherSchedulerTickMs: Number(process.env.WATCHER_SCHEDULER_TICK_MS ?? 15_000),
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
   telegramChatId: process.env.TELEGRAM_CHAT_ID,
   whatsappWebhookUrl: process.env.WHATSAPP_WEBHOOK_URL,
