@@ -4,6 +4,7 @@ export const queueNames = {
   referralEngine: "referral-engine",
   applicationQueue: "application-queue",
   browserAutomation: "browser-automation",
+  outreachExecution: "outreach-execution",
   notifications: "notifications",
 } as const;
 
@@ -39,4 +40,8 @@ export interface BrowserAutomationJobData {
 
 export interface NotificationJobData {
   notificationId: number;
+}
+
+export interface OutreachExecutionJobData {
+  outreachAttemptId: number;
 }

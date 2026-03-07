@@ -325,6 +325,94 @@ export async function updateBackendNotificationStatus(
   });
 }
 
+export async function fetchBackendOutreachAttemptById(outreachAttemptId: number) {
+  const response = await fetch(`${env.backendUrl}/api/outreach-attempts/${outreachAttemptId}`);
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`Backend request failed: ${response.status} /api/outreach-attempts/${outreachAttemptId}`);
+  }
+
+  return response.json() as Promise<{
+    data: {
+      id: number;
+      referralId: number;
+      connectedAccountId: number | null;
+      channel: "linkedin" | "email" | "telegram" | "whatsapp";
+      approvalStatus: "pending_approval" | "approved" | "rejected" | "not_required";
+      executionStatus: "drafted" | "queued" | "sent" | "failed" | "cancelled";
+      messageSubject: string | null;
+      messageBody: string;
+      externalReference: string | null;
+      errorMessage: string | null;
+      requestedAt: string;
+      approvedAt: string | null;
+      sentAt: string | null;
+      company: string;
+      jobTitle: string;
+      contactName: string;
+      contactRole: string;
+      connectedAccountLabel: string | null;
+      connectedAccountProvider: "linkedin" | "gmail" | "outlook" | "telegram" | "whatsapp" | null;
+    };
+  }>;
+}
+
+export async function fetchBackendOutreachAttempts(input?: {
+  limit?: number;
+  approvalStatus?: "pending_approval" | "approved" | "rejected" | "not_required";
+  executionStatus?: "drafted" | "queued" | "sent" | "failed" | "cancelled";
+  channel?: "linkedin" | "email" | "telegram" | "whatsapp";
+}) {
+  const params = new URLSearchParams();
+  if (input?.limit) params.set("limit", String(input.limit));
+  if (input?.approvalStatus) params.set("approvalStatus", input.approvalStatus);
+  if (input?.executionStatus) params.set("executionStatus", input.executionStatus);
+  if (input?.channel) params.set("channel", input.channel);
+
+  return request<{
+    data: Array<{
+      id: number;
+      referralId: number;
+      connectedAccountId: number | null;
+      channel: "linkedin" | "email" | "telegram" | "whatsapp";
+      approvalStatus: "pending_approval" | "approved" | "rejected" | "not_required";
+      executionStatus: "drafted" | "queued" | "sent" | "failed" | "cancelled";
+      messageSubject: string | null;
+      messageBody: string;
+      externalReference: string | null;
+      errorMessage: string | null;
+      requestedAt: string;
+      approvedAt: string | null;
+      sentAt: string | null;
+      company: string;
+      jobTitle: string;
+      contactName: string;
+      contactRole: string;
+      connectedAccountLabel: string | null;
+      connectedAccountProvider: "linkedin" | "gmail" | "outlook" | "telegram" | "whatsapp" | null;
+    }>;
+  }>(`/api/outreach-attempts${params.size > 0 ? `?${params.toString()}` : ""}`);
+}
+
+export async function updateBackendOutreachAttemptStatus(
+  outreachAttemptId: number,
+  body: {
+    executionStatus: "drafted" | "queued" | "sent" | "failed" | "cancelled";
+    externalReference?: string;
+    errorMessage?: string;
+    sentAt?: string;
+  },
+) {
+  return request<{ data: { id: number } }>(`/api/outreach-attempts/${outreachAttemptId}/status`, {
+    method: "PUT",
+    body,
+  });
+}
+
 export async function createBackendApplicationSession(body: {
   jobId: number;
   formUrl: string;

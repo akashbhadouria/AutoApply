@@ -8,6 +8,7 @@ import {
 } from "./outreach-attempt.schema.js";
 import {
   createOutreachAttempt,
+  getOutreachAttemptById,
   listOutreachAttempts,
   listOutreachAttemptsByReferralId,
   updateOutreachAttemptApproval,
@@ -27,6 +28,11 @@ export async function getOutreachAttempts(payload: unknown) {
 export async function getOutreachAttemptsByReferralId(referralId: string) {
   const normalizedReferralId = z.coerce.number().int().positive().parse(referralId);
   return listOutreachAttemptsByReferralId(normalizedReferralId);
+}
+
+export async function getOutreachAttempt(outreachAttemptId: string) {
+  const normalizedOutreachAttemptId = z.coerce.number().int().positive().parse(outreachAttemptId);
+  return getOutreachAttemptById(normalizedOutreachAttemptId);
 }
 
 export async function changeOutreachAttemptApproval(outreachAttemptId: string, payload: unknown) {

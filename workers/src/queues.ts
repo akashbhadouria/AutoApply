@@ -2,7 +2,7 @@ import type { JobsOptions } from "bullmq";
 import { Queue } from "bullmq";
 
 import { getConnectionOptions } from "./connection.js";
-import { queueNames, type ApplicationQueueJobData, type JobFeedWatcherJobData, type NotificationJobData } from "./contracts.js";
+import { queueNames, type ApplicationQueueJobData, type JobFeedWatcherJobData, type NotificationJobData, type OutreachExecutionJobData } from "./contracts.js";
 
 const connection = getConnectionOptions();
 
@@ -12,6 +12,7 @@ const queueRetryPolicies = {
   [queueNames.referralEngine]: { attempts: 3, backoffDelayMs: 15_000, removeOnComplete: 100, removeOnFail: 50 },
   [queueNames.applicationQueue]: { attempts: 4, backoffDelayMs: 30_000, removeOnComplete: 200, removeOnFail: 100 },
   [queueNames.browserAutomation]: { attempts: 4, backoffDelayMs: 45_000, removeOnComplete: 200, removeOnFail: 100 },
+  [queueNames.outreachExecution]: { attempts: 3, backoffDelayMs: 20_000, removeOnComplete: 150, removeOnFail: 75 },
   [queueNames.notifications]: { attempts: 3, backoffDelayMs: 20_000, removeOnComplete: 150, removeOnFail: 75 },
 } as const;
 
@@ -50,6 +51,7 @@ export const jobFeedWatcherQueue = createQueue(queueNames.jobFeedWatcher);
 export const referralEngineQueue = createQueue(queueNames.referralEngine);
 export const applicationQueue = createQueue(queueNames.applicationQueue);
 export const browserAutomationQueue = createQueue(queueNames.browserAutomation);
+export const outreachExecutionQueue = createQueue(queueNames.outreachExecution);
 export const notificationsQueue = createQueue(queueNames.notifications);
 
 export async function enqueueApplicationQueueJob(data: ApplicationQueueJobData, overrides?: Partial<JobsOptions>) {
@@ -91,6 +93,14 @@ export async function enqueueNotificationJob(data: NotificationJobData, override
   return notificationsQueue.add(queueNames.notifications, data, getQueueJobOptions(queueNames.notifications, overrides));
 }
 
+export async function enqueueOutreachExecutionJob(data: OutreachExecutionJobData, overrides?: Partial<JobsOptions>) {
+  return outreachExecutionQueue.add(
+    queueNames.outreachExecution,
+    data,
+    getQueueJobOptions(queueNames.outreachExecution, overrides),
+  );
+}
+
 export async function closeQueues() {
   await Promise.all([
     jobFeedWatcherQueue.close(),
@@ -98,6 +108,7 @@ export async function closeQueues() {
     referralEngineQueue.close(),
     applicationQueue.close(),
     browserAutomationQueue.close(),
+    outreachExecutionQueue.close(),
     notificationsQueue.close(),
   ]);
 }

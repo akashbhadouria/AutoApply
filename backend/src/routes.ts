@@ -36,6 +36,7 @@ import { getFreshJobs, getJobById, getJobs, ingestDiscoveredJob, ingestDiscovere
 import { changeNotificationStatus, getNotificationById, getNotifications, saveNotification } from "./notification.service.js";
 import {
   changeOutreachAttemptApproval,
+  getOutreachAttempt,
   changeOutreachAttemptStatus,
   getOutreachAttempts,
   getOutreachAttemptsByReferralId,
@@ -545,6 +546,15 @@ apiRouter.get("/api/outreach-attempts/referral/:referralId", async (request, res
   try {
     const attempts = await getOutreachAttemptsByReferralId(request.params.referralId);
     response.json({ data: attempts });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/outreach-attempts/:id", async (request, response, next) => {
+  try {
+    const attempt = await getOutreachAttempt(request.params.id);
+    response.status(attempt ? 200 : 404).json(attempt ? { data: attempt } : { error: "Not found" });
   } catch (error) {
     next(error);
   }

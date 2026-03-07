@@ -46,6 +46,21 @@ Example body:
 }
 ```
 
+The control plane now also supports:
+
+- `outreach-execution`
+
+with payload:
+
+```json
+{
+  "queueName": "outreach-execution",
+  "payload": {
+    "outreachAttemptId": 12
+  }
+}
+```
+
 ### `POST /api/automation/queues/:queueName/pause`
 
 Pauses the selected BullMQ queue so new jobs stop being claimed by workers.
@@ -65,6 +80,8 @@ The `/automation` page is a manual control harness that:
 - allows operators to pause and resume queues directly
 - allows custom JSON payloads
 - confirms the enqueued queue and job id
+
+This now includes manual control for the outreach execution runtime as well, which is useful for approval-driven send testing.
 
 This is the first operational bridge between the dashboard and the worker runtime.
 

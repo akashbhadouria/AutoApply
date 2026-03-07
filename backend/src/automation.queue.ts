@@ -10,6 +10,7 @@ export const automationQueueNames = {
   referralEngine: "referral-engine",
   applicationQueue: "application-queue",
   browserAutomation: "browser-automation",
+  outreachExecution: "outreach-execution",
   notifications: "notifications",
 } as const;
 
@@ -57,6 +58,13 @@ export const queueRetryPolicies: Record<AutomationQueueName, AutomationQueueRetr
     removeOnComplete: 200,
     removeOnFail: 100,
   },
+  "outreach-execution": {
+    attempts: 3,
+    backoffType: "fixed",
+    backoffDelayMs: 20_000,
+    removeOnComplete: 150,
+    removeOnFail: 75,
+  },
   notifications: {
     attempts: 3,
     backoffType: "fixed",
@@ -102,5 +110,6 @@ export const queueRegistry = {
   [automationQueueNames.referralEngine]: createQueue(automationQueueNames.referralEngine),
   [automationQueueNames.applicationQueue]: createQueue(automationQueueNames.applicationQueue),
   [automationQueueNames.browserAutomation]: createQueue(automationQueueNames.browserAutomation),
+  [automationQueueNames.outreachExecution]: createQueue(automationQueueNames.outreachExecution),
   [automationQueueNames.notifications]: createQueue(automationQueueNames.notifications),
 };

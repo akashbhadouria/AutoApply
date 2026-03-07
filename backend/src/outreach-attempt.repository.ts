@@ -136,6 +136,11 @@ export async function listOutreachAttemptsByReferralId(referralId: number): Prom
   return result.rows.map(mapOutreachAttemptListRow);
 }
 
+export async function getOutreachAttemptById(outreachAttemptId: number): Promise<OutreachAttemptListRecord | null> {
+  const result = await pool.query(`${outreachAttemptSelect} WHERE outreach_attempts.id = $1`, [outreachAttemptId]);
+  return result.rows[0] ? mapOutreachAttemptListRow(result.rows[0]) : null;
+}
+
 export async function updateOutreachAttemptApproval(
   outreachAttemptId: number,
   input: UpdateOutreachAttemptApprovalInput,

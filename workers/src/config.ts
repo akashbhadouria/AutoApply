@@ -68,6 +68,8 @@ export const env = {
   jobSourceFeeds: parseJobSourceFeeds(process.env.JOB_SOURCE_FEEDS_JSON),
   notificationSchedulerEnabled: process.env.NOTIFICATION_SCHEDULER_ENABLED !== "false",
   notificationSchedulerTickMs: Number(process.env.NOTIFICATION_SCHEDULER_TICK_MS ?? 20_000),
+  outreachSchedulerEnabled: process.env.OUTREACH_SCHEDULER_ENABLED !== "false",
+  outreachSchedulerTickMs: Number(process.env.OUTREACH_SCHEDULER_TICK_MS ?? 20_000),
   resumeSessionSchedulerEnabled: process.env.RESUME_SESSION_SCHEDULER_ENABLED !== "false",
   resumeSessionSchedulerTickMs: Number(process.env.RESUME_SESSION_SCHEDULER_TICK_MS ?? 30_000),
   referralTimeoutSchedulerEnabled: process.env.REFERRAL_TIMEOUT_SCHEDULER_ENABLED !== "false",

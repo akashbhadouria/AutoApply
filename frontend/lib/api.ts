@@ -276,7 +276,14 @@ export interface AutomationFailedJobSummary {
 }
 
 export interface AutomationQueue {
-  queueName: "job-feed-watcher" | "job-scanner" | "referral-engine" | "application-queue" | "browser-automation" | "notifications";
+  queueName:
+    | "job-feed-watcher"
+    | "job-scanner"
+    | "referral-engine"
+    | "application-queue"
+    | "browser-automation"
+    | "outreach-execution"
+    | "notifications";
   stats: AutomationQueueStats;
   retryPolicy: AutomationQueueRetryPolicy;
   recentFailures: AutomationFailedJobSummary[];

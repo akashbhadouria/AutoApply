@@ -18,6 +18,8 @@ import {
   fetchBackendJobFeedWatchers,
   fetchBackendNotificationById,
   fetchBackendNotifications,
+  fetchBackendOutreachAttemptById,
+  fetchBackendOutreachAttempts,
   fetchBackendProfileFields,
   fetchBackendReferralsByJobId,
   fetchBackendSettings,
@@ -28,6 +30,7 @@ import {
   saveBackendFieldMapping,
   saveBackendReferral,
   updateBackendJobFeedWatcherStatus,
+  updateBackendOutreachAttemptStatus,
   updateBackendReferralStatus,
   updateBackendNotificationStatus,
 } from "./backend.js";
@@ -39,17 +42,20 @@ import type {
   JobDiscoveryJobData,
   JobFeedWatcherJobData,
   NotificationJobData,
+  OutreachExecutionJobData,
   ReferralJobData,
 } from "./contracts.js";
 import { getConnectionOptions } from "./connection.js";
 import { queueNames } from "./contracts.js";
 import { env } from "./config.js";
 import { deliverNotification, getNotificationTransportStatus } from "./notification-delivery.js";
+import { deliverOutreachAttempt, getOutreachTransportStatus } from "./outreach-delivery.js";
 import {
   enqueueApplicationQueueJob,
   enqueueBrowserAutomationJob,
   enqueueJobFeedWatcherJob,
   enqueueNotificationJob,
+  enqueueOutreachExecutionJob,
   enqueueReferralEngineJob,
 } from "./queues.js";
 import { scanDiscoveredJobs } from "./scanners.js";
@@ -216,6 +222,8 @@ export function startWorkers() {
   const connection = getConnectionOptions();
   let notificationSchedulerTimer: NodeJS.Timeout | null = null;
   let notificationSchedulerRunning = false;
+  let outreachSchedulerTimer: NodeJS.Timeout | null = null;
+  let outreachSchedulerRunning = false;
   let referralTimeoutSchedulerTimer: NodeJS.Timeout | null = null;
   let referralTimeoutSchedulerRunning = false;
   let resumeSessionSchedulerTimer: NodeJS.Timeout | null = null;
@@ -1008,6 +1016,148 @@ export function startWorkers() {
     { connection },
   );
 
+  const outreachExecutionWorker = new Worker<OutreachExecutionJobData>(
+    queueNames.outreachExecution,
+    async (job) => {
+      logWorkerStart(queueNames.outreachExecution, job.data);
+      const outreachAttemptResponse = await fetchBackendOutreachAttemptById(job.data.outreachAttemptId);
+
+      if (!outreachAttemptResponse) {
+        await createBackendEvent({
+          eventType: "outreach_execution.missing",
+          actor: "outreachExecutionWorker",
+          payload: {
+            outreachAttemptId: job.data.outreachAttemptId,
+          },
+        });
+        return;
+      }
+
+      const attempt = outreachAttemptResponse.data;
+
+      if (attempt.executionStatus === "sent" || attempt.executionStatus === "cancelled") {
+        await createBackendEvent({
+          eventType: "outreach_execution.skipped_already_processed",
+          actor: "outreachExecutionWorker",
+          payload: {
+            outreachAttemptId: attempt.id,
+            executionStatus: attempt.executionStatus,
+          },
+        });
+        return;
+      }
+
+      if (attempt.approvalStatus === "pending_approval" || attempt.approvalStatus === "rejected") {
+        await createBackendEvent({
+          eventType: "outreach_execution.skipped_unapproved",
+          actor: "outreachExecutionWorker",
+          payload: {
+            outreachAttemptId: attempt.id,
+            approvalStatus: attempt.approvalStatus,
+          },
+        });
+        return;
+      }
+
+      const transportStatus = getOutreachTransportStatus(attempt.channel);
+
+      if (attempt.channel === "linkedin") {
+        await updateBackendOutreachAttemptStatus(attempt.id, {
+          executionStatus: "queued",
+        });
+        await createBackendNotification({
+          type: "outreach_manual_review",
+          title: "LinkedIn outreach ready for manual send",
+          message: `${attempt.contactName} at ${attempt.company} is approved. Review and send the LinkedIn message manually from the outreach inbox.`,
+          channel: "dashboard",
+          status: "pending",
+          relatedReferralId: attempt.referralId,
+        });
+        await createBackendEvent({
+          eventType: "outreach_execution.manual_review_required",
+          actor: "outreachExecutionWorker",
+          payload: {
+            outreachAttemptId: attempt.id,
+            channel: attempt.channel,
+            transport: transportStatus.transport,
+          },
+        });
+        return;
+      }
+
+      if (!transportStatus.configured) {
+        await updateBackendOutreachAttemptStatus(attempt.id, {
+          executionStatus: "failed",
+          errorMessage: "transport_unconfigured",
+        });
+        await createBackendEvent({
+          eventType: "outreach_execution.blocked",
+          actor: "outreachExecutionWorker",
+          payload: {
+            outreachAttemptId: attempt.id,
+            channel: attempt.channel,
+            reason: "transport_unconfigured",
+            transport: transportStatus.transport,
+          },
+        });
+        return;
+      }
+
+      try {
+        const delivery = await deliverOutreachAttempt(attempt);
+        await updateBackendOutreachAttemptStatus(attempt.id, {
+          executionStatus: "sent",
+          externalReference: delivery.externalReference,
+          sentAt: new Date().toISOString(),
+        });
+        await createBackendNotification({
+          type: "outreach_sent",
+          title: "Outreach attempt sent",
+          message: `${attempt.channel} outreach for ${attempt.contactName} at ${attempt.company} was delivered through ${delivery.transport}.`,
+          channel: "dashboard",
+          status: "pending",
+          relatedReferralId: attempt.referralId,
+        });
+        await createBackendEvent({
+          eventType: "outreach_execution.sent",
+          actor: "outreachExecutionWorker",
+          payload: {
+            outreachAttemptId: attempt.id,
+            channel: attempt.channel,
+            transport: delivery.transport,
+            mode: delivery.mode,
+            externalReference: delivery.externalReference ?? null,
+          },
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown outreach delivery error";
+        await updateBackendOutreachAttemptStatus(attempt.id, {
+          executionStatus: "failed",
+          errorMessage: message,
+        });
+        await createBackendNotification({
+          type: "outreach_failed",
+          title: "Outreach delivery failed",
+          message: `${attempt.channel} outreach for ${attempt.contactName} at ${attempt.company} failed. ${message}`,
+          channel: "dashboard",
+          status: "pending",
+          relatedReferralId: attempt.referralId,
+        });
+        await createBackendEvent({
+          eventType: "outreach_execution.failed",
+          actor: "outreachExecutionWorker",
+          payload: {
+            outreachAttemptId: attempt.id,
+            channel: attempt.channel,
+            transport: transportStatus.transport,
+            error: message,
+          },
+        });
+      }
+    },
+    { connection },
+  );
+
   async function scheduleDueWatchers() {
     if (watcherSchedulerRunning) {
       return;
@@ -1101,6 +1251,85 @@ export function startWorkers() {
       });
     } finally {
       notificationSchedulerRunning = false;
+    }
+  }
+
+  async function scheduleApprovedOutreach() {
+    if (outreachSchedulerRunning) {
+      return;
+    }
+
+    outreachSchedulerRunning = true;
+    try {
+      const [approvedDraftedResponse, notRequiredDraftedResponse, approvedQueuedResponse, notRequiredQueuedResponse] =
+        await Promise.all([
+        fetchBackendOutreachAttempts({
+          limit: 100,
+          approvalStatus: "approved",
+          executionStatus: "drafted",
+        }),
+        fetchBackendOutreachAttempts({
+          limit: 100,
+          approvalStatus: "not_required",
+          executionStatus: "drafted",
+        }),
+        fetchBackendOutreachAttempts({
+          limit: 100,
+          approvalStatus: "approved",
+          executionStatus: "queued",
+        }),
+        fetchBackendOutreachAttempts({
+          limit: 100,
+          approvalStatus: "not_required",
+          executionStatus: "queued",
+        }),
+        ]);
+
+      const queued = new Set<number>();
+      const attempts = [
+        ...approvedDraftedResponse.data,
+        ...notRequiredDraftedResponse.data,
+        ...approvedQueuedResponse.data,
+        ...notRequiredQueuedResponse.data,
+      ].filter((attempt) => {
+        if (queued.has(attempt.id)) {
+          return false;
+        }
+        queued.add(attempt.id);
+        return true;
+      });
+
+      for (const attempt of attempts) {
+        await enqueueOutreachExecutionJob(
+          {
+            outreachAttemptId: attempt.id,
+          },
+          {
+            jobId: `outreach:${attempt.id}`,
+          },
+        );
+      }
+
+      if (attempts.length > 0) {
+        await createBackendEvent({
+          eventType: "outreach_scheduler.enqueued",
+          actor: "outreachScheduler",
+          payload: {
+            queuedCount: attempts.length,
+            outreachAttemptIds: attempts.map((attempt) => attempt.id),
+          },
+        });
+      }
+    } catch (error) {
+      await createBackendEvent({
+        eventType: "outreach_scheduler.failed",
+        actor: "outreachScheduler",
+        payload: {
+          error: error instanceof Error ? error.message : "Unknown outreach scheduler error",
+        },
+      });
+    } finally {
+      outreachSchedulerRunning = false;
     }
   }
 
@@ -1204,6 +1433,13 @@ export function startWorkers() {
     void schedulePendingNotifications();
   }
 
+  if (env.outreachSchedulerEnabled) {
+    outreachSchedulerTimer = setInterval(() => {
+      void scheduleApprovedOutreach();
+    }, Math.max(env.outreachSchedulerTickMs, 5_000));
+    void scheduleApprovedOutreach();
+  }
+
   if (env.referralTimeoutSchedulerEnabled) {
     referralTimeoutSchedulerTimer = setInterval(() => {
       void scheduleReferralTimeoutSweep();
@@ -1223,6 +1459,9 @@ export function startWorkers() {
       if (notificationSchedulerTimer) {
         clearInterval(notificationSchedulerTimer);
       }
+      if (outreachSchedulerTimer) {
+        clearInterval(outreachSchedulerTimer);
+      }
       if (referralTimeoutSchedulerTimer) {
         clearInterval(referralTimeoutSchedulerTimer);
       }
@@ -1238,6 +1477,7 @@ export function startWorkers() {
         referralEngineWorker.close(),
         applicationQueueWorker.close(),
         browserAutomationWorker.close(),
+        outreachExecutionWorker.close(),
         notificationWorker.close(),
       ]);
     },

@@ -6,6 +6,7 @@ export const automationQueueNameSchema = z.enum([
   "referral-engine",
   "application-queue",
   "browser-automation",
+  "outreach-execution",
   "notifications",
 ]);
 

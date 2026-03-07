@@ -4,6 +4,7 @@ export type AutomationQueueName =
   | "referral-engine"
   | "application-queue"
   | "browser-automation"
+  | "outreach-execution"
   | "notifications";
 
 export interface AutomationQueueStats {

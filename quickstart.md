@@ -112,6 +112,7 @@ Fresh watcher-discovered jobs now trigger downstream work automatically: referra
 Watcher sweeps now also persist `job_feed_cursors` and `job_discovery_events`, so discovery state survives worker restarts and recent watcher activity can be audited.
 Workers can also auto-enqueue due watchers using `WATCHER_SCHEDULER_ENABLED` and `WATCHER_SCHEDULER_TICK_MS`.
 The workers process can also auto-enqueue referral timeout sweeps and pending notifications using `REFERRAL_TIMEOUT_SCHEDULER_ENABLED`, `REFERRAL_TIMEOUT_SCHEDULER_TICK_MS`, `NOTIFICATION_SCHEDULER_ENABLED`, and `NOTIFICATION_SCHEDULER_TICK_MS`.
+Approved outreach attempts can now also auto-flow into the new outreach execution worker using `OUTREACH_SCHEDULER_ENABLED` and `OUTREACH_SCHEDULER_TICK_MS`.
 It can also auto-resume saved ATS sessions using `RESUME_SESSION_SCHEDULER_ENABLED` and `RESUME_SESSION_SCHEDULER_TICK_MS`.
 
 The `/automation` page now also shows live queue backlog and worker snapshots from BullMQ, including waiting, active, delayed, failed, connected-worker counts, retry policy, and recent retained failed jobs.
@@ -130,6 +131,14 @@ The notification worker can now perform optional live delivery for:
 - Telegram via `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`
 - email via `EMAIL_WEBHOOK_URL`
 - WhatsApp via `WHATSAPP_WEBHOOK_URL`
+
+The outreach execution worker reuses the same delivery configuration for:
+
+- Telegram via `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`
+- email via `EMAIL_WEBHOOK_URL`
+- WhatsApp via `WHATSAPP_WEBHOOK_URL`
+
+LinkedIn outreach remains manual-only for now and is converted into a dashboard review task instead of being auto-sent.
 
 The `/referrals` page now supports direct status actions. Marking a referral as `replied` or `no_response` will automatically queue that job into `application-queue`.
 
@@ -215,6 +224,7 @@ The frontend now also shows a global runtime banner so backend connectivity prob
 - `PUT /api/referrals/:id/status`
 - `GET /api/outreach-attempts`
 - `GET /api/outreach-attempts/referral/:referralId`
+- `GET /api/outreach-attempts/:id`
 - `POST /api/outreach-attempts`
 - `PUT /api/outreach-attempts/:id/approval`
 - `PUT /api/outreach-attempts/:id/status`

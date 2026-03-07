@@ -18,6 +18,7 @@ The first implemented feature is the `Profile Manager`, which provides:
 - AutoApply V1 onboarding for the current user and targeting preferences
 - connected accounts for outreach-capable providers
 - approval-ready outreach attempt auditing linked to referrals and connected accounts
+- an outreach execution worker for approved email/Telegram/WhatsApp sends, with LinkedIn kept in manual-review mode
 - job watchers for per-user discovery rules and near-real-time watcher runs
 - persistent watcher cursors and discovery-event audit history for restart-safe job watching
 - focused watcher activity and recent discovery APIs for operator-grade redesign work
