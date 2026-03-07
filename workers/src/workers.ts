@@ -103,9 +103,9 @@ export function startWorkers() {
     queueNames.jobScanner,
     async (job) => {
       logWorkerStart(queueNames.jobScanner, job.data);
-      const discoveredJobs = scanDiscoveredJobs(job.data);
+      const scannerRun = await scanDiscoveredJobs(job.data);
       const batchResult = await discoverBackendJobsBatch({
-        jobs: discoveredJobs,
+        jobs: scannerRun.jobs,
       });
       await createBackendEvent({
         eventType: "job_scanner.run_requested",
@@ -115,12 +115,18 @@ export function startWorkers() {
           locations: job.data.locations,
           recencyDays: job.data.recencyDays,
           discoveredCount: batchResult.data.length,
+          scannerSources: scannerRun.sources,
         },
       });
+      const liveSourceCount = scannerRun.sources.filter((source) => source.mode === "live").length;
+      const liveErrorCount = scannerRun.sources.filter((source) => source.mode === "live" && source.error).length;
       await createBackendNotification({
         type: "job_scanner_requested",
         title: "Job scanner completed",
-        message: `Discovered ${batchResult.data.length} normalized jobs for ${job.data.searchTitles.length} titles across ${job.data.locations.length} locations.`,
+        message:
+          liveSourceCount === 0
+            ? `Discovered ${batchResult.data.length} normalized jobs using fallback scanner data for ${job.data.searchTitles.length} titles across ${job.data.locations.length} locations.`
+            : `Discovered ${batchResult.data.length} normalized jobs from ${liveSourceCount} configured live feed(s)${liveErrorCount > 0 ? ` with ${liveErrorCount} feed error(s)` : ""}.`,
         channel: "dashboard",
         status: "delivered",
       });

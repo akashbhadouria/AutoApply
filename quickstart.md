@@ -88,6 +88,8 @@ The referrals and field-mappings pages now include backend-powered agent actions
 - `Summarize job description` on `/jobs`
 - `Summarize notification` on `/notifications`
 
+The job scanner can now consume live company ATS feeds if the workers environment defines `JOB_SOURCE_FEEDS_JSON`. Without that configuration, it falls back to deterministic discovery data so local development stays stable.
+
 To inspect the current applied-application count in the active rate window:
 
 ```bash

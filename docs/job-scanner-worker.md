@@ -1,34 +1,64 @@
 # Job Scanner Worker
 
-`jobScannerWorker` now performs the first real queue-driven backend mutation.
+`jobScannerWorker` now supports configurable live feed ingestion while preserving deterministic fallback behavior.
 
 ## Current behavior
 
 When a `job-scanner` job is enqueued, the worker:
 
-1. expands the requested titles and locations into source-specific discoveries
-2. generates deterministic discovery payloads for multiple source platforms
-3. sends them to the backend batch discovery endpoint
-4. writes an event audit record
-5. creates a dashboard notification summarizing the run
+1. reads configured live source feeds from `JOB_SOURCE_FEEDS_JSON`
+2. fetches Greenhouse, Lever, or generic JSON feeds when configured
+3. filters results by requested titles, locations, and recency window
+4. falls back to deterministic discoveries if no live jobs are found
+5. sends discoveries to the backend batch discovery endpoint
+6. writes an event audit record with source-level stats
+7. creates a dashboard notification summarizing the run
 
-## Why deterministic adapters for now
+## Live feed configuration
 
-The current implementation is an integration-safe bridge between:
+Set `JOB_SOURCE_FEEDS_JSON` in [workers/.env.example](/home/akash/AutoApply/workers/.env.example) as a JSON array:
+
+```json
+[
+  {
+    "name": "acme-greenhouse",
+    "provider": "greenhouse",
+    "platform": "company_site",
+    "url": "https://boards-api.greenhouse.io/v1/boards/acme/jobs"
+  },
+  {
+    "name": "acme-lever",
+    "provider": "lever",
+    "platform": "company_site",
+    "url": "https://api.lever.co/v0/postings/acme?mode=json"
+  }
+]
+```
+
+Supported providers:
+
+- `greenhouse`
+- `lever`
+- `generic_json`
+
+## Why fallback still exists
+
+The current implementation is intentionally resilient between:
 
 - queue orchestration
 - normalized jobs ingestion
 - event and notification side effects
+- live feed usage in environments where some feeds may be unavailable
 
-It does not pretend to scrape live sites yet.
+It still does not scrape LinkedIn, Instahyre, Hirist, or Naukri directly. Those platforms will need dedicated adapters later.
 
 That is deliberate because:
 
 - the repo now has stable worker and backend contracts
-- scanner logic can be replaced source by source later
+- company ATS feeds can be integrated immediately without browser scraping
+- scanner logic can still be replaced source by source later
 - the rest of the platform can already be built against real queue-driven ingestion
 
 ## Next step
 
-Replace the deterministic source adapters with Playwright or API-backed scanners per platform while preserving the existing job payload and batch ingest contract.
-
+Add dedicated platform adapters for LinkedIn, Instahyre, Hirist, and Naukri while preserving the existing job payload and batch ingest contract.
