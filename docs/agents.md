@@ -28,5 +28,7 @@ Current UI usage:
 
 - [referrals page](/home/akash/AutoApply/frontend/app/referrals/page.tsx) can generate outreach drafts directly into the referral form
 - [field mappings page](/home/akash/AutoApply/frontend/app/field-mappings/page.tsx) can generate and review mapping suggestions before saving them
+- [jobs page](/home/akash/AutoApply/frontend/app/jobs/page.tsx) can summarize pasted job descriptions into a short fit brief
+- [notifications page](/home/akash/AutoApply/frontend/app/notifications/page.tsx) can summarize the current notification draft into an operational action summary
 
 This is intentionally provider-agnostic. Replacing the deterministic provider with a real OpenClaw execution path should only require changes inside the backend agent service layer.

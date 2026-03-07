@@ -29,5 +29,6 @@ The first implemented feature is the `Profile Manager`, which provides:
 - backend queue producer APIs and a manual automation control plane
 - Playwright-backed browser analysis and persistent field mapping storage
 - backend-powered agent endpoints and UI flows for referral drafts and ATS field mapping suggestions
+- agent-assisted job-description and notification summarization directly in the dashboard UI
 
 See [quickstart.md](/home/akash/AutoApply/quickstart.md) to run the current slice locally.

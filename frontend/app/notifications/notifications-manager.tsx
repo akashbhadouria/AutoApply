@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/table";
-import type { Job, Notification } from "@/lib/api";
+import type { Job, Notification, NotificationSummaryResult } from "@/lib/api";
 
 interface NotificationFormState {
   type: string;
@@ -38,6 +38,8 @@ export function NotificationsManager({
   const [form, setForm] = useState<NotificationFormState>(emptyForm);
   const [isSaving, setIsSaving] = useState(false);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [summaryResult, setSummaryResult] = useState<NotificationSummaryResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [channelFilter, setChannelFilter] = useState<Notification["channel"] | "all">("all");
   const [statusFilter, setStatusFilter] = useState<Notification["status"] | "all">("all");
@@ -124,6 +126,35 @@ export function NotificationsManager({
     }
   }
 
+  async function handleSummarizeDraft() {
+    setError(null);
+    setIsSummarizing(true);
+
+    try {
+      const response = await fetch("/api/agents/notification-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: form.type,
+          title: form.title,
+          message: form.message,
+          channel: form.channel,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Unable to summarize notification");
+      }
+
+      const payload = (await response.json()) as { data: NotificationSummaryResult };
+      setSummaryResult(payload.data);
+    } catch (summaryError) {
+      setError(summaryError instanceof Error ? summaryError.message : "Failed to summarize notification");
+    } finally {
+      setIsSummarizing(false);
+    }
+  }
+
   useEffect(() => {
     setNotifications(initialNotifications);
   }, [initialNotifications]);
@@ -184,6 +215,10 @@ export function NotificationsManager({
               ))}
             </select>
             {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            <Button className="w-full" disabled={isSummarizing} onClick={handleSummarizeDraft} type="button">
+              {isSummarizing ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+              Summarize notification
+            </Button>
             <Button className="w-full" disabled={isSaving} type="submit">
               {isSaving ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
               Save notification
@@ -230,6 +265,12 @@ export function NotificationsManager({
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
               <p className="text-sm text-slate-300">The notifications worker can still process queue-driven delivery state updates independently.</p>
+            </div>
+            <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4 text-sm text-cyan-100">
+              <p>Severity: {summaryResult?.severity ?? "No summary yet"}</p>
+              <p className="mt-2">{summaryResult?.summary ?? "Summarize the current draft to get an operational brief."}</p>
+              <p className="mt-2">{summaryResult?.recommendedAction ?? "The recommended next action will appear here."}</p>
+              {summaryResult ? <p className="mt-2 text-xs">Prompt template: {summaryResult.promptArtifact.templateName}</p> : null}
             </div>
           </div>
         </Card>

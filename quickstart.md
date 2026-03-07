@@ -85,6 +85,8 @@ The referrals and field-mappings pages now include backend-powered agent actions
 
 - `Generate agent draft` on `/referrals`
 - `Suggest mapping` on `/field-mappings`
+- `Summarize job description` on `/jobs`
+- `Summarize notification` on `/notifications`
 
 To inspect the current applied-application count in the active rate window:
 
