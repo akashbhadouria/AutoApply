@@ -9,6 +9,11 @@ export const discoverJobSchema = z.object({
   jobUrl: z.string().trim().url(),
   sourcePlatform: sourcePlatformSchema,
   postedDate: z.string().date().optional(),
+  firstSeenAt: z.string().datetime().optional(),
+  freshnessStatus: z.enum(["fresh", "recent", "standard"]).optional(),
+  jobPriority: z.enum(["high", "normal", "low"]).optional(),
+  applyStrategy: z.enum(["api", "http_form", "browser"]).optional(),
+  discoveredByWatcherId: z.coerce.number().int().positive().optional(),
 });
 
 export type DiscoverJobInput = z.infer<typeof discoverJobSchema>;

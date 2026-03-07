@@ -1,10 +1,15 @@
 export const queueNames = {
+  jobFeedWatcher: "job-feed-watcher",
   jobScanner: "job-scanner",
   referralEngine: "referral-engine",
   applicationQueue: "application-queue",
   browserAutomation: "browser-automation",
   notifications: "notifications",
 } as const;
+
+export interface JobFeedWatcherJobData {
+  watcherId?: number;
+}
 
 export interface JobDiscoveryJobData {
   searchTitles: string[];

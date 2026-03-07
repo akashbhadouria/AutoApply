@@ -10,6 +10,7 @@ This repository currently implements eight foundational slices of the larger job
 - `Automation Control Plane`
 - `ATS Self-Learning Layer`
 - `OpenClaw-Compatible Agent Layer`
+- `HirePilot V1 Onboarding + Watchers`
 
 ## Prerequisites
 
@@ -44,6 +45,9 @@ That single command will:
 
 Open:
 
+- `http://localhost:3000/onboarding`
+- `http://localhost:3000/connected-accounts`
+- `http://localhost:3000/job-watchers`
 - `http://localhost:3000/profile`
 - `http://localhost:3000/jobs`
 - `http://localhost:3000/applications`
@@ -89,6 +93,7 @@ The referrals and field-mappings pages now include backend-powered agent actions
 - `Summarize notification` on `/notifications`
 
 The job scanner can now consume live company ATS feeds if the workers environment defines `JOB_SOURCE_FEEDS_JSON`. Without that configuration, it falls back to deterministic discovery data so local development stays stable.
+The new HirePilot V1 watcher surface stores per-user discovery rules and can enqueue the `job-feed-watcher` queue directly.
 
 The `/automation` page now also shows live queue backlog and worker snapshots from BullMQ, including waiting, active, delayed, failed, connected-worker counts, retry policy, and recent retained failed jobs.
 It now also supports direct queue `Pause` and `Resume` controls for operator testing and incident handling.
@@ -135,6 +140,15 @@ The frontend now also shows a global runtime banner so backend connectivity prob
 
 - `GET /health`
 - `GET /api/dashboard/summary`
+- `GET /api/me`
+- `PUT /api/me`
+- `GET /api/me/preferences`
+- `PUT /api/me/preferences`
+- `GET /api/me/connected-accounts`
+- `POST /api/me/connected-accounts`
+- `GET /api/me/job-watchers`
+- `POST /api/me/job-watchers`
+- `PUT /api/me/job-watchers/:watcherId/status`
 - `GET /api/profile-fields`
 - `PUT /api/profile-fields/:key`
 - `DELETE /api/profile-fields/:key`
@@ -176,6 +190,9 @@ The frontend now also shows a global runtime banner so backend connectivity prob
 ## Implemented docs
 
 - [docs/profile-manager.md](/home/akash/AutoApply/docs/profile-manager.md)
+- [docs/onboarding.md](/home/akash/AutoApply/docs/onboarding.md)
+- [docs/connected-accounts.md](/home/akash/AutoApply/docs/connected-accounts.md)
+- [docs/job-watchers.md](/home/akash/AutoApply/docs/job-watchers.md)
 - [docs/dashboard.md](/home/akash/AutoApply/docs/dashboard.md)
 - [docs/demo-seed.md](/home/akash/AutoApply/docs/demo-seed.md)
 - [docs/jobs-inventory.md](/home/akash/AutoApply/docs/jobs-inventory.md)

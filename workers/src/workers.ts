@@ -9,6 +9,7 @@ import {
   fetchBackendApplicationRateWindow,
   fetchBackendContacts,
   fetchBackendFieldMappings,
+  fetchBackendJobFeedWatchers,
   fetchBackendNotificationById,
   fetchBackendProfileFields,
   fetchBackendReferralsByJobId,
@@ -17,6 +18,7 @@ import {
   saveBackendApplication,
   saveBackendFieldMapping,
   saveBackendReferral,
+  updateBackendJobFeedWatcherStatus,
   updateBackendReferralStatus,
   updateBackendNotificationStatus,
 } from "./backend.js";
@@ -25,6 +27,7 @@ import type {
   ApplicationQueueJobData,
   BrowserAutomationJobData,
   JobDiscoveryJobData,
+  JobFeedWatcherJobData,
   NotificationJobData,
   ReferralJobData,
 } from "./contracts.js";
@@ -97,8 +100,118 @@ function parseNumberSetting(rawValue: string | undefined, defaultValue: number) 
   return Number.isFinite(parsed) && parsed > 0 ? parsed : defaultValue;
 }
 
+function inferApplyStrategy(sourcePlatform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site") {
+  if (sourcePlatform === "linkedin") {
+    return "api" as const;
+  }
+  if (sourcePlatform === "instahyre" || sourcePlatform === "hirist") {
+    return "http_form" as const;
+  }
+  return "browser" as const;
+}
+
+function inferFreshness(postedDate: string) {
+  const parsed = Date.parse(postedDate);
+  if (Number.isNaN(parsed)) {
+    return {
+      freshnessStatus: "standard" as const,
+      jobPriority: "normal" as const,
+    };
+  }
+
+  const ageMinutes = Math.max(0, Math.floor((Date.now() - parsed) / 60_000));
+  if (ageMinutes <= 5) {
+    return {
+      freshnessStatus: "fresh" as const,
+      jobPriority: "high" as const,
+    };
+  }
+
+  if (ageMinutes <= 60 * 24) {
+    return {
+      freshnessStatus: "recent" as const,
+      jobPriority: "normal" as const,
+    };
+  }
+
+  return {
+    freshnessStatus: "standard" as const,
+    jobPriority: "normal" as const,
+  };
+}
+
 export function startWorkers() {
   const connection = getConnectionOptions();
+
+  const jobFeedWatcherWorker = new Worker<JobFeedWatcherJobData>(
+    queueNames.jobFeedWatcher,
+    async (job) => {
+      logWorkerStart(queueNames.jobFeedWatcher, job.data);
+      const watchersResponse = await fetchBackendJobFeedWatchers();
+      const watchers = job.data.watcherId
+        ? watchersResponse.data.filter((watcher) => watcher.id === job.data.watcherId && watcher.status === "active")
+        : watchersResponse.data.filter((watcher) => watcher.status === "active");
+
+      let totalDiscovered = 0;
+
+      for (const watcher of watchers) {
+        try {
+          const scannerRun = await scanDiscoveredJobs({
+            searchTitles: watcher.searchTitles,
+            locations: watcher.locations,
+            recencyDays: watcher.recencyDays,
+          });
+
+          const jobs = scannerRun.jobs.map((discoveredJob) => {
+            const freshness = inferFreshness(discoveredJob.postedDate);
+
+            return {
+              ...discoveredJob,
+              firstSeenAt: new Date().toISOString(),
+              freshnessStatus: freshness.freshnessStatus,
+              jobPriority: freshness.jobPriority,
+              applyStrategy: inferApplyStrategy(discoveredJob.sourcePlatform),
+              discoveredByWatcherId: watcher.id,
+            };
+          });
+
+          const batchResult = await discoverBackendJobsBatch({ jobs });
+          totalDiscovered += batchResult.data.length;
+
+          await updateBackendJobFeedWatcherStatus(watcher.id, {
+            status: "active",
+          });
+          await createBackendEvent({
+            eventType: "job_discovered",
+            actor: "jobFeedWatcherWorker",
+            payload: {
+              watcherId: watcher.id,
+              watcherName: watcher.name,
+              discoveredCount: batchResult.data.length,
+              sourcePlatform: watcher.sourcePlatform,
+            },
+          });
+        } catch (error) {
+          await updateBackendJobFeedWatcherStatus(watcher.id, {
+            status: "error",
+            lastError: error instanceof Error ? error.message : "Unknown watcher error",
+          });
+        }
+      }
+
+      await createBackendNotification({
+        type: "job_feed_watchers_completed",
+        title: "Job watcher sweep completed",
+        message:
+          watchers.length === 0
+            ? "No active job watchers were available for this run."
+            : `Processed ${watchers.length} watcher(s) and discovered ${totalDiscovered} jobs.`,
+        channel: "dashboard",
+        status: "delivered",
+      });
+    },
+    { connection },
+  );
 
   const jobScannerWorker = new Worker<JobDiscoveryJobData>(
     queueNames.jobScanner,
@@ -569,6 +682,7 @@ export function startWorkers() {
   return {
     async close() {
       await Promise.all([
+        jobFeedWatcherWorker.close(),
         jobScannerWorker.close(),
         referralEngineWorker.close(),
         applicationQueueWorker.close(),

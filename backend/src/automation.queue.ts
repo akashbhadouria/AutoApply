@@ -5,6 +5,7 @@ import { env } from "./config.js";
 import type { AutomationQueueName, AutomationQueueRetryPolicy } from "./automation.types.js";
 
 export const automationQueueNames = {
+  jobFeedWatcher: "job-feed-watcher",
   jobScanner: "job-scanner",
   referralEngine: "referral-engine",
   applicationQueue: "application-queue",
@@ -21,6 +22,13 @@ function getConnectionOptions(): ConnectionOptions {
 const connection = getConnectionOptions();
 
 export const queueRetryPolicies: Record<AutomationQueueName, AutomationQueueRetryPolicy> = {
+  "job-feed-watcher": {
+    attempts: 2,
+    backoffType: "fixed",
+    backoffDelayMs: 10_000,
+    removeOnComplete: 100,
+    removeOnFail: 50,
+  },
   "job-scanner": {
     attempts: 2,
     backoffType: "fixed",
@@ -89,6 +97,7 @@ export function getQueueJobOptions(queueName: AutomationQueueName, overrides?: P
 }
 
 export const queueRegistry = {
+  [automationQueueNames.jobFeedWatcher]: createQueue(automationQueueNames.jobFeedWatcher),
   [automationQueueNames.jobScanner]: createQueue(automationQueueNames.jobScanner),
   [automationQueueNames.referralEngine]: createQueue(automationQueueNames.referralEngine),
   [automationQueueNames.applicationQueue]: createQueue(automationQueueNames.applicationQueue),

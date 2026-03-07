@@ -226,3 +226,187 @@ CREATE TRIGGER system_settings_set_updated_at
 BEFORE UPDATE ON system_settings
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE IF NOT EXISTS users (
+  id BIGSERIAL PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  full_name TEXT NOT NULL,
+  phone TEXT,
+  location TEXT,
+  linkedin_url TEXT,
+  portfolio_url TEXT,
+  github_url TEXT,
+  resume_url TEXT,
+  resume_storage_path TEXT,
+  onboarding_completed BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+DROP TRIGGER IF EXISTS users_set_updated_at ON users;
+
+CREATE TRIGGER users_set_updated_at
+BEFORE UPDATE ON users
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE IF NOT EXISTS user_job_preferences (
+  user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  preferred_roles JSONB NOT NULL DEFAULT '[]'::jsonb,
+  preferred_locations JSONB NOT NULL DEFAULT '[]'::jsonb,
+  remote_preference TEXT NOT NULL DEFAULT 'hybrid',
+  referral_preference TEXT NOT NULL DEFAULT 'referral_first',
+  instant_apply_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  blocked_companies JSONB NOT NULL DEFAULT '[]'::jsonb,
+  target_applications_per_day INTEGER NOT NULL DEFAULT 25,
+  notification_channels JSONB NOT NULL DEFAULT '["dashboard"]'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT user_job_preferences_remote_preference_check CHECK (
+    remote_preference IN ('remote_only', 'hybrid', 'onsite_only', 'any')
+  ),
+  CONSTRAINT user_job_preferences_referral_preference_check CHECK (
+    referral_preference IN ('referral_first', 'instant_apply', 'balanced')
+  )
+);
+
+DROP TRIGGER IF EXISTS user_job_preferences_set_updated_at ON user_job_preferences;
+
+CREATE TRIGGER user_job_preferences_set_updated_at
+BEFORE UPDATE ON user_job_preferences
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE IF NOT EXISTS connected_accounts (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,
+  account_label TEXT NOT NULL,
+  connection_status TEXT NOT NULL DEFAULT 'pending',
+  approval_mode TEXT NOT NULL DEFAULT 'manual_approval',
+  account_identifier TEXT,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  last_checked_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT connected_accounts_provider_check CHECK (
+    provider IN ('linkedin', 'gmail', 'outlook', 'telegram', 'whatsapp')
+  ),
+  CONSTRAINT connected_accounts_status_check CHECK (
+    connection_status IN ('pending', 'connected', 'degraded', 'disconnected')
+  ),
+  CONSTRAINT connected_accounts_approval_mode_check CHECK (
+    approval_mode IN ('manual_approval', 'auto_send')
+  )
+);
+
+DROP TRIGGER IF EXISTS connected_accounts_set_updated_at ON connected_accounts;
+
+CREATE TRIGGER connected_accounts_set_updated_at
+BEFORE UPDATE ON connected_accounts
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE IF NOT EXISTS job_feed_watchers (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  source_platform TEXT NOT NULL,
+  provider TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active',
+  polling_interval_seconds INTEGER NOT NULL DEFAULT 60,
+  search_titles JSONB NOT NULL DEFAULT '[]'::jsonb,
+  locations JSONB NOT NULL DEFAULT '[]'::jsonb,
+  recency_days INTEGER NOT NULL DEFAULT 7,
+  configuration JSONB NOT NULL DEFAULT '{}'::jsonb,
+  last_run_at TIMESTAMPTZ,
+  last_success_at TIMESTAMPTZ,
+  last_error TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT job_feed_watchers_source_platform_check CHECK (
+    source_platform IN ('linkedin', 'instahyre', 'hirist', 'naukri', 'company_site')
+  ),
+  CONSTRAINT job_feed_watchers_provider_check CHECK (
+    provider IN ('linkedin', 'instahyre', 'hirist', 'naukri', 'company_site', 'greenhouse', 'lever', 'generic_json', 'google_jobs')
+  ),
+  CONSTRAINT job_feed_watchers_status_check CHECK (
+    status IN ('active', 'paused', 'error')
+  )
+);
+
+DROP TRIGGER IF EXISTS job_feed_watchers_set_updated_at ON job_feed_watchers;
+
+CREATE TRIGGER job_feed_watchers_set_updated_at
+BEFORE UPDATE ON job_feed_watchers
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE IF NOT EXISTS job_feed_cursors (
+  watcher_id BIGINT PRIMARY KEY REFERENCES job_feed_watchers(id) ON DELETE CASCADE,
+  last_seen_job_id TEXT,
+  last_seen_timestamp TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+DROP TRIGGER IF EXISTS job_feed_cursors_set_updated_at ON job_feed_cursors;
+
+CREATE TRIGGER job_feed_cursors_set_updated_at
+BEFORE UPDATE ON job_feed_cursors
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE IF NOT EXISTS job_discovery_events (
+  id BIGSERIAL PRIMARY KEY,
+  watcher_id BIGINT REFERENCES job_feed_watchers(id) ON DELETE SET NULL,
+  job_id BIGINT REFERENCES jobs(id) ON DELETE SET NULL,
+  event_type TEXT NOT NULL DEFAULT 'job_discovered',
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT job_discovery_events_type_check CHECK (
+    event_type IN ('job_discovered', 'fresh_job_detected')
+  )
+);
+
+ALTER TABLE jobs
+  ADD COLUMN IF NOT EXISTS first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS freshness_status TEXT NOT NULL DEFAULT 'standard',
+  ADD COLUMN IF NOT EXISTS job_priority TEXT NOT NULL DEFAULT 'normal',
+  ADD COLUMN IF NOT EXISTS apply_strategy TEXT NOT NULL DEFAULT 'browser',
+  ADD COLUMN IF NOT EXISTS discovered_by_watcher_id BIGINT REFERENCES job_feed_watchers(id) ON DELETE SET NULL;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'jobs_freshness_status_check'
+  ) THEN
+    ALTER TABLE jobs
+      ADD CONSTRAINT jobs_freshness_status_check CHECK (
+        freshness_status IN ('fresh', 'recent', 'standard')
+      );
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'jobs_job_priority_check'
+  ) THEN
+    ALTER TABLE jobs
+      ADD CONSTRAINT jobs_job_priority_check CHECK (
+        job_priority IN ('high', 'normal', 'low')
+      );
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'jobs_apply_strategy_check'
+  ) THEN
+    ALTER TABLE jobs
+      ADD CONSTRAINT jobs_apply_strategy_check CHECK (
+        apply_strategy IN ('api', 'http_form', 'browser')
+      );
+  END IF;
+END $$;

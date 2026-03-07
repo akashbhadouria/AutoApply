@@ -17,7 +17,75 @@ export interface Job {
   primarySourcePlatform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
   sourcePlatforms: Array<"linkedin" | "instahyre" | "hirist" | "naukri" | "company_site">;
   postedDate: string | null;
+  firstSeenAt: string;
+  freshnessStatus: "fresh" | "recent" | "standard";
+  jobPriority: "high" | "normal" | "low";
+  applyStrategy: "api" | "http_form" | "browser";
+  discoveredByWatcherId: number | null;
   discoveredAt: string;
+  updatedAt: string;
+}
+
+export interface CurrentUser {
+  id: number;
+  email: string;
+  fullName: string;
+  phone: string | null;
+  location: string | null;
+  linkedinUrl: string | null;
+  portfolioUrl: string | null;
+  githubUrl: string | null;
+  resumeUrl: string | null;
+  resumeStoragePath: string | null;
+  onboardingCompleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserJobPreferences {
+  userId: number;
+  preferredRoles: string[];
+  preferredLocations: string[];
+  remotePreference: "remote_only" | "hybrid" | "onsite_only" | "any";
+  referralPreference: "referral_first" | "instant_apply" | "balanced";
+  instantApplyEnabled: boolean;
+  blockedCompanies: string[];
+  targetApplicationsPerDay: number;
+  notificationChannels: Array<"dashboard" | "email" | "telegram" | "whatsapp">;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConnectedAccount {
+  id: number;
+  userId: number;
+  provider: "linkedin" | "gmail" | "outlook" | "telegram" | "whatsapp";
+  accountLabel: string;
+  connectionStatus: "pending" | "connected" | "degraded" | "disconnected";
+  approvalMode: "manual_approval" | "auto_send";
+  accountIdentifier: string | null;
+  metadata: Record<string, unknown>;
+  lastCheckedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JobFeedWatcher {
+  id: number;
+  userId: number;
+  name: string;
+  sourcePlatform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
+  provider: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site" | "greenhouse" | "lever" | "generic_json" | "google_jobs";
+  status: "active" | "paused" | "error";
+  pollingIntervalSeconds: number;
+  searchTitles: string[];
+  locations: string[];
+  recencyDays: number;
+  configuration: Record<string, unknown>;
+  lastRunAt: string | null;
+  lastSuccessAt: string | null;
+  lastError: string | null;
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -140,7 +208,7 @@ export interface AutomationFailedJobSummary {
 }
 
 export interface AutomationQueue {
-  queueName: "job-scanner" | "referral-engine" | "application-queue" | "browser-automation" | "notifications";
+  queueName: "job-feed-watcher" | "job-scanner" | "referral-engine" | "application-queue" | "browser-automation" | "notifications";
   stats: AutomationQueueStats;
   retryPolicy: AutomationQueueRetryPolicy;
   recentFailures: AutomationFailedJobSummary[];
@@ -331,6 +399,174 @@ export async function fetchProfileFields(): Promise<ProfileField[]> {
 
   const payload = (await response.json()) as { data: ProfileField[] };
   return payload.data;
+}
+
+export async function fetchCurrentUser(): Promise<CurrentUser> {
+  const response = await fetch(`${getBackendUrl()}/api/me`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load current user");
+  }
+
+  const payload = (await response.json()) as { data: CurrentUser };
+  return payload.data;
+}
+
+export async function upsertCurrentUser(body: {
+  email: string;
+  fullName: string;
+  phone?: string;
+  location?: string;
+  linkedinUrl?: string;
+  portfolioUrl?: string;
+  githubUrl?: string;
+  resumeUrl?: string;
+  resumeStoragePath?: string;
+  onboardingCompleted?: boolean;
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/me`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to save current user");
+  }
+
+  return response.json() as Promise<{ data: CurrentUser }>;
+}
+
+export async function fetchCurrentUserPreferences(): Promise<UserJobPreferences> {
+  const response = await fetch(`${getBackendUrl()}/api/me/preferences`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load user preferences");
+  }
+
+  const payload = (await response.json()) as { data: UserJobPreferences };
+  return payload.data;
+}
+
+export async function upsertCurrentUserPreferences(body: Omit<UserJobPreferences, "userId" | "createdAt" | "updatedAt">) {
+  const response = await fetch(`${getBackendUrl()}/api/me/preferences`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to save user preferences");
+  }
+
+  return response.json() as Promise<{ data: UserJobPreferences }>;
+}
+
+export async function fetchConnectedAccounts(): Promise<ConnectedAccount[]> {
+  const response = await fetch(`${getBackendUrl()}/api/me/connected-accounts`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load connected accounts");
+  }
+
+  const payload = (await response.json()) as { data: ConnectedAccount[] };
+  return payload.data;
+}
+
+export async function createConnectedAccount(body: {
+  provider: ConnectedAccount["provider"];
+  accountLabel: string;
+  connectionStatus?: ConnectedAccount["connectionStatus"];
+  approvalMode?: ConnectedAccount["approvalMode"];
+  accountIdentifier?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/me/connected-accounts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to create connected account");
+  }
+
+  return response.json() as Promise<{ data: ConnectedAccount }>;
+}
+
+export async function fetchJobFeedWatchers(): Promise<JobFeedWatcher[]> {
+  const response = await fetch(`${getBackendUrl()}/api/me/job-watchers`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load job watchers");
+  }
+
+  const payload = (await response.json()) as { data: JobFeedWatcher[] };
+  return payload.data;
+}
+
+export async function createJobFeedWatcher(body: {
+  name: string;
+  sourcePlatform: JobFeedWatcher["sourcePlatform"];
+  provider: JobFeedWatcher["provider"];
+  status?: JobFeedWatcher["status"];
+  pollingIntervalSeconds?: number;
+  searchTitles: string[];
+  locations: string[];
+  recencyDays?: number;
+  configuration?: Record<string, unknown>;
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/me/job-watchers`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to create job watcher");
+  }
+
+  return response.json() as Promise<{ data: JobFeedWatcher }>;
+}
+
+export async function updateJobFeedWatcherStatus(
+  watcherId: number,
+  body: { status: JobFeedWatcher["status"]; lastError?: string },
+) {
+  const response = await fetch(`${getBackendUrl()}/api/me/job-watchers/${watcherId}/status`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update watcher status");
+  }
+
+  return response.json() as Promise<{ data: JobFeedWatcher }>;
 }
 
 export async function fetchDashboardSummary(): Promise<DashboardSummary> {

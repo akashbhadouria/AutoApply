@@ -33,6 +33,127 @@ async function upsertProfileFields() {
   }
 }
 
+async function upsertCurrentUser() {
+  const result = await pool.query<{ id: string }>(
+    `INSERT INTO users (
+       email, full_name, phone, location, linkedin_url, portfolio_url, github_url, resume_url, resume_storage_path, onboarding_completed
+     )
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+     ON CONFLICT (email)
+     DO UPDATE SET
+       full_name = EXCLUDED.full_name,
+       phone = EXCLUDED.phone,
+       location = EXCLUDED.location,
+       linkedin_url = EXCLUDED.linkedin_url,
+       portfolio_url = EXCLUDED.portfolio_url,
+       github_url = EXCLUDED.github_url,
+       resume_url = EXCLUDED.resume_url,
+       resume_storage_path = EXCLUDED.resume_storage_path,
+       onboarding_completed = EXCLUDED.onboarding_completed,
+       updated_at = NOW()
+     RETURNING id`,
+    [
+      "founder@hirepilot.dev",
+      "Akash Bhadouria",
+      "+91-9876543210",
+      "Bangalore",
+      "https://linkedin.com/in/akash-bhadouria",
+      "https://akash.dev",
+      "https://github.com/akash",
+      "https://akash.dev/resume.pdf",
+      "/workspace/resume/akash-bhadouria.pdf",
+      true,
+    ],
+  );
+
+  const userId = Number(result.rows[0].id);
+
+  await pool.query(
+    `INSERT INTO user_job_preferences (
+       user_id, preferred_roles, preferred_locations, remote_preference, referral_preference,
+       instant_apply_enabled, blocked_companies, target_applications_per_day, notification_channels
+     )
+     VALUES ($1,$2::jsonb,$3::jsonb,$4,$5,$6,$7::jsonb,$8,$9::jsonb)
+     ON CONFLICT (user_id)
+     DO UPDATE SET
+       preferred_roles = EXCLUDED.preferred_roles,
+       preferred_locations = EXCLUDED.preferred_locations,
+       remote_preference = EXCLUDED.remote_preference,
+       referral_preference = EXCLUDED.referral_preference,
+       instant_apply_enabled = EXCLUDED.instant_apply_enabled,
+       blocked_companies = EXCLUDED.blocked_companies,
+       target_applications_per_day = EXCLUDED.target_applications_per_day,
+       notification_channels = EXCLUDED.notification_channels,
+       updated_at = NOW()`,
+    [
+      userId,
+      JSON.stringify(["Frontend Engineer", "React Developer", "UI Engineer"]),
+      JSON.stringify(["Bangalore", "Remote India"]),
+      "hybrid",
+      "referral_first",
+      true,
+      JSON.stringify(["Stealth Demo Company"]),
+      40,
+      JSON.stringify(["dashboard", "telegram"]),
+    ],
+  );
+
+  const accounts = [
+    ["linkedin", "Primary LinkedIn", "connected", "manual_approval", "linkedin.com/in/akash-bhadouria"],
+    ["gmail", "Founder Gmail", "connected", "manual_approval", "founder@hirepilot.dev"],
+    ["telegram", "Ops Telegram", "pending", "manual_approval", "@hirepilot_ops"],
+  ] as const;
+
+  for (const account of accounts) {
+    await pool.query(
+      `INSERT INTO connected_accounts (
+         user_id, provider, account_label, connection_status, approval_mode, account_identifier, metadata, last_checked_at
+       )
+       VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,NOW())
+       ON CONFLICT DO NOTHING`,
+      [userId, account[0], account[1], account[2], account[3], account[4], JSON.stringify({ seeded: true })],
+    );
+  }
+
+  const watchers = [
+    {
+      name: "Fresh frontend Bangalore",
+      sourcePlatform: "linkedin",
+      provider: "linkedin",
+      searchTitles: ["Frontend Engineer", "React Developer"],
+      locations: ["Bangalore"],
+    },
+    {
+      name: "Remote company ATS",
+      sourcePlatform: "company_site",
+      provider: "greenhouse",
+      searchTitles: ["UI Engineer", "SDE-2 Frontend"],
+      locations: ["Remote India"],
+    },
+  ] as const;
+
+  for (const watcher of watchers) {
+    await pool.query(
+      `INSERT INTO job_feed_watchers (
+         user_id, name, source_platform, provider, status, polling_interval_seconds, search_titles, locations, recency_days, configuration
+       )
+       VALUES ($1,$2,$3,$4,'active',60,$5::jsonb,$6::jsonb,7,$7::jsonb)
+       ON CONFLICT DO NOTHING`,
+      [
+        userId,
+        watcher.name,
+        watcher.sourcePlatform,
+        watcher.provider,
+        JSON.stringify(watcher.searchTitles),
+        JSON.stringify(watcher.locations),
+        JSON.stringify({ seeded: true }),
+      ],
+    );
+  }
+
+  return userId;
+}
+
 async function upsertJobs() {
   const jobs = [
     {
@@ -485,6 +606,7 @@ async function upsertSystemSettings() {
 
 async function main() {
   try {
+    await upsertCurrentUser();
     await upsertProfileFields();
     const jobIds = await upsertJobs();
     const contactIds = await upsertContacts();

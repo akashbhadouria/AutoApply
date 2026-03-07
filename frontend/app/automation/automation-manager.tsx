@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import type { AutomationQueue, EnqueuedAutomationJob } from "@/lib/api";
 
 const defaultPayloads: Record<AutomationQueue["queueName"], string> = {
+  "job-feed-watcher": JSON.stringify({ watcherId: 1 }, null, 2),
   "job-scanner": JSON.stringify(
     {
       searchTitles: ["Frontend Engineer", "React Developer"],

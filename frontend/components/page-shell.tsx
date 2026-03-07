@@ -9,6 +9,9 @@ import { Card } from "@/components/ui/card";
 
 const navigation = [
   { href: "/", label: "Overview" },
+  { href: "/onboarding", label: "Onboarding" },
+  { href: "/connected-accounts", label: "Accounts" },
+  { href: "/job-watchers", label: "Watchers" },
   { href: "/profile", label: "Profile" },
   { href: "/jobs", label: "Jobs" },
   { href: "/applications", label: "Applications" },

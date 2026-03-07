@@ -247,6 +247,7 @@ export function JobsManager({ initialJobs }: { initialJobs: Job[] }) {
                   <TableHeaderCell>Company</TableHeaderCell>
                   <TableHeaderCell>Role</TableHeaderCell>
                   <TableHeaderCell>Location</TableHeaderCell>
+                  <TableHeaderCell>Priority</TableHeaderCell>
                   <TableHeaderCell>Sources</TableHeaderCell>
                   <TableHeaderCell>Posted</TableHeaderCell>
                 </TableRow>
@@ -254,7 +255,7 @@ export function JobsManager({ initialJobs }: { initialJobs: Job[] }) {
               <TableBody>
                 {jobs.length === 0 ? (
                   <TableRow>
-                    <TableCell className="px-4 py-10 text-muted" colSpan={5}>
+                    <TableCell className="px-4 py-10 text-muted" colSpan={6}>
                       No jobs ingested yet.
                     </TableCell>
                   </TableRow>
@@ -264,6 +265,17 @@ export function JobsManager({ initialJobs }: { initialJobs: Job[] }) {
                       <TableCell className="font-medium">{job.company}</TableCell>
                       <TableCell>{job.title}</TableCell>
                       <TableCell>{job.location}</TableCell>
+                      <TableCell>
+                        <span className={`rounded-full px-3 py-1 text-xs uppercase tracking-[0.18em] ${
+                          job.jobPriority === "high"
+                            ? "bg-amber-500/15 text-amber-300"
+                            : job.freshnessStatus === "fresh"
+                              ? "bg-emerald-500/15 text-emerald-300"
+                              : "bg-slate-500/15 text-slate-300"
+                        }`}>
+                          {job.jobPriority} / {job.applyStrategy}
+                        </span>
+                      </TableCell>
                       <TableCell className="text-muted">{job.sourcePlatforms.join(", ")}</TableCell>
                       <TableCell>{job.postedDate ?? "Unknown"}</TableCell>
                     </TableRow>

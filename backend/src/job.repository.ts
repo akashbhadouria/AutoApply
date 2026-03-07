@@ -14,6 +14,11 @@ function mapJobRow(row: Record<string, unknown>): JobRecord {
       ? row.source_platforms.map((platform) => String(platform) as JobRecord["sourcePlatforms"][number])
       : [],
     postedDate: row.posted_date ? new Date(String(row.posted_date)).toISOString().slice(0, 10) : null,
+    firstSeenAt: new Date(String(row.first_seen_at)).toISOString(),
+    freshnessStatus: String(row.freshness_status) as JobRecord["freshnessStatus"],
+    jobPriority: String(row.job_priority) as JobRecord["jobPriority"],
+    applyStrategy: String(row.apply_strategy) as JobRecord["applyStrategy"],
+    discoveredByWatcherId: row.discovered_by_watcher_id ? Number(row.discovered_by_watcher_id) : null,
     discoveredAt: new Date(String(row.discovered_at)).toISOString(),
     updatedAt: new Date(String(row.updated_at)).toISOString(),
   };
@@ -33,6 +38,11 @@ export async function listJobs(): Promise<JobRecord[]> {
        jobs.job_url,
        jobs.primary_source_platform,
        jobs.posted_date,
+       jobs.first_seen_at,
+       jobs.freshness_status,
+       jobs.job_priority,
+       jobs.apply_strategy,
+       jobs.discovered_by_watcher_id,
        jobs.discovered_at,
        jobs.updated_at,
        ARRAY_REMOVE(ARRAY_AGG(job_sources.source_platform ORDER BY job_sources.source_platform), NULL) AS source_platforms
@@ -62,11 +72,16 @@ export async function discoverJob(input: DiscoverJobInput): Promise<JobRecord> {
          job_url,
          primary_source_platform,
          posted_date,
+         first_seen_at,
+         freshness_status,
+         job_priority,
+         apply_strategy,
+         discovered_by_watcher_id,
          normalized_company,
          normalized_title,
          normalized_location
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        ON CONFLICT (normalized_company, normalized_title, normalized_location)
        DO UPDATE SET
          company = EXCLUDED.company,
@@ -74,6 +89,19 @@ export async function discoverJob(input: DiscoverJobInput): Promise<JobRecord> {
          location = EXCLUDED.location,
          job_url = EXCLUDED.job_url,
          posted_date = COALESCE(EXCLUDED.posted_date, jobs.posted_date),
+         first_seen_at = LEAST(jobs.first_seen_at, EXCLUDED.first_seen_at),
+         freshness_status = CASE
+           WHEN EXCLUDED.freshness_status = 'fresh' THEN 'fresh'
+           WHEN EXCLUDED.freshness_status = 'recent' AND jobs.freshness_status = 'standard' THEN 'recent'
+           ELSE jobs.freshness_status
+         END,
+         job_priority = CASE
+           WHEN EXCLUDED.job_priority = 'high' THEN 'high'
+           WHEN EXCLUDED.job_priority = 'normal' AND jobs.job_priority = 'low' THEN 'normal'
+           ELSE jobs.job_priority
+         END,
+         apply_strategy = EXCLUDED.apply_strategy,
+         discovered_by_watcher_id = COALESCE(EXCLUDED.discovered_by_watcher_id, jobs.discovered_by_watcher_id),
          updated_at = NOW()
        RETURNING id`,
       [
@@ -83,6 +111,11 @@ export async function discoverJob(input: DiscoverJobInput): Promise<JobRecord> {
         input.jobUrl,
         input.sourcePlatform,
         input.postedDate ?? null,
+        input.firstSeenAt ?? new Date().toISOString(),
+        input.freshnessStatus ?? "standard",
+        input.jobPriority ?? "normal",
+        input.applyStrategy ?? "browser",
+        input.discoveredByWatcherId ?? null,
         normalizedCompany,
         normalizedTitle,
         normalizedLocation,
@@ -110,6 +143,11 @@ export async function discoverJob(input: DiscoverJobInput): Promise<JobRecord> {
          jobs.job_url,
          jobs.primary_source_platform,
          jobs.posted_date,
+         jobs.first_seen_at,
+         jobs.freshness_status,
+         jobs.job_priority,
+         jobs.apply_strategy,
+         jobs.discovered_by_watcher_id,
          jobs.discovered_at,
          jobs.updated_at,
          ARRAY_REMOVE(ARRAY_AGG(job_sources.source_platform ORDER BY job_sources.source_platform), NULL) AS source_platforms
@@ -129,4 +167,3 @@ export async function discoverJob(input: DiscoverJobInput): Promise<JobRecord> {
     client.release();
   }
 }
-

@@ -1,4 +1,5 @@
 export type AutomationQueueName =
+  | "job-feed-watcher"
   | "job-scanner"
   | "referral-engine"
   | "application-queue"

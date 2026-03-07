@@ -1,0 +1,71 @@
+export interface CurrentUserRecord {
+  id: number;
+  email: string;
+  fullName: string;
+  phone: string | null;
+  location: string | null;
+  linkedinUrl: string | null;
+  portfolioUrl: string | null;
+  githubUrl: string | null;
+  resumeUrl: string | null;
+  resumeStoragePath: string | null;
+  onboardingCompleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserJobPreferencesRecord {
+  userId: number;
+  preferredRoles: string[];
+  preferredLocations: string[];
+  remotePreference: "remote_only" | "hybrid" | "onsite_only" | "any";
+  referralPreference: "referral_first" | "instant_apply" | "balanced";
+  instantApplyEnabled: boolean;
+  blockedCompanies: string[];
+  targetApplicationsPerDay: number;
+  notificationChannels: Array<"dashboard" | "email" | "telegram" | "whatsapp">;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConnectedAccountRecord {
+  id: number;
+  userId: number;
+  provider: "linkedin" | "gmail" | "outlook" | "telegram" | "whatsapp";
+  accountLabel: string;
+  connectionStatus: "pending" | "connected" | "degraded" | "disconnected";
+  approvalMode: "manual_approval" | "auto_send";
+  accountIdentifier: string | null;
+  metadata: Record<string, unknown>;
+  lastCheckedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JobFeedWatcherRecord {
+  id: number;
+  userId: number;
+  name: string;
+  sourcePlatform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
+  provider:
+    | "linkedin"
+    | "instahyre"
+    | "hirist"
+    | "naukri"
+    | "company_site"
+    | "greenhouse"
+    | "lever"
+    | "generic_json"
+    | "google_jobs";
+  status: "active" | "paused" | "error";
+  pollingIntervalSeconds: number;
+  searchTitles: string[];
+  locations: string[];
+  recencyDays: number;
+  configuration: Record<string, unknown>;
+  lastRunAt: string | null;
+  lastSuccessAt: string | null;
+  lastError: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

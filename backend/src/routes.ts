@@ -10,6 +10,17 @@ import {
 } from "./agent.service.js";
 import { enqueueAutomationJob, getAutomationQueues, pauseAutomationQueue, resumeAutomationQueue } from "./automation.service.js";
 import { getContacts, saveContact } from "./contact.service.js";
+import {
+  addConnectedAccount,
+  addJobFeedWatcher,
+  changeJobFeedWatcherStatus,
+  fetchConnectedAccounts,
+  fetchCurrentUserPreferences,
+  fetchJobFeedWatchers,
+  getOrCreateCurrentUser,
+  updateCurrentUser,
+  updateCurrentUserPreferences,
+} from "./current-user.service.js";
 import { getEvents, saveEvent } from "./event.service.js";
 import { getFieldMappings, saveFieldMapping } from "./field-mapping.service.js";
 import { getApplicationByJobId, getApplicationRateWindow, getApplications, saveApplication } from "./application.service.js";
@@ -43,6 +54,87 @@ apiRouter.get("/api/dashboard/summary", async (_request, response, next) => {
   try {
     const summary = await getDashboardSummary();
     response.json({ data: summary });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/me", async (_request, response, next) => {
+  try {
+    const user = await getOrCreateCurrentUser();
+    response.json({ data: user });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.put("/api/me", async (request, response, next) => {
+  try {
+    const user = await updateCurrentUser(request.body);
+    response.status(200).json({ data: user });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/me/preferences", async (_request, response, next) => {
+  try {
+    const preferences = await fetchCurrentUserPreferences();
+    response.json({ data: preferences });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.put("/api/me/preferences", async (request, response, next) => {
+  try {
+    const preferences = await updateCurrentUserPreferences(request.body);
+    response.status(200).json({ data: preferences });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/me/connected-accounts", async (_request, response, next) => {
+  try {
+    const accounts = await fetchConnectedAccounts();
+    response.json({ data: accounts });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/me/connected-accounts", async (request, response, next) => {
+  try {
+    const account = await addConnectedAccount(request.body);
+    response.status(201).json({ data: account });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/me/job-watchers", async (_request, response, next) => {
+  try {
+    const watchers = await fetchJobFeedWatchers();
+    response.json({ data: watchers });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/me/job-watchers", async (request, response, next) => {
+  try {
+    const watcher = await addJobFeedWatcher(request.body);
+    response.status(201).json({ data: watcher });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.put("/api/me/job-watchers/:watcherId/status", async (request, response, next) => {
+  try {
+    const watcher = await changeJobFeedWatcherStatus(request.params.watcherId, request.body);
+    response.status(watcher ? 200 : 404).json(watcher ? { data: watcher } : { error: "Not found" });
   } catch (error) {
     next(error);
   }

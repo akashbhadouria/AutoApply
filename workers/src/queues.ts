@@ -2,11 +2,12 @@ import type { JobsOptions } from "bullmq";
 import { Queue } from "bullmq";
 
 import { getConnectionOptions } from "./connection.js";
-import { queueNames, type ApplicationQueueJobData, type NotificationJobData } from "./contracts.js";
+import { queueNames, type ApplicationQueueJobData, type JobFeedWatcherJobData, type NotificationJobData } from "./contracts.js";
 
 const connection = getConnectionOptions();
 
 const queueRetryPolicies = {
+  [queueNames.jobFeedWatcher]: { attempts: 2, backoffDelayMs: 10_000, removeOnComplete: 100, removeOnFail: 50 },
   [queueNames.jobScanner]: { attempts: 2, backoffDelayMs: 10_000, removeOnComplete: 100, removeOnFail: 50 },
   [queueNames.referralEngine]: { attempts: 3, backoffDelayMs: 15_000, removeOnComplete: 100, removeOnFail: 50 },
   [queueNames.applicationQueue]: { attempts: 4, backoffDelayMs: 30_000, removeOnComplete: 200, removeOnFail: 100 },
@@ -45,6 +46,7 @@ function getQueueJobOptions(queueName: keyof typeof queueRetryPolicies, override
 }
 
 export const jobScannerQueue = createQueue(queueNames.jobScanner);
+export const jobFeedWatcherQueue = createQueue(queueNames.jobFeedWatcher);
 export const referralEngineQueue = createQueue(queueNames.referralEngine);
 export const applicationQueue = createQueue(queueNames.applicationQueue);
 export const browserAutomationQueue = createQueue(queueNames.browserAutomation);
@@ -52,6 +54,10 @@ export const notificationsQueue = createQueue(queueNames.notifications);
 
 export async function enqueueApplicationQueueJob(data: ApplicationQueueJobData, overrides?: Partial<JobsOptions>) {
   return applicationQueue.add(queueNames.applicationQueue, data, getQueueJobOptions(queueNames.applicationQueue, overrides));
+}
+
+export async function enqueueJobFeedWatcherJob(data: JobFeedWatcherJobData, overrides?: Partial<JobsOptions>) {
+  return jobFeedWatcherQueue.add(queueNames.jobFeedWatcher, data, getQueueJobOptions(queueNames.jobFeedWatcher, overrides));
 }
 
 export async function enqueueBrowserAutomationJob(
@@ -76,6 +82,7 @@ export async function enqueueNotificationJob(data: NotificationJobData, override
 
 export async function closeQueues() {
   await Promise.all([
+    jobFeedWatcherQueue.close(),
     jobScannerQueue.close(),
     referralEngineQueue.close(),
     applicationQueue.close(),

@@ -9,7 +9,11 @@ export interface JobRecord {
   primarySourcePlatform: SourcePlatform;
   sourcePlatforms: SourcePlatform[];
   postedDate: string | null;
+  firstSeenAt: string;
+  freshnessStatus: "fresh" | "recent" | "standard";
+  jobPriority: "high" | "normal" | "low";
+  applyStrategy: "api" | "http_form" | "browser";
+  discoveredByWatcherId: number | null;
   discoveredAt: string;
   updatedAt: string;
 }
-

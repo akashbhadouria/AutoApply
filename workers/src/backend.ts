@@ -262,10 +262,46 @@ export async function discoverBackendJobsBatch(body: {
     jobUrl: string;
     sourcePlatform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
     postedDate: string;
+    firstSeenAt?: string;
+    freshnessStatus?: "fresh" | "recent" | "standard";
+    jobPriority?: "high" | "normal" | "low";
+    applyStrategy?: "api" | "http_form" | "browser";
+    discoveredByWatcherId?: number;
   }>;
 }) {
   return request<{ data: Array<{ id: number }> }>("/api/jobs/discover/batch", {
     method: "POST",
+    body,
+  });
+}
+
+export async function fetchBackendJobFeedWatchers() {
+  return request<{
+    data: Array<{
+      id: number;
+      userId: number;
+      name: string;
+      sourcePlatform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
+      provider: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site" | "greenhouse" | "lever" | "generic_json" | "google_jobs";
+      status: "active" | "paused" | "error";
+      pollingIntervalSeconds: number;
+      searchTitles: string[];
+      locations: string[];
+      recencyDays: number;
+      configuration: Record<string, unknown>;
+      lastRunAt: string | null;
+      lastSuccessAt: string | null;
+      lastError: string | null;
+    }>;
+  }>("/api/me/job-watchers");
+}
+
+export async function updateBackendJobFeedWatcherStatus(
+  watcherId: number,
+  body: { status: "active" | "paused" | "error"; lastError?: string },
+) {
+  return request<{ data: { id: number } }>(`/api/me/job-watchers/${watcherId}/status`, {
+    method: "PUT",
     body,
   });
 }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const automationQueueNameSchema = z.enum([
+  "job-feed-watcher",
   "job-scanner",
   "referral-engine",
   "application-queue",
@@ -14,4 +15,3 @@ export const enqueueAutomationJobSchema = z.object({
 });
 
 export type EnqueueAutomationJobInput = z.infer<typeof enqueueAutomationJobSchema>;
-

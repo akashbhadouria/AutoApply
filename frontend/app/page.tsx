@@ -8,6 +8,9 @@ import { Card } from "@/components/ui/card";
 import { fetchBackendRuntimeStatus, fetchDashboardSummary, type DashboardSummary } from "@/lib/api";
 
 const routes = [
+  { href: "/onboarding", title: "Onboarding", description: "Founder and candidate setup flow for identity, resume, and launch readiness." },
+  { href: "/connected-accounts", title: "Connected Accounts", description: "LinkedIn, email, Telegram, and WhatsApp connection state with approval mode." },
+  { href: "/job-watchers", title: "Job Watchers", description: "Per-user near-real-time source watchers with polling, titles, and locations." },
   { href: "/profile", title: "Profile", description: "Canonical identity data, salary fields, links, and ATS autofill primitives." },
   { href: "/jobs", title: "Jobs", description: "Normalized inventory with source-platform merging and queue-driven ingestion." },
   { href: "/applications", title: "Applications", description: "Application state attached to canonical jobs instead of fragmented trackers." },
