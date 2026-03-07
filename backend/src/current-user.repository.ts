@@ -14,10 +14,14 @@ function mapUserRow(row: Record<string, unknown>): CurrentUserRecord {
   return {
     id: Number(row.id),
     email: String(row.email),
+    notificationEmail: row.notification_email ? String(row.notification_email) : null,
     fullName: String(row.full_name),
     phone: row.phone ? String(row.phone) : null,
+    whatsappNumber: row.whatsapp_number ? String(row.whatsapp_number) : null,
     location: row.location ? String(row.location) : null,
     linkedinUrl: row.linkedin_url ? String(row.linkedin_url) : null,
+    telegramUsername: row.telegram_username ? String(row.telegram_username) : null,
+    telegramChatId: row.telegram_chat_id ? String(row.telegram_chat_id) : null,
     portfolioUrl: row.portfolio_url ? String(row.portfolio_url) : null,
     githubUrl: row.github_url ? String(row.github_url) : null,
     resumeUrl: row.resume_url ? String(row.resume_url) : null,
@@ -110,10 +114,14 @@ export async function getCurrentUser() {
 
 export async function saveCurrentUser(input: {
   email: string;
+  notificationEmail?: string;
   fullName: string;
   phone?: string;
+  whatsappNumber?: string;
   location?: string;
   linkedinUrl?: string;
+  telegramUsername?: string;
+  telegramChatId?: string;
   portfolioUrl?: string;
   githubUrl?: string;
   resumeUrl?: string;
@@ -125,16 +133,20 @@ export async function saveCurrentUser(input: {
   if (!existing) {
     const inserted = await pool.query(
       `INSERT INTO users (
-         email, full_name, phone, location, linkedin_url, portfolio_url, github_url, resume_url, resume_storage_path, onboarding_completed
+         email, notification_email, full_name, phone, whatsapp_number, location, linkedin_url, telegram_username, telegram_chat_id, portfolio_url, github_url, resume_url, resume_storage_path, onboarding_completed
        )
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
        RETURNING *`,
       [
         input.email,
+        input.notificationEmail ?? input.email,
         input.fullName,
         input.phone ?? null,
+        input.whatsappNumber ?? input.phone ?? null,
         input.location ?? null,
         input.linkedinUrl ?? null,
+        input.telegramUsername ?? null,
+        input.telegramChatId ?? null,
         input.portfolioUrl ?? null,
         input.githubUrl ?? null,
         input.resumeUrl ?? null,
@@ -149,25 +161,33 @@ export async function saveCurrentUser(input: {
   const updated = await pool.query(
     `UPDATE users
      SET email = $2,
-         full_name = $3,
-         phone = $4,
-         location = $5,
-         linkedin_url = $6,
-         portfolio_url = $7,
-         github_url = $8,
-         resume_url = $9,
-         resume_storage_path = $10,
-         onboarding_completed = $11,
+         notification_email = $3,
+         full_name = $4,
+         phone = $5,
+         whatsapp_number = $6,
+         location = $7,
+         linkedin_url = $8,
+         telegram_username = $9,
+         telegram_chat_id = $10,
+         portfolio_url = $11,
+         github_url = $12,
+         resume_url = $13,
+         resume_storage_path = $14,
+         onboarding_completed = $15,
          updated_at = NOW()
      WHERE id = $1
      RETURNING *`,
     [
       existing.id,
       input.email,
+      input.notificationEmail ?? input.email,
       input.fullName,
       input.phone ?? null,
+      input.whatsappNumber ?? input.phone ?? null,
       input.location ?? null,
       input.linkedinUrl ?? null,
+      input.telegramUsername ?? null,
+      input.telegramChatId ?? null,
       input.portfolioUrl ?? null,
       input.githubUrl ?? null,
       input.resumeUrl ?? null,

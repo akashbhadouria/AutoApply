@@ -10,6 +10,13 @@ interface NotificationPayload {
   deliveredAt: string | null;
 }
 
+interface NotificationRecipient {
+  email: string | null;
+  telegramUsername: string | null;
+  telegramChatId: string | null;
+  whatsappNumber: string | null;
+}
+
 interface NotificationDeliveryResult {
   mode: "simulated" | "live";
   transport: string;
@@ -33,32 +40,38 @@ async function postJson(url: string, body: Record<string, unknown>) {
   }
 }
 
-export function getNotificationTransportStatus(channel: NotificationPayload["channel"]) {
+export function getNotificationTransportStatus(
+  channel: NotificationPayload["channel"],
+  recipient?: NotificationRecipient,
+) {
   if (channel === "dashboard") {
     return { configured: true, transport: "dashboard" };
   }
 
   if (channel === "telegram") {
     return {
-      configured: Boolean(env.telegramBotToken && env.telegramChatId),
+      configured: Boolean(env.telegramBotToken && (recipient?.telegramChatId || env.telegramChatId)),
       transport: "telegram_bot_api",
     };
   }
 
   if (channel === "email") {
     return {
-      configured: Boolean(env.emailWebhookUrl),
+      configured: Boolean(env.emailWebhookUrl && recipient?.email),
       transport: "email_webhook",
     };
   }
 
   return {
-    configured: Boolean(env.whatsappWebhookUrl),
+    configured: Boolean(env.whatsappWebhookUrl && recipient?.whatsappNumber),
     transport: "whatsapp_webhook",
   };
 }
 
-export async function deliverNotification(notification: NotificationPayload): Promise<NotificationDeliveryResult> {
+export async function deliverNotification(
+  notification: NotificationPayload,
+  recipient: NotificationRecipient,
+): Promise<NotificationDeliveryResult> {
   if (notification.channel === "dashboard") {
     return {
       mode: "simulated",
@@ -67,7 +80,8 @@ export async function deliverNotification(notification: NotificationPayload): Pr
   }
 
   if (notification.channel === "telegram") {
-    if (!env.telegramBotToken || !env.telegramChatId) {
+    const chatId = recipient.telegramChatId || env.telegramChatId;
+    if (!env.telegramBotToken || !chatId) {
       throw new Error("telegram_transport_unconfigured");
     }
 
@@ -77,7 +91,7 @@ export async function deliverNotification(notification: NotificationPayload): Pr
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        chat_id: env.telegramChatId,
+        chat_id: chatId,
         text: buildNotificationText(notification),
       }),
     });
@@ -93,12 +107,13 @@ export async function deliverNotification(notification: NotificationPayload): Pr
   }
 
   if (notification.channel === "email") {
-    if (!env.emailWebhookUrl) {
+    if (!env.emailWebhookUrl || !recipient.email) {
       throw new Error("email_transport_unconfigured");
     }
 
     await postJson(env.emailWebhookUrl, {
       channel: notification.channel,
+      recipientEmail: recipient.email,
       notificationId: notification.id,
       type: notification.type,
       title: notification.title,
@@ -111,12 +126,13 @@ export async function deliverNotification(notification: NotificationPayload): Pr
     };
   }
 
-  if (!env.whatsappWebhookUrl) {
+  if (!env.whatsappWebhookUrl || !recipient.whatsappNumber) {
     throw new Error("whatsapp_transport_unconfigured");
   }
 
   await postJson(env.whatsappWebhookUrl, {
     channel: notification.channel,
+    recipientNumber: recipient.whatsappNumber,
     notificationId: notification.id,
     type: notification.type,
     title: notification.title,

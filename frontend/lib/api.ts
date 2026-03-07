@@ -29,10 +29,14 @@ export interface Job {
 export interface CurrentUser {
   id: number;
   email: string;
+  notificationEmail: string | null;
   fullName: string;
   phone: string | null;
+  whatsappNumber: string | null;
   location: string | null;
   linkedinUrl: string | null;
+  telegramUsername: string | null;
+  telegramChatId: string | null;
   portfolioUrl: string | null;
   githubUrl: string | null;
   resumeUrl: string | null;
@@ -505,10 +509,14 @@ export async function fetchCurrentUser(): Promise<CurrentUser> {
 
 export async function upsertCurrentUser(body: {
   email: string;
+  notificationEmail?: string;
   fullName: string;
   phone?: string;
+  whatsappNumber?: string;
   location?: string;
   linkedinUrl?: string;
+  telegramUsername?: string;
+  telegramChatId?: string;
   portfolioUrl?: string;
   githubUrl?: string;
   resumeUrl?: string;

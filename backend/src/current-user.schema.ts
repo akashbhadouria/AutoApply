@@ -17,10 +17,14 @@ const watcherProviderSchema = z.enum([
 
 export const currentUserSchema = z.object({
   email: z.string().trim().email(),
+  notificationEmail: z.string().trim().email().optional(),
   fullName: z.string().trim().min(1).max(160),
   phone: z.string().trim().min(1).max(40).optional(),
+  whatsappNumber: z.string().trim().min(1).max(40).optional(),
   location: z.string().trim().min(1).max(160).optional(),
   linkedinUrl: z.string().trim().url().optional(),
+  telegramUsername: z.string().trim().min(1).max(80).optional(),
+  telegramChatId: z.string().trim().min(1).max(80).optional(),
   portfolioUrl: z.string().trim().url().optional(),
   githubUrl: z.string().trim().url().optional(),
   resumeUrl: z.string().trim().url().optional(),

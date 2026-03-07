@@ -14,6 +14,7 @@ import {
   fetchBackendApplicationRateWindow,
   fetchBackendContacts,
   fetchBackendCurrentUserPreferences,
+  fetchBackendCurrentUser,
   fetchBackendFieldMappings,
   fetchBackendJobFeedWatchers,
   fetchBackendNotificationById,
@@ -945,7 +946,14 @@ export function startWorkers() {
         settings.get(settingKey),
         notification.channel === "dashboard",
       );
-      const transportStatus = getNotificationTransportStatus(notification.channel);
+      const currentUserResponse = await fetchBackendCurrentUser();
+      const recipient = {
+        email: currentUserResponse.data.notificationEmail ?? currentUserResponse.data.email,
+        telegramUsername: currentUserResponse.data.telegramUsername,
+        telegramChatId: currentUserResponse.data.telegramChatId,
+        whatsappNumber: currentUserResponse.data.whatsappNumber ?? currentUserResponse.data.phone,
+      };
+      const transportStatus = getNotificationTransportStatus(notification.channel, recipient);
 
       if (!channelEnabled) {
         await updateBackendNotificationStatus(notification.id, {
@@ -982,7 +990,7 @@ export function startWorkers() {
       }
 
       try {
-        const delivery = await deliverNotification(notification);
+        const delivery = await deliverNotification(notification, recipient);
         await updateBackendNotificationStatus(notification.id, {
           status: "delivered",
           deliveredAt: new Date().toISOString(),
@@ -995,6 +1003,7 @@ export function startWorkers() {
             channel: notification.channel,
             transport: delivery.transport,
             mode: delivery.mode,
+            recipient: notification.channel === "email" ? recipient.email : notification.channel === "telegram" ? recipient.telegramChatId ?? recipient.telegramUsername : recipient.whatsappNumber,
           },
         });
       } catch (error) {

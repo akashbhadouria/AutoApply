@@ -33,6 +33,7 @@ export async function getOrCreateCurrentUser() {
 
   return saveCurrentUser({
     email: "founder@autoapply.dev",
+    notificationEmail: "founder@autoapply.dev",
     fullName: "AutoApply Founder",
     onboardingCompleted: false,
   });

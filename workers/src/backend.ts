@@ -198,6 +198,20 @@ export async function fetchBackendCurrentUserPreferences() {
   }>("/api/me/preferences");
 }
 
+export async function fetchBackendCurrentUser() {
+  return request<{
+    data: {
+      id: number;
+      email: string;
+      notificationEmail: string | null;
+      phone: string | null;
+      whatsappNumber: string | null;
+      telegramUsername: string | null;
+      telegramChatId: string | null;
+    };
+  }>("/api/me");
+}
+
 export async function fetchBackendNotificationById(notificationId: number) {
   const response = await fetch(`${env.backendUrl}/api/notifications/${notificationId}`);
 

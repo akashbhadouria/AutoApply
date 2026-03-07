@@ -61,11 +61,18 @@ Open:
 - `http://localhost:3000/settings`
 
 The onboarding page now supports local resume upload. Uploaded files are stored under `storage/resumes` and the absolute path is saved back into the user profile for ATS/browser workers.
+Onboarding now also captures `notificationEmail`, `telegramUsername`, `telegramChatId`, and `whatsappNumber` so notification delivery has real per-user destination targets instead of only channel toggles.
 
 If you want to reseed demo data manually without restarting the stack:
 
 ```bash
 npm run seed:demo
+```
+
+If you pulled recent schema changes, re-apply the database schema once before testing:
+
+```bash
+docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -d job_hunter < database/schema.sql
 ```
 
 To verify the stack end to end:

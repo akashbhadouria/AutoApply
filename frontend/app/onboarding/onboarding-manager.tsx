@@ -33,10 +33,14 @@ export function OnboardingManager({
 }) {
   const [user, setUser] = useState({
     email: initialUser.email,
+    notificationEmail: initialUser.notificationEmail ?? initialUser.email,
     fullName: initialUser.fullName,
     phone: initialUser.phone ?? "",
+    whatsappNumber: initialUser.whatsappNumber ?? initialUser.phone ?? "",
     location: initialUser.location ?? "",
     linkedinUrl: initialUser.linkedinUrl ?? "",
+    telegramUsername: initialUser.telegramUsername ?? "",
+    telegramChatId: initialUser.telegramChatId ?? "",
     portfolioUrl: initialUser.portfolioUrl ?? "",
     githubUrl: initialUser.githubUrl ?? "",
     resumeUrl: initialUser.resumeUrl ?? "",
@@ -113,9 +117,13 @@ export function OnboardingManager({
           body: JSON.stringify({
             ...user,
             onboardingCompleted: true,
+            notificationEmail: user.notificationEmail || undefined,
             phone: user.phone || undefined,
+            whatsappNumber: user.whatsappNumber || undefined,
             location: user.location || undefined,
             linkedinUrl: user.linkedinUrl || undefined,
+            telegramUsername: user.telegramUsername || undefined,
+            telegramChatId: user.telegramChatId || undefined,
             portfolioUrl: user.portfolioUrl || undefined,
             githubUrl: user.githubUrl || undefined,
             resumeUrl: user.resumeUrl || undefined,
@@ -166,9 +174,13 @@ export function OnboardingManager({
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <Input placeholder="Founder Name" value={user.fullName} onChange={(event) => setUser((current) => ({ ...current, fullName: event.target.value }))} />
           <Input placeholder="founder@autoapply.dev" type="email" value={user.email} onChange={(event) => setUser((current) => ({ ...current, email: event.target.value }))} />
+          <Input placeholder="Notification email" type="email" value={user.notificationEmail} onChange={(event) => setUser((current) => ({ ...current, notificationEmail: event.target.value }))} />
           <Input placeholder="+91..." value={user.phone} onChange={(event) => setUser((current) => ({ ...current, phone: event.target.value }))} />
+          <Input placeholder="WhatsApp number" value={user.whatsappNumber} onChange={(event) => setUser((current) => ({ ...current, whatsappNumber: event.target.value }))} />
           <Input placeholder="Bangalore" value={user.location} onChange={(event) => setUser((current) => ({ ...current, location: event.target.value }))} />
           <Input placeholder="LinkedIn URL" value={user.linkedinUrl} onChange={(event) => setUser((current) => ({ ...current, linkedinUrl: event.target.value }))} />
+          <Input placeholder="Telegram username" value={user.telegramUsername} onChange={(event) => setUser((current) => ({ ...current, telegramUsername: event.target.value }))} />
+          <Input placeholder="Telegram chat ID (optional, best for live bot delivery)" value={user.telegramChatId} onChange={(event) => setUser((current) => ({ ...current, telegramChatId: event.target.value }))} />
           <Input placeholder="Portfolio URL" value={user.portfolioUrl} onChange={(event) => setUser((current) => ({ ...current, portfolioUrl: event.target.value }))} />
           <Input placeholder="GitHub URL" value={user.githubUrl} onChange={(event) => setUser((current) => ({ ...current, githubUrl: event.target.value }))} />
           <Input placeholder="Public resume URL" value={user.resumeUrl} onChange={(event) => setUser((current) => ({ ...current, resumeUrl: event.target.value }))} />

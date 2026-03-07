@@ -1,10 +1,14 @@
 export interface CurrentUserRecord {
   id: number;
   email: string;
+  notificationEmail: string | null;
   fullName: string;
   phone: string | null;
+  whatsappNumber: string | null;
   location: string | null;
   linkedinUrl: string | null;
+  telegramUsername: string | null;
+  telegramChatId: string | null;
   portfolioUrl: string | null;
   githubUrl: string | null;
   resumeUrl: string | null;

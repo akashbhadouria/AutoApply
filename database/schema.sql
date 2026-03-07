@@ -272,10 +272,14 @@ EXECUTE FUNCTION set_updated_at();
 CREATE TABLE IF NOT EXISTS users (
   id BIGSERIAL PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
+  notification_email TEXT,
   full_name TEXT NOT NULL,
   phone TEXT,
+  whatsapp_number TEXT,
   location TEXT,
   linkedin_url TEXT,
+  telegram_username TEXT,
+  telegram_chat_id TEXT,
   portfolio_url TEXT,
   github_url TEXT,
   resume_url TEXT,
@@ -291,6 +295,11 @@ CREATE TRIGGER users_set_updated_at
 BEFORE UPDATE ON users
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS notification_email TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp_number TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_username TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_chat_id TEXT;
 
 CREATE TABLE IF NOT EXISTS user_job_preferences (
   user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
