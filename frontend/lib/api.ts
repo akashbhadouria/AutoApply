@@ -110,8 +110,22 @@ export interface FieldMapping {
   updatedAt: string;
 }
 
+export interface AutomationQueueStats {
+  waiting: number;
+  active: number;
+  completed: number;
+  failed: number;
+  delayed: number;
+  paused: number;
+  prioritized: number;
+  waitingChildren: number;
+  workerCount: number;
+  isPaused: boolean;
+}
+
 export interface AutomationQueue {
   queueName: "job-scanner" | "referral-engine" | "application-queue" | "browser-automation" | "notifications";
+  stats: AutomationQueueStats;
 }
 
 export interface EnqueuedAutomationJob {

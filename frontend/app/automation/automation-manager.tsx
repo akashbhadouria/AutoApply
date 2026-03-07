@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,22 @@ export function AutomationManager({ queues }: { queues: AutomationQueue[] }) {
   const [lastJob, setLastJob] = useState<EnqueuedAutomationJob | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [queueSnapshots, setQueueSnapshots] = useState(queues);
   const hasQueues = queues.length > 0;
+  const selectedQueueSnapshot = useMemo(
+    () => queueSnapshots.find((queue) => queue.queueName === selectedQueue) ?? null,
+    [queueSnapshots, selectedQueue],
+  );
+
+  async function refreshQueues() {
+    const response = await fetch("/api/automation/queues", { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error("Failed to refresh automation queues");
+    }
+
+    const payload = (await response.json()) as { data: AutomationQueue[] };
+    setQueueSnapshots(payload.data);
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -57,6 +72,7 @@ export function AutomationManager({ queues }: { queues: AutomationQueue[] }) {
 
       const result = (await response.json()) as { data: EnqueuedAutomationJob };
       setLastJob(result.data);
+      await refreshQueues();
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : "Failed to enqueue job");
     } finally {
@@ -86,7 +102,7 @@ export function AutomationManager({ queues }: { queues: AutomationQueue[] }) {
               setPayload(defaultPayloads[nextQueue]);
             }}
           >
-            {queues.map((queue) => (
+            {queueSnapshots.map((queue) => (
               <option key={queue.queueName} value={queue.queueName}>
                 {queue.queueName}
               </option>
@@ -111,15 +127,57 @@ export function AutomationManager({ queues }: { queues: AutomationQueue[] }) {
 
       <div className="space-y-6">
         <Card className="p-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Available queues</p>
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Queue snapshots</p>
+            <Button className="bg-transparent px-3 text-ink hover:bg-canvas hover:text-ink" onClick={() => void refreshQueues()} type="button">
+              Refresh
+            </Button>
+          </div>
           {hasQueues ? (
-            <ul className="mt-4 space-y-3 text-sm text-ink">
-              {queues.map((queue) => (
-                <li key={queue.queueName}>{queue.queueName}</li>
+            <div className="mt-4 space-y-3">
+              {queueSnapshots.map((queue) => (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4" key={queue.queueName}>
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-sm font-medium text-ink">{queue.queueName}</p>
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
+                        queue.stats.workerCount > 0 && !queue.stats.isPaused
+                          ? "bg-emerald-500/15 text-emerald-300"
+                          : "bg-amber-500/15 text-amber-300"
+                      }`}
+                    >
+                      {queue.stats.workerCount > 0 && !queue.stats.isPaused ? "live" : "degraded"}
+                    </span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-slate-300">
+                    <p>waiting: {queue.stats.waiting}</p>
+                    <p>active: {queue.stats.active}</p>
+                    <p>failed: {queue.stats.failed}</p>
+                    <p>delayed: {queue.stats.delayed}</p>
+                    <p>completed: {queue.stats.completed}</p>
+                    <p>workers: {queue.stats.workerCount}</p>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           ) : (
             <p className="mt-4 text-sm text-muted">No queues were returned by the backend.</p>
+          )}
+        </Card>
+
+        <Card className="p-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Selected queue health</p>
+          {selectedQueueSnapshot ? (
+            <div className="mt-4 space-y-3 text-sm text-ink">
+              <p>Queue: {selectedQueueSnapshot.queueName}</p>
+              <p>Workers connected: {selectedQueueSnapshot.stats.workerCount}</p>
+              <p>Paused: {selectedQueueSnapshot.stats.isPaused ? "yes" : "no"}</p>
+              <p>Backlog: {selectedQueueSnapshot.stats.waiting + selectedQueueSnapshot.stats.delayed}</p>
+              <p>Waiting children: {selectedQueueSnapshot.stats.waitingChildren}</p>
+              <p>Prioritized: {selectedQueueSnapshot.stats.prioritized}</p>
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-muted">No queue selected.</p>
           )}
         </Card>
 

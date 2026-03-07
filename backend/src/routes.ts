@@ -36,8 +36,13 @@ apiRouter.get("/api/dashboard/summary", async (_request, response, next) => {
   }
 });
 
-apiRouter.get("/api/automation/queues", (_request, response) => {
-  response.json({ data: getAutomationQueues() });
+apiRouter.get("/api/automation/queues", async (_request, response, next) => {
+  try {
+    const queues = await getAutomationQueues();
+    response.json({ data: queues });
+  } catch (error) {
+    next(error);
+  }
 });
 
 apiRouter.post("/api/automation/enqueue", async (request, response, next) => {

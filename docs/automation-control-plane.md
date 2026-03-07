@@ -14,7 +14,18 @@ This creates a stable integration boundary for:
 
 ### `GET /api/automation/queues`
 
-Returns the registered queue names.
+Returns the registered queue names plus live BullMQ stats:
+
+- waiting
+- active
+- completed
+- failed
+- delayed
+- paused
+- prioritized
+- waiting children
+- connected worker count
+- pause state
 
 ### `POST /api/automation/enqueue`
 
@@ -38,6 +49,7 @@ Example body:
 The `/automation` page is a manual control harness that:
 
 - lists queue names
+- shows queue health and backlog snapshots
 - allows custom JSON payloads
 - confirms the enqueued queue and job id
 
