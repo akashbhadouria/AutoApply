@@ -34,6 +34,8 @@ Use this payload on the Automation page to run the timeout sweep manually:
 }
 ```
 
+When `REFERRAL_TIMEOUT_SCHEDULER_ENABLED=true`, the workers process also auto-enqueues this timeout sweep in the background using the persisted `referral_timeout_hours` setting.
+
 ## Draft generation
 
 The current draft logic is deterministic and uses:

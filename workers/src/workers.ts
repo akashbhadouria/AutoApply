@@ -16,6 +16,7 @@ import {
   fetchBackendFieldMappings,
   fetchBackendJobFeedWatchers,
   fetchBackendNotificationById,
+  fetchBackendNotifications,
   fetchBackendProfileFields,
   fetchBackendReferralsByJobId,
   fetchBackendSettings,
@@ -43,7 +44,13 @@ import { getConnectionOptions } from "./connection.js";
 import { queueNames } from "./contracts.js";
 import { env } from "./config.js";
 import { deliverNotification, getNotificationTransportStatus } from "./notification-delivery.js";
-import { enqueueApplicationQueueJob, enqueueBrowserAutomationJob, enqueueJobFeedWatcherJob, enqueueReferralEngineJob } from "./queues.js";
+import {
+  enqueueApplicationQueueJob,
+  enqueueBrowserAutomationJob,
+  enqueueJobFeedWatcherJob,
+  enqueueNotificationJob,
+  enqueueReferralEngineJob,
+} from "./queues.js";
 import { scanDiscoveredJobs } from "./scanners.js";
 
 function logWorkerStart(name: string, data: unknown) {
@@ -206,6 +213,10 @@ function inferFreshness(postedDate: string) {
 
 export function startWorkers() {
   const connection = getConnectionOptions();
+  let notificationSchedulerTimer: NodeJS.Timeout | null = null;
+  let notificationSchedulerRunning = false;
+  let referralTimeoutSchedulerTimer: NodeJS.Timeout | null = null;
+  let referralTimeoutSchedulerRunning = false;
   let watcherSchedulerTimer: NodeJS.Timeout | null = null;
   let watcherSchedulerRunning = false;
 
@@ -1047,6 +1058,90 @@ export function startWorkers() {
     }
   }
 
+  async function schedulePendingNotifications() {
+    if (notificationSchedulerRunning) {
+      return;
+    }
+
+    notificationSchedulerRunning = true;
+    try {
+      const notificationsResponse = await fetchBackendNotifications();
+      const pendingNotifications = notificationsResponse.data.filter((notification) => notification.status === "pending");
+
+      for (const notification of pendingNotifications) {
+        await enqueueNotificationJob(
+          {
+            notificationId: notification.id,
+          },
+          {
+            jobId: `notification:${notification.id}`,
+          },
+        );
+      }
+
+      if (pendingNotifications.length > 0) {
+        await createBackendEvent({
+          eventType: "notification_scheduler.enqueued",
+          actor: "notificationScheduler",
+          payload: {
+            pendingCount: pendingNotifications.length,
+          },
+        });
+      }
+    } catch (error) {
+      await createBackendEvent({
+        eventType: "notification_scheduler.failed",
+        actor: "notificationScheduler",
+        payload: {
+          error: error instanceof Error ? error.message : "Unknown notification scheduler error",
+        },
+      });
+    } finally {
+      notificationSchedulerRunning = false;
+    }
+  }
+
+  async function scheduleReferralTimeoutSweep() {
+    if (referralTimeoutSchedulerRunning) {
+      return;
+    }
+
+    referralTimeoutSchedulerRunning = true;
+    try {
+      const settingsResponse = await fetchBackendSettings();
+      const settings = new Map(settingsResponse.data.map((setting) => [setting.key, setting.value]));
+      const olderThanHours = parseNumberSetting(settings.get("referral_timeout_hours"), 24);
+
+      await enqueueReferralEngineJob(
+        {
+          mode: "timeouts",
+          olderThanHours,
+        },
+        {
+          jobId: "referral-timeout-sweep",
+        },
+      );
+
+      await createBackendEvent({
+        eventType: "referral_timeout_scheduler.enqueued",
+        actor: "referralTimeoutScheduler",
+        payload: {
+          olderThanHours,
+        },
+      });
+    } catch (error) {
+      await createBackendEvent({
+        eventType: "referral_timeout_scheduler.failed",
+        actor: "referralTimeoutScheduler",
+        payload: {
+          error: error instanceof Error ? error.message : "Unknown referral timeout scheduler error",
+        },
+      });
+    } finally {
+      referralTimeoutSchedulerRunning = false;
+    }
+  }
+
   if (env.watcherSchedulerEnabled) {
     watcherSchedulerTimer = setInterval(() => {
       void scheduleDueWatchers();
@@ -1054,8 +1149,28 @@ export function startWorkers() {
     void scheduleDueWatchers();
   }
 
+  if (env.notificationSchedulerEnabled) {
+    notificationSchedulerTimer = setInterval(() => {
+      void schedulePendingNotifications();
+    }, Math.max(env.notificationSchedulerTickMs, 5_000));
+    void schedulePendingNotifications();
+  }
+
+  if (env.referralTimeoutSchedulerEnabled) {
+    referralTimeoutSchedulerTimer = setInterval(() => {
+      void scheduleReferralTimeoutSweep();
+    }, Math.max(env.referralTimeoutSchedulerTickMs, 30_000));
+    void scheduleReferralTimeoutSweep();
+  }
+
   return {
     async close() {
+      if (notificationSchedulerTimer) {
+        clearInterval(notificationSchedulerTimer);
+      }
+      if (referralTimeoutSchedulerTimer) {
+        clearInterval(referralTimeoutSchedulerTimer);
+      }
       if (watcherSchedulerTimer) {
         clearInterval(watcherSchedulerTimer);
       }

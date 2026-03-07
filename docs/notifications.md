@@ -39,3 +39,12 @@ Current transport behavior:
 - `telegram`: real Telegram Bot API delivery when `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are present
 - `email`: webhook-based delivery when `EMAIL_WEBHOOK_URL` is present
 - `whatsapp`: webhook-based delivery when `WHATSAPP_WEBHOOK_URL` is present
+
+## Scheduler behavior
+
+When `NOTIFICATION_SCHEDULER_ENABLED=true`, the workers process:
+
+- polls backend notifications on a short interval
+- finds `pending` notifications
+- enqueues them on the `notifications` queue with deduped job ids
+- writes scheduler events for enqueue activity and failures

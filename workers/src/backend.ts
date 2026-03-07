@@ -222,6 +222,20 @@ export async function fetchBackendNotificationById(notificationId: number) {
   }>;
 }
 
+export async function fetchBackendNotifications() {
+  return request<{
+    data: Array<{
+      id: number;
+      type: string;
+      title: string;
+      message: string;
+      channel: "dashboard" | "email" | "telegram" | "whatsapp";
+      status: "pending" | "delivered" | "failed";
+      deliveredAt: string | null;
+    }>;
+  }>("/api/notifications");
+}
+
 export async function fetchBackendFieldMappings() {
   return request<{
     data: Array<{
