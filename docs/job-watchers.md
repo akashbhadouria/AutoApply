@@ -1,6 +1,6 @@
 # Job Watchers
 
-The HirePilot V1 watcher slice adds user-level discovery rules and a dedicated watcher queue.
+The AutoApply V1 watcher slice adds user-level discovery rules and a dedicated watcher queue.
 
 ## What it covers
 

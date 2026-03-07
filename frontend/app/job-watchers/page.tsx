@@ -11,14 +11,14 @@ export default async function JobWatchersPage() {
 
     return (
       <FeaturePageShell
-        badge="HirePilot V1"
+        badge="AutoApply V1"
         bullets={[
           "Watchers are the replacement for ad-hoc cron-only scanning.",
           "Each watcher belongs to the current user and stores its targeting rules.",
           "The watcher queue now exists alongside the older scanner worker.",
           "This is the first product surface for near-real-time discovery control.",
         ]}
-        description="Create and manage user-level job watchers that define which titles and locations HirePilot should monitor continuously."
+        description="Create and manage user-level job watchers that define which titles and locations AutoApply should monitor continuously."
         title="Job watchers for near-real-time discovery."
       >
         <JobWatchersManager initialWatchers={watchers} />
@@ -27,7 +27,7 @@ export default async function JobWatchersPage() {
   } catch (error) {
     return (
       <FeaturePageShell
-        badge="HirePilot V1"
+        badge="AutoApply V1"
         bullets={[
           "This page depends on the new job feed watcher model.",
           "Use it to set user-specific discovery rules instead of relying on one global scanner payload.",

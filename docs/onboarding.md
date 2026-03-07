@@ -1,6 +1,6 @@
 # Onboarding
 
-The HirePilot V1 onboarding flow introduces a product-facing setup surface for the current user.
+The AutoApply V1 onboarding flow introduces a product-facing setup surface for the current user.
 
 ## What it covers
 

@@ -53,7 +53,7 @@ async function upsertCurrentUser() {
        updated_at = NOW()
      RETURNING id`,
     [
-      "founder@hirepilot.dev",
+      "founder@autoapply.dev",
       "Akash Bhadouria",
       "+91-9876543210",
       "Bangalore",
@@ -100,8 +100,8 @@ async function upsertCurrentUser() {
 
   const accounts = [
     ["linkedin", "Primary LinkedIn", "connected", "manual_approval", "linkedin.com/in/akash-bhadouria"],
-    ["gmail", "Founder Gmail", "connected", "manual_approval", "founder@hirepilot.dev"],
-    ["telegram", "Ops Telegram", "pending", "manual_approval", "@hirepilot_ops"],
+    ["gmail", "Founder Gmail", "connected", "manual_approval", "founder@autoapply.dev"],
+    ["telegram", "Ops Telegram", "pending", "manual_approval", "@autoapply_ops"],
   ] as const;
 
   for (const account of accounts) {

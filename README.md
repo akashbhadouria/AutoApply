@@ -15,7 +15,7 @@ It also seeds deterministic demo data so the dashboard and operational pages are
 
 The first implemented feature is the `Profile Manager`, which provides:
 
-- HirePilot V1 onboarding for the current user and targeting preferences
+- AutoApply V1 onboarding for the current user and targeting preferences
 - connected accounts for outreach-capable providers
 - job watchers for per-user discovery rules and near-real-time watcher runs
 - a live dashboard overview with runtime status and aggregate system metrics

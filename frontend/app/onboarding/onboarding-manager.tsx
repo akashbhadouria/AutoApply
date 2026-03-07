@@ -103,7 +103,7 @@ export function OnboardingManager({
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <Input placeholder="Founder Name" value={user.fullName} onChange={(event) => setUser((current) => ({ ...current, fullName: event.target.value }))} />
-          <Input placeholder="founder@hirepilot.dev" type="email" value={user.email} onChange={(event) => setUser((current) => ({ ...current, email: event.target.value }))} />
+          <Input placeholder="founder@autoapply.dev" type="email" value={user.email} onChange={(event) => setUser((current) => ({ ...current, email: event.target.value }))} />
           <Input placeholder="+91..." value={user.phone} onChange={(event) => setUser((current) => ({ ...current, phone: event.target.value }))} />
           <Input placeholder="Bangalore" value={user.location} onChange={(event) => setUser((current) => ({ ...current, location: event.target.value }))} />
           <Input placeholder="LinkedIn URL" value={user.linkedinUrl} onChange={(event) => setUser((current) => ({ ...current, linkedinUrl: event.target.value }))} />
@@ -121,7 +121,7 @@ export function OnboardingManager({
         <Card className="p-6">
           <div className="space-y-2">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">Job Preferences</p>
-            <h2 className="text-2xl font-semibold text-ink">What HirePilot should chase.</h2>
+            <h2 className="text-2xl font-semibold text-ink">What AutoApply should chase.</h2>
           </div>
 
           <div className="mt-6 space-y-4">

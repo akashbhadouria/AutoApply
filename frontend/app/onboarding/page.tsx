@@ -11,7 +11,7 @@ export default async function OnboardingPage() {
 
     return (
       <FeaturePageShell
-        badge="HirePilot V1"
+        badge="AutoApply V1"
         bullets={[
           "This is the first user-facing startup-grade onboarding flow in the repo.",
           "Identity, preferences, and automation policy are now configured together.",
@@ -29,7 +29,7 @@ export default async function OnboardingPage() {
 
     return (
       <FeaturePageShell
-        badge="HirePilot V1"
+        badge="AutoApply V1"
         bullets={[
           "This page depends on the new current-user and preferences endpoints.",
           "It should remain usable even if the rest of the product is only partially migrated.",
@@ -43,7 +43,7 @@ export default async function OnboardingPage() {
           checks={[
             "GET /api/me returns a current user payload.",
             "GET /api/me/preferences returns user targeting preferences.",
-            "database/schema.sql has been applied after the HirePilot V1 schema update.",
+            "database/schema.sql has been applied after the AutoApply V1 schema update.",
             "Use npm run dev:stack after schema changes so the Docker DB is current.",
           ]}
           message={message}

@@ -11,14 +11,14 @@ export default async function ConnectedAccountsPage() {
 
     return (
       <FeaturePageShell
-        badge="HirePilot V1"
+        badge="AutoApply V1"
         bullets={[
           "Account connection is a hard requirement for real outreach execution.",
           "Approval mode is explicit instead of hidden in worker logic.",
           "This is the first product surface for startup-grade identity orchestration.",
           "LinkedIn and email can now be represented as operator-managed connections.",
         ]}
-        description="Use this page to model how outreach-capable accounts connect to HirePilot before any real send path is introduced."
+        description="Use this page to model how outreach-capable accounts connect to AutoApply before any real send path is introduced."
         title="Connected accounts and approval policy."
       >
         <ConnectedAccountsManager initialAccounts={accounts} />
@@ -27,7 +27,7 @@ export default async function ConnectedAccountsPage() {
   } catch (error) {
     return (
       <FeaturePageShell
-        badge="HirePilot V1"
+        badge="AutoApply V1"
         bullets={[
           "This page depends on the new connected accounts entity.",
           "The surface is intentionally separate from generic settings.",

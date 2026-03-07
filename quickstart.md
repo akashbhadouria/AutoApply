@@ -10,7 +10,7 @@ This repository currently implements eight foundational slices of the larger job
 - `Automation Control Plane`
 - `ATS Self-Learning Layer`
 - `OpenClaw-Compatible Agent Layer`
-- `HirePilot V1 Onboarding + Watchers`
+- `AutoApply V1 Onboarding + Watchers`
 
 ## Prerequisites
 
@@ -93,7 +93,7 @@ The referrals and field-mappings pages now include backend-powered agent actions
 - `Summarize notification` on `/notifications`
 
 The job scanner can now consume live company ATS feeds if the workers environment defines `JOB_SOURCE_FEEDS_JSON`. Without that configuration, it falls back to deterministic discovery data so local development stays stable.
-The new HirePilot V1 watcher surface stores per-user discovery rules and can enqueue the `job-feed-watcher` queue directly.
+The new AutoApply V1 watcher surface stores per-user discovery rules and can enqueue the `job-feed-watcher` queue directly.
 
 The `/automation` page now also shows live queue backlog and worker snapshots from BullMQ, including waiting, active, delayed, failed, connected-worker counts, retry policy, and recent retained failed jobs.
 It now also supports direct queue `Pause` and `Resume` controls for operator testing and incident handling.

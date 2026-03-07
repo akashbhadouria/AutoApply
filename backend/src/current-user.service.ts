@@ -26,8 +26,8 @@ export async function getOrCreateCurrentUser() {
   }
 
   return saveCurrentUser({
-    email: "founder@hirepilot.dev",
-    fullName: "HirePilot Founder",
+    email: "founder@autoapply.dev",
+    fullName: "AutoApply Founder",
     onboardingCompleted: false,
   });
 }
