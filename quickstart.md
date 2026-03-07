@@ -128,6 +128,7 @@ npm run dev:workers
 
 If host database auth is inconsistent, pages now remain styled and show explicit runtime dependency errors instead of dropping into raw error screens.
 The frontend now also shows a global runtime banner so backend connectivity problems are visible immediately on every major page.
+`GET /health` now returns real dependency status for backend, PostgreSQL, and Redis, and uses HTTP `503` when the stack is degraded.
 
 ## Implemented endpoints
 

@@ -257,6 +257,11 @@ export interface BackendRuntimeStatus {
   backendUrl: string;
   backendStatus: "healthy" | "degraded";
   detail: string;
+  services: Array<{
+    label: string;
+    status: "healthy" | "degraded";
+    detail: string;
+  }>;
 }
 
 const backendUrl = process.env.BACKEND_URL ?? "http://localhost:4000";
@@ -271,18 +276,25 @@ export async function fetchBackendRuntimeStatus(): Promise<BackendRuntimeStatus>
       cache: "no-store",
     });
 
-    if (!response.ok) {
-      return {
-        backendUrl: getBackendUrl(),
-        backendStatus: "degraded",
-        detail: `Backend health check returned HTTP ${response.status}.`,
-      };
-    }
+    const payload = (await response.json()) as {
+      status?: "ok" | "degraded";
+      services?: Array<{
+        label: string;
+        status: "healthy" | "degraded";
+        detail: string;
+      }>;
+    };
+    const services = Array.isArray(payload.services) ? payload.services : [];
+    const degradedServices = services.filter((service) => service.status !== "healthy");
 
     return {
       backendUrl: getBackendUrl(),
-      backendStatus: "healthy",
-      detail: "Frontend and backend are connected. Live data routes should be available.",
+      backendStatus: response.ok && payload.status === "ok" ? "healthy" : "degraded",
+      detail:
+        degradedServices.length === 0
+          ? "Frontend and backend are connected. Backend, PostgreSQL, and Redis are healthy."
+          : `Connected, but degraded dependencies detected: ${degradedServices.map((service) => service.label).join(", ")}.`,
+      services,
     };
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Unknown connection error";
@@ -291,6 +303,13 @@ export async function fetchBackendRuntimeStatus(): Promise<BackendRuntimeStatus>
       backendUrl: getBackendUrl(),
       backendStatus: "degraded",
       detail: `Frontend cannot reach the backend runtime. ${detail}`,
+      services: [
+        {
+          label: "Backend",
+          status: "degraded",
+          detail: detail,
+        },
+      ],
     };
   }
 }

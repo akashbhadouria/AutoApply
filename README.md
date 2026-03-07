@@ -37,5 +37,6 @@ The first implemented feature is the `Profile Manager`, which provides:
 - optional live notification delivery adapters for Telegram and webhook-based email/WhatsApp channels
 - referral status actions that can automatically hand jobs into the application queue
 - a global runtime-integration banner that shows whether the frontend can currently reach the backend
+- `/health` now reports backend, PostgreSQL, and Redis dependency status instead of only a static ok response
 
 See [quickstart.md](/home/akash/AutoApply/quickstart.md) to run the current slice locally.

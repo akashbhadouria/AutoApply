@@ -1,5 +1,3 @@
-import { queueRegistry } from "./automation.queue.js";
-import { pool } from "./db.js";
 import {
   getApplicationBreakdown,
   getDashboardCounts,
@@ -9,46 +7,10 @@ import {
   getReferralBreakdown,
 } from "./dashboard.repository.js";
 import type { DashboardSummary } from "./dashboard.types.js";
-
-async function getDatabaseStatus() {
-  try {
-    await pool.query("SELECT 1");
-    return {
-      label: "PostgreSQL",
-      status: "healthy" as const,
-      detail: "Primary persistence is reachable.",
-    };
-  } catch {
-    return {
-      label: "PostgreSQL",
-      status: "degraded" as const,
-      detail: "The backend cannot query the primary database.",
-    };
-  }
-}
-
-async function getRedisStatus() {
-  try {
-    const queue = queueRegistry["job-scanner"];
-    const client = await queue.client;
-    const result = await client.ping();
-
-    return {
-      label: "Redis",
-      status: result === "PONG" ? ("healthy" as const) : ("degraded" as const),
-      detail: result === "PONG" ? "BullMQ can reach Redis." : "Unexpected ping response from Redis.",
-    };
-  } catch {
-    return {
-      label: "Redis",
-      status: "degraded" as const,
-      detail: "Queue storage is not reachable.",
-    };
-  }
-}
+import { getServiceHealthSummary } from "./health.service.js";
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
-  const [counts, applicationBreakdown, referralBreakdown, recentJobs, recentEvents, latestScannerRun, databaseStatus, redisStatus] =
+  const [counts, applicationBreakdown, referralBreakdown, recentJobs, recentEvents, latestScannerRun, healthSummary] =
     await Promise.all([
       getDashboardCounts(),
       getApplicationBreakdown(),
@@ -56,8 +18,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       getRecentJobs(),
       getRecentEvents(),
       getLatestScannerRun(),
-      getDatabaseStatus(),
-      getRedisStatus(),
+      getServiceHealthSummary(),
     ]);
 
   return {
@@ -69,15 +30,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       { label: "Pending notifications", value: counts.notificationsPending, detail: "Events still waiting for delivery." },
       { label: "Field mappings", value: counts.fieldMappings, detail: "Learned ATS labels mapped to profile keys." },
     ],
-    statuses: [
-      {
-        label: "Backend",
-        status: "healthy",
-        detail: "Express API is serving dashboard requests.",
-      },
-      databaseStatus,
-      redisStatus,
-    ],
+    statuses: healthSummary.services,
     applicationBreakdown,
     referralBreakdown,
     recentJobs,

@@ -16,6 +16,7 @@ import { getApplicationByJobId, getApplicationRateWindow, getApplications, saveA
 import { getJobs, ingestDiscoveredJob, ingestDiscoveredJobsBatch } from "./job.service.js";
 import { changeNotificationStatus, getNotificationById, getNotifications, saveNotification } from "./notification.service.js";
 import { getDashboardSummary } from "./dashboard.service.js";
+import { getServiceHealthSummary } from "./health.service.js";
 import { getProfileFields, removeProfileField, saveProfileField } from "./profile.service.js";
 import { changeReferralStatus, getReferrals, getReferralsForJob, getTimedOutPendingReferrals, saveReferral } from "./referral.service.js";
 import {
@@ -29,8 +30,13 @@ import { getSystemSettings, removeSystemSetting, saveSystemSetting } from "./set
 
 export const apiRouter = Router();
 
-apiRouter.get("/health", (_request, response) => {
-  response.json({ status: "ok" });
+apiRouter.get("/health", async (_request, response, next) => {
+  try {
+    const health = await getServiceHealthSummary();
+    response.status(health.status === "ok" ? 200 : 503).json(health);
+  } catch (error) {
+    next(error);
+  }
 });
 
 apiRouter.get("/api/dashboard/summary", async (_request, response, next) => {

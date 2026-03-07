@@ -6,6 +6,11 @@ type RuntimeStatus = {
   backendUrl: string;
   backendStatus: "healthy" | "degraded";
   detail: string;
+  services: Array<{
+    label: string;
+    status: "healthy" | "degraded";
+    detail: string;
+  }>;
 };
 
 export function RuntimeHealthBanner({ initialStatus }: { initialStatus?: RuntimeStatus | null }) {
@@ -29,6 +34,13 @@ export function RuntimeHealthBanner({ initialStatus }: { initialStatus?: Runtime
             backendUrl: "http://localhost:4000",
             backendStatus: "degraded",
             detail: "Runtime status could not be fetched from the frontend proxy.",
+            services: [
+              {
+                label: "Backend",
+                status: "degraded",
+                detail: "Frontend proxy status route is unavailable.",
+              },
+            ],
           });
         }
       } finally {
@@ -77,6 +89,23 @@ export function RuntimeHealthBanner({ initialStatus }: { initialStatus?: Runtime
           <p className="mt-2 text-sm">
             {status.detail} <span className="text-white/80">Backend: {status.backendUrl}</span>
           </p>
+          {status.services.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {status.services.map((service) => (
+                <span
+                  className={`rounded-full px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] ${
+                    service.status === "healthy"
+                      ? "bg-emerald-500/20 text-emerald-100"
+                      : "bg-amber-500/20 text-amber-50"
+                  }`}
+                  key={service.label}
+                  title={service.detail}
+                >
+                  {service.label}: {service.status}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
         <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${badgeTone}`}>
           {status.backendStatus}
