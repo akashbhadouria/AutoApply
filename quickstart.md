@@ -60,6 +60,8 @@ Open:
 - `http://localhost:3000/field-mappings`
 - `http://localhost:3000/settings`
 
+The onboarding page now supports local resume upload. Uploaded files are stored under `storage/resumes` and the absolute path is saved back into the user profile for ATS/browser workers.
+
 If you want to reseed demo data manually without restarting the stack:
 
 ```bash
