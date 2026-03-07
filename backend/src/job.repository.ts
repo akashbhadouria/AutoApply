@@ -83,6 +83,34 @@ export async function listFreshJobs(): Promise<JobRecord[]> {
   return result.rows.map(mapJobRow);
 }
 
+export async function findJobById(jobId: number): Promise<JobRecord | null> {
+  const result = await pool.query(
+    `SELECT
+       jobs.id,
+       jobs.company,
+       jobs.title,
+       jobs.location,
+       jobs.job_url,
+       jobs.primary_source_platform,
+       jobs.posted_date,
+       jobs.first_seen_at,
+       jobs.freshness_status,
+       jobs.job_priority,
+       jobs.apply_strategy,
+       jobs.discovered_by_watcher_id,
+       jobs.discovered_at,
+       jobs.updated_at,
+       ARRAY_REMOVE(ARRAY_AGG(job_sources.source_platform ORDER BY job_sources.source_platform), NULL) AS source_platforms
+     FROM jobs
+     LEFT JOIN job_sources ON job_sources.job_id = jobs.id
+     WHERE jobs.id = $1
+     GROUP BY jobs.id`,
+    [jobId],
+  );
+
+  return result.rows[0] ? mapJobRow(result.rows[0]) : null;
+}
+
 export async function discoverJob(input: DiscoverJobInput): Promise<JobRecord> {
   const normalizedCompany = normalizeIdentityPart(input.company);
   const normalizedTitle = normalizeIdentityPart(input.title);

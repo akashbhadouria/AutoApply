@@ -8,6 +8,7 @@ import {
   summarizeJobDescription,
   summarizeNotification,
 } from "./agent.service.js";
+import { getApplyAttemptsByJobId, saveApplyAttempt } from "./apply-attempt.service.js";
 import { enqueueAutomationJob, getAutomationQueues, pauseAutomationQueue, resumeAutomationQueue } from "./automation.service.js";
 import { getContacts, saveContact } from "./contact.service.js";
 import {
@@ -24,7 +25,7 @@ import {
 import { getEvents, saveEvent } from "./event.service.js";
 import { getFieldMappings, saveFieldMapping } from "./field-mapping.service.js";
 import { getApplicationByJobId, getApplicationRateWindow, getApplications, saveApplication } from "./application.service.js";
-import { getFreshJobs, getJobs, ingestDiscoveredJob, ingestDiscoveredJobsBatch } from "./job.service.js";
+import { getFreshJobs, getJobById, getJobs, ingestDiscoveredJob, ingestDiscoveredJobsBatch } from "./job.service.js";
 import { changeNotificationStatus, getNotificationById, getNotifications, saveNotification } from "./notification.service.js";
 import { getDashboardSummary } from "./dashboard.service.js";
 import { getServiceHealthSummary } from "./health.service.js";
@@ -293,6 +294,15 @@ apiRouter.get("/api/jobs/fresh", async (_request, response, next) => {
   }
 });
 
+apiRouter.get("/api/jobs/:id", async (request, response, next) => {
+  try {
+    const job = await getJobById(request.params.id);
+    response.status(job ? 200 : 404).json(job ? { data: job } : { error: "Not found" });
+  } catch (error) {
+    next(error);
+  }
+});
+
 apiRouter.post("/api/jobs/discover", async (request, response, next) => {
   try {
     const job = await ingestDiscoveredJob(request.body);
@@ -344,6 +354,24 @@ apiRouter.post("/api/applications", async (request, response, next) => {
   try {
     const application = await saveApplication(request.body);
     response.status(201).json({ data: application });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/apply-attempts/job/:jobId", async (request, response, next) => {
+  try {
+    const attempts = await getApplyAttemptsByJobId(request.params.jobId);
+    response.json({ data: attempts });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/apply-attempts", async (request, response, next) => {
+  try {
+    const attempt = await saveApplyAttempt(request.body);
+    response.status(201).json({ data: attempt });
   } catch (error) {
     next(error);
   }

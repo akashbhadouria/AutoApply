@@ -2,6 +2,7 @@ import { Worker } from "bullmq";
 
 import {
   createBackendApplicationSession,
+  fetchBackendJobById,
   createBackendEvent,
   discoverBackendJobsBatch,
   createBackendNotification,
@@ -16,6 +17,7 @@ import {
   fetchBackendReferralsByJobId,
   fetchBackendSettings,
   fetchBackendTimedOutReferrals,
+  saveBackendApplyAttempt,
   saveBackendApplication,
   saveBackendFieldMapping,
   saveBackendReferral,
@@ -24,6 +26,7 @@ import {
   updateBackendNotificationStatus,
 } from "./backend.js";
 import { runAtsAutofill } from "./ats.js";
+import { runDirectApiApply, runHttpFormApply } from "./apply-engine.js";
 import type {
   ApplicationQueueJobData,
   BrowserAutomationJobData,
@@ -453,17 +456,24 @@ export function startWorkers() {
     queueNames.applicationQueue,
     async (job) => {
       logWorkerStart(queueNames.applicationQueue, job.data);
-      const [existingApplication, referralsResponse, settingsResponse, rateWindowResponse] = await Promise.all([
+      const [jobRecordResponse, existingApplication, referralsResponse, settingsResponse, rateWindowResponse] = await Promise.all([
+        fetchBackendJobById(job.data.jobId),
         fetchBackendApplicationByJobId(job.data.jobId),
         fetchBackendReferralsByJobId(job.data.jobId),
         fetchBackendSettings(),
         fetchBackendApplicationRateWindow(1),
       ]);
+      const jobRecord = jobRecordResponse?.data ?? null;
       const appliedRecord = existingApplication?.data ?? null;
       const hasSuccessfulReferral = referralsResponse.data.some((referral) => referral.status === "referred");
       const hasPendingReferral = referralsResponse.data.some((referral) => referral.status === "pending");
       const settings = new Map(settingsResponse.data.map((setting) => [setting.key, setting.value]));
       const hourlyLimit = parseNumberSetting(settings.get("application_rate_limit_per_hour"), 10);
+      const applyStrategy = jobRecord?.applyStrategy ?? inferApplyStrategy(job.data.sourcePlatform);
+
+      if (!jobRecord) {
+        throw new Error(`Job ${job.data.jobId} could not be loaded for application processing.`);
+      }
 
       if (appliedRecord?.applied) {
         await createBackendEvent({
@@ -537,12 +547,105 @@ export function startWorkers() {
         status: nextStatus,
       });
 
-      if (nextStatus === "applied") {
+      if (nextStatus === "applied" && applyStrategy === "browser") {
+        await saveBackendApplyAttempt({
+          jobId: job.data.jobId,
+          strategy: "browser",
+          provider: job.data.sourcePlatform,
+          status: "queued",
+          requestPayload: {
+            formUrl: buildMockApplicationFormUrl(job.data.jobId, job.data.sourcePlatform),
+          },
+          responseSummary: {
+            reason: "Browser automation required for this job strategy.",
+          },
+        });
         await enqueueBrowserAutomationJob({
           jobId: job.data.jobId,
           formUrl: buildMockApplicationFormUrl(job.data.jobId, job.data.sourcePlatform),
           sourcePlatform: job.data.sourcePlatform,
         });
+      }
+
+      if (nextStatus === "applied" && applyStrategy !== "browser") {
+        const executionResult =
+          applyStrategy === "api"
+            ? await runDirectApiApply({
+                jobId: jobRecord.id,
+                company: jobRecord.company,
+                title: jobRecord.title,
+                jobUrl: jobRecord.jobUrl,
+                sourcePlatform: job.data.sourcePlatform,
+              })
+            : await runHttpFormApply({
+                jobId: jobRecord.id,
+                company: jobRecord.company,
+                title: jobRecord.title,
+                jobUrl: jobRecord.jobUrl,
+                sourcePlatform: job.data.sourcePlatform,
+              });
+
+        await saveBackendApplyAttempt({
+          jobId: job.data.jobId,
+          strategy: applyStrategy,
+          provider: executionResult.provider,
+          status: executionResult.status,
+          externalReference: executionResult.externalReference,
+          requestPayload: {
+            company: jobRecord.company,
+            title: jobRecord.title,
+            sourcePlatform: job.data.sourcePlatform,
+            strategy: applyStrategy,
+          },
+          responseSummary: executionResult.responseSummary,
+          durationMs: executionResult.durationMs,
+        });
+
+        if (executionResult.shouldFallbackToBrowser) {
+          await saveBackendApplyAttempt({
+            jobId: job.data.jobId,
+            strategy: "browser",
+            provider: job.data.sourcePlatform,
+            status: "queued",
+            requestPayload: {
+              formUrl: buildMockApplicationFormUrl(job.data.jobId, job.data.sourcePlatform),
+              fallbackFrom: applyStrategy,
+            },
+            responseSummary: {
+              reason: "Primary apply strategy is unsupported; browser fallback queued.",
+            },
+          });
+          await enqueueBrowserAutomationJob({
+            jobId: job.data.jobId,
+            formUrl: buildMockApplicationFormUrl(job.data.jobId, job.data.sourcePlatform),
+            sourcePlatform: job.data.sourcePlatform,
+          });
+          await createBackendEvent({
+            eventType: "application_fallback_requested",
+            actor: "applicationQueueWorker",
+            payload: {
+              jobId: job.data.jobId,
+              sourcePlatform: job.data.sourcePlatform,
+              fromStrategy: applyStrategy,
+              toStrategy: "browser",
+            },
+            relatedJobId: job.data.jobId,
+          });
+        } else {
+          await createBackendEvent({
+            eventType: "application_submitted",
+            actor: "applicationQueueWorker",
+            payload: {
+              jobId: job.data.jobId,
+              sourcePlatform: job.data.sourcePlatform,
+              strategy: applyStrategy,
+              provider: executionResult.provider,
+              externalReference: executionResult.externalReference,
+              durationMs: executionResult.durationMs,
+            },
+            relatedJobId: job.data.jobId,
+          });
+        }
       }
 
       await createBackendEvent({
@@ -553,6 +656,7 @@ export function startWorkers() {
           sourcePlatform: job.data.sourcePlatform,
           applicationId: application.data.id,
           status: nextStatus,
+          applyStrategy,
         },
         relatedJobId: job.data.jobId,
       });
@@ -561,7 +665,9 @@ export function startWorkers() {
         title: nextStatus === "applied" ? "Application record created" : "Application waiting on referral outcome",
         message:
           nextStatus === "applied"
-            ? `Created application tracking and queued browser automation for job ${job.data.jobId}.`
+            ? applyStrategy === "browser"
+              ? `Created application tracking and queued browser automation for job ${job.data.jobId}.`
+              : `Created application tracking and executed ${applyStrategy} apply flow for job ${job.data.jobId}.`
             : `Job ${job.data.jobId} still has pending referral activity, so the application remains pending.`,
         channel: "dashboard",
         status: "delivered",

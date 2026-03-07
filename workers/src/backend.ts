@@ -69,6 +69,30 @@ export async function fetchBackendApplicationByJobId(jobId: number) {
   }>;
 }
 
+export async function fetchBackendJobById(jobId: number) {
+  const response = await fetch(`${env.backendUrl}/api/jobs/${jobId}`);
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`Backend request failed: ${response.status} /api/jobs/${jobId}`);
+  }
+
+  return response.json() as Promise<{
+    data: {
+      id: number;
+      company: string;
+      title: string;
+      location: string;
+      jobUrl: string;
+      primarySourcePlatform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
+      applyStrategy: "api" | "http_form" | "browser";
+    };
+  }>;
+}
+
 export async function fetchBackendApplicationRateWindow(hours = 1) {
   return request<{
     data: {
@@ -214,6 +238,22 @@ export async function saveBackendApplication(body: {
   status: "pending" | "applied" | "interview" | "rejected" | "offer";
 }) {
   return request<{ data: { id: number } }>("/api/applications", {
+    method: "POST",
+    body,
+  });
+}
+
+export async function saveBackendApplyAttempt(body: {
+  jobId: number;
+  strategy: "api" | "http_form" | "browser";
+  provider: string;
+  status: "queued" | "submitted" | "failed" | "unsupported";
+  externalReference?: string;
+  requestPayload?: Record<string, unknown>;
+  responseSummary?: Record<string, unknown>;
+  durationMs?: number;
+}) {
+  return request<{ data: { id: number } }>("/api/apply-attempts", {
     method: "POST",
     body,
   });

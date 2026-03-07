@@ -90,6 +90,25 @@ BEFORE UPDATE ON applications
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 
+CREATE TABLE IF NOT EXISTS apply_attempts (
+  id BIGSERIAL PRIMARY KEY,
+  job_id BIGINT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+  strategy TEXT NOT NULL,
+  provider TEXT NOT NULL,
+  status TEXT NOT NULL,
+  external_reference TEXT,
+  request_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  response_summary JSONB NOT NULL DEFAULT '{}'::jsonb,
+  duration_ms INTEGER,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT apply_attempts_strategy_check CHECK (
+    strategy IN ('api', 'http_form', 'browser')
+  ),
+  CONSTRAINT apply_attempts_status_check CHECK (
+    status IN ('queued', 'submitted', 'failed', 'unsupported')
+  )
+);
+
 CREATE TABLE IF NOT EXISTS contacts (
   id BIGSERIAL PRIMARY KEY,
   company TEXT NOT NULL,

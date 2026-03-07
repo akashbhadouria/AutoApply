@@ -123,6 +123,13 @@ The notification worker can now perform optional live delivery for:
 
 The `/referrals` page now supports direct status actions. Marking a referral as `replied` or `no_response` will automatically queue that job into `application-queue`.
 
+The application queue now executes the 3-tier apply engine for jobs that are ready:
+
+- `api` jobs use the direct-apply adapter
+- `http_form` jobs use the lightweight HTTP-form adapter
+- `browser` jobs go to Playwright
+- unsupported direct/http jobs automatically fall back to browser and record an apply attempt audit trail
+
 To inspect the current applied-application count in the active rate window:
 
 ```bash
@@ -168,6 +175,7 @@ The frontend now also shows a global runtime banner so backend connectivity prob
 - `PUT /api/profile-fields/:key`
 - `DELETE /api/profile-fields/:key`
 - `GET /api/jobs`
+- `GET /api/jobs/:id`
 - `GET /api/jobs/fresh`
 - `POST /api/jobs/discover`
 - `POST /api/jobs/discover/batch`
@@ -175,6 +183,8 @@ The frontend now also shows a global runtime banner so backend connectivity prob
 - `GET /api/applications/rate-window`
 - `GET /api/applications/job/:jobId`
 - `POST /api/applications`
+- `GET /api/apply-attempts/job/:jobId`
+- `POST /api/apply-attempts`
 - `GET /api/contacts`
 - `POST /api/contacts`
 - `GET /api/referrals`

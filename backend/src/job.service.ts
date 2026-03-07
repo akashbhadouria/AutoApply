@@ -1,5 +1,6 @@
-import { discoverJob, listFreshJobs, listJobs } from "./job.repository.js";
+import { discoverJob, findJobById, listFreshJobs, listJobs } from "./job.repository.js";
 import { discoverJobsBatchSchema, discoverJobSchema } from "./job.schema.js";
+import { z } from "zod";
 
 export async function getJobs() {
   return listJobs();
@@ -7,6 +8,11 @@ export async function getJobs() {
 
 export async function getFreshJobs() {
   return listFreshJobs();
+}
+
+export async function getJobById(jobId: string) {
+  const normalizedJobId = z.coerce.number().int().positive().parse(jobId);
+  return findJobById(normalizedJobId);
 }
 
 export async function ingestDiscoveredJob(payload: unknown) {
