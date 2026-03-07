@@ -85,3 +85,26 @@ export interface JobDiscoveryEventRecord {
   payload: Record<string, unknown>;
   createdAt: string;
 }
+
+export interface JobWatcherActivityRecord {
+  watcherId: number;
+  watcherName: string;
+  sourcePlatform: JobFeedWatcherRecord["sourcePlatform"];
+  provider: JobFeedWatcherRecord["provider"];
+  status: JobFeedWatcherRecord["status"];
+  pollingIntervalSeconds: number;
+  lastRunAt: string | null;
+  lastSuccessAt: string | null;
+  lastError: string | null;
+  lastSeenTimestamp: string | null;
+  recentDiscoveryCount: number;
+  recentFreshCount: number;
+}
+
+export interface RecentJobDiscoveryEventRecord extends JobDiscoveryEventRecord {
+  watcherName: string;
+  sourcePlatform: JobFeedWatcherRecord["sourcePlatform"];
+  provider: JobFeedWatcherRecord["provider"];
+  company: string | null;
+  title: string | null;
+}

@@ -12,3 +12,12 @@ export const saveApplyAttemptSchema = z.object({
 });
 
 export type SaveApplyAttemptInput = z.infer<typeof saveApplyAttemptSchema>;
+
+export const listApplyAttemptsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(25),
+  status: z.enum(["queued", "submitted", "failed", "unsupported"]).optional(),
+  strategy: z.enum(["api", "http_form", "browser"]).optional(),
+  provider: z.string().trim().min(1).max(120).optional(),
+});
+
+export type ListApplyAttemptsQuery = z.infer<typeof listApplyAttemptsQuerySchema>;

@@ -8,7 +8,7 @@ import {
   summarizeJobDescription,
   summarizeNotification,
 } from "./agent.service.js";
-import { getApplyAttemptsByJobId, saveApplyAttempt } from "./apply-attempt.service.js";
+import { getApplyAttempts, getApplyAttemptsByJobId, saveApplyAttempt } from "./apply-attempt.service.js";
 import { getApplicationMethods } from "./application-method.service.js";
 import { enqueueAutomationJob, getAutomationQueues, pauseAutomationQueue, resumeAutomationQueue } from "./automation.service.js";
 import { getContacts, saveContact } from "./contact.service.js";
@@ -21,8 +21,10 @@ import {
   fetchJobFeedCursor,
   fetchConnectedAccounts,
   fetchCurrentUserPreferences,
+  fetchJobWatcherActivities,
   fetchJobFeedWatchers,
   getOrCreateCurrentUser,
+  fetchRecentJobDiscoveryEvents,
   updateJobFeedCursor,
   updateCurrentUser,
   updateCurrentUserPreferences,
@@ -128,6 +130,15 @@ apiRouter.get("/api/me/job-watchers", async (_request, response, next) => {
   }
 });
 
+apiRouter.get("/api/me/job-watchers/activity", async (_request, response, next) => {
+  try {
+    const activity = await fetchJobWatcherActivities();
+    response.json({ data: activity });
+  } catch (error) {
+    next(error);
+  }
+});
+
 apiRouter.post("/api/me/job-watchers", async (request, response, next) => {
   try {
     const watcher = await addJobFeedWatcher(request.body);
@@ -167,6 +178,18 @@ apiRouter.put("/api/me/job-watchers/:watcherId/cursor", async (request, response
 apiRouter.get("/api/me/job-watchers/:watcherId/discovery-events", async (request, response, next) => {
   try {
     const events = await fetchJobDiscoveryEvents(request.params.watcherId);
+    response.json({ data: events });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/me/job-watchers/discovery-events/recent", async (request, response, next) => {
+  try {
+    const events = await fetchRecentJobDiscoveryEvents({
+      limit: typeof request.query.limit === "string" ? request.query.limit : undefined,
+      eventType: typeof request.query.eventType === "string" ? request.query.eventType : undefined,
+    });
     response.json({ data: events });
   } catch (error) {
     next(error);
@@ -412,6 +435,20 @@ apiRouter.post("/api/applications", async (request, response, next) => {
 apiRouter.get("/api/apply-attempts/job/:jobId", async (request, response, next) => {
   try {
     const attempts = await getApplyAttemptsByJobId(request.params.jobId);
+    response.json({ data: attempts });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/apply-attempts", async (request, response, next) => {
+  try {
+    const attempts = await getApplyAttempts({
+      limit: typeof request.query.limit === "string" ? request.query.limit : undefined,
+      status: typeof request.query.status === "string" ? request.query.status : undefined,
+      strategy: typeof request.query.strategy === "string" ? request.query.strategy : undefined,
+      provider: typeof request.query.provider === "string" ? request.query.provider : undefined,
+    });
     response.json({ data: attempts });
   } catch (error) {
     next(error);

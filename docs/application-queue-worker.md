@@ -49,6 +49,13 @@ Every execution path now also writes an `apply_attempts` record with:
 - duration
 - optional external reference
 
+The backend audit surface now supports:
+
+- `GET /api/apply-attempts`
+- `GET /api/apply-attempts/job/:jobId`
+
+The list endpoint accepts optional filters for `status`, `strategy`, `provider`, and `limit`, which makes it suitable for future operator views without relying only on the dashboard summary.
+
 ## Local browser target
 
 For local validation, the browser fallback still sends automation to deterministic `example.com` provider-aware ATS mocks instead of a dead placeholder domain. That keeps the application queue testable with the current Playwright worker.

@@ -19,6 +19,7 @@ The first implemented feature is the `Profile Manager`, which provides:
 - connected accounts for outreach-capable providers
 - job watchers for per-user discovery rules and near-real-time watcher runs
 - persistent watcher cursors and discovery-event audit history for restart-safe job watching
+- focused watcher activity and recent discovery APIs for operator-grade redesign work
 - fresh jobs and outreach inbox operator surfaces
 - a live dashboard overview with runtime status and aggregate system metrics
 - dashboard summary data now also includes watcher activity and recent apply-attempt audit snapshots
@@ -43,6 +44,7 @@ The first implemented feature is the `Profile Manager`, which provides:
 - optional live notification delivery adapters for Telegram and webhook-based email/WhatsApp channels
 - referral status actions that can automatically hand jobs into the application queue
 - the application queue now routes jobs through `api`, `http_form`, or `browser` execution paths and writes apply-attempt audit records
+- apply-attempt audits can now be listed directly with backend filters instead of only per-job lookup
 - application routing is now provider-aware through the `application_methods` registry and stored `applyProvider` metadata on jobs
 - a global runtime-integration banner that shows whether the frontend can currently reach the backend
 - `/health` now reports backend, PostgreSQL, and Redis dependency status instead of only a static ok response

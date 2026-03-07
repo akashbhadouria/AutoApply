@@ -12,10 +12,12 @@ import {
   getJobFeedCursor,
   getCurrentUser,
   getUserJobPreferences,
-  listJobDiscoveryEventsByWatcherId,
   listActiveJobFeedWatchers,
   listConnectedAccounts,
+  listJobDiscoveryEventsByWatcherId,
   listJobFeedWatchers,
+  listRecentJobDiscoveryEventsByUserId,
+  listWatcherActivitiesByUserId,
   markJobFeedWatcherRun,
   saveJobFeedCursor,
   saveCurrentUser,
@@ -90,6 +92,11 @@ export async function fetchJobFeedWatchers() {
   return listJobFeedWatchers(user.id);
 }
 
+export async function fetchJobWatcherActivities() {
+  const user = await getOrCreateCurrentUser();
+  return listWatcherActivitiesByUserId(user.id);
+}
+
 export async function fetchActiveJobFeedWatchers() {
   return listActiveJobFeedWatchers();
 }
@@ -135,6 +142,23 @@ export async function updateJobFeedCursor(
 
 export async function fetchJobDiscoveryEvents(watcherId: string) {
   return listJobDiscoveryEventsByWatcherId(Number(watcherId));
+}
+
+export async function fetchRecentJobDiscoveryEvents(input?: {
+  limit?: string;
+  eventType?: string;
+}) {
+  const user = await getOrCreateCurrentUser();
+  const limit = Math.min(100, Math.max(1, Number(input?.limit ?? 25) || 25));
+  const eventType =
+    input?.eventType === "job_discovered" || input?.eventType === "fresh_job_detected"
+      ? input.eventType
+      : undefined;
+
+  return listRecentJobDiscoveryEventsByUserId(user.id, {
+    limit,
+    eventType,
+  });
 }
 
 export async function addJobDiscoveryEvent(

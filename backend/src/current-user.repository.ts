@@ -5,6 +5,8 @@ import type {
   JobDiscoveryEventRecord,
   JobFeedCursorRecord,
   JobFeedWatcherRecord,
+  JobWatcherActivityRecord,
+  RecentJobDiscoveryEventRecord,
   UserJobPreferencesRecord,
 } from "./current-user.types.js";
 
@@ -368,6 +370,128 @@ export async function listJobDiscoveryEventsByWatcherId(watcherId: number) {
     [watcherId],
   );
   return result.rows.map(mapJobDiscoveryEventRow);
+}
+
+export async function listWatcherActivitiesByUserId(userId: number): Promise<JobWatcherActivityRecord[]> {
+  const result = await pool.query<{
+    watcher_id: string;
+    watcher_name: string;
+    source_platform: string;
+    provider: string;
+    status: string;
+    polling_interval_seconds: string;
+    last_run_at: string | null;
+    last_success_at: string | null;
+    last_error: string | null;
+    last_seen_timestamp: string | null;
+    recent_discovery_count: string;
+    recent_fresh_count: string;
+  }>(
+    `SELECT
+       watchers.id AS watcher_id,
+       watchers.name AS watcher_name,
+       watchers.source_platform,
+       watchers.provider,
+       watchers.status,
+       watchers.polling_interval_seconds,
+       watchers.last_run_at,
+       watchers.last_success_at,
+       watchers.last_error,
+       cursors.last_seen_timestamp,
+       COALESCE(SUM(CASE WHEN discovery.event_type = 'job_discovered' THEN 1 ELSE 0 END), 0)::text AS recent_discovery_count,
+       COALESCE(SUM(CASE WHEN discovery.event_type = 'fresh_job_detected' THEN 1 ELSE 0 END), 0)::text AS recent_fresh_count
+     FROM job_feed_watchers AS watchers
+     LEFT JOIN job_feed_cursors AS cursors
+       ON cursors.watcher_id = watchers.id
+     LEFT JOIN job_discovery_events AS discovery
+       ON discovery.watcher_id = watchers.id
+      AND discovery.created_at >= NOW() - INTERVAL '24 hours'
+     WHERE watchers.user_id = $1
+     GROUP BY watchers.id, cursors.watcher_id
+     ORDER BY watchers.updated_at DESC, watchers.id DESC`,
+    [userId],
+  );
+
+  return result.rows.map((row) => ({
+    watcherId: Number(row.watcher_id),
+    watcherName: row.watcher_name,
+    sourcePlatform: row.source_platform as JobWatcherActivityRecord["sourcePlatform"],
+    provider: row.provider as JobWatcherActivityRecord["provider"],
+    status: row.status as JobWatcherActivityRecord["status"],
+    pollingIntervalSeconds: Number(row.polling_interval_seconds),
+    lastRunAt: row.last_run_at ? new Date(row.last_run_at).toISOString() : null,
+    lastSuccessAt: row.last_success_at ? new Date(row.last_success_at).toISOString() : null,
+    lastError: row.last_error,
+    lastSeenTimestamp: row.last_seen_timestamp ? new Date(row.last_seen_timestamp).toISOString() : null,
+    recentDiscoveryCount: Number(row.recent_discovery_count),
+    recentFreshCount: Number(row.recent_fresh_count),
+  }));
+}
+
+export async function listRecentJobDiscoveryEventsByUserId(
+  userId: number,
+  input: { limit: number; eventType?: JobDiscoveryEventRecord["eventType"] },
+): Promise<RecentJobDiscoveryEventRecord[]> {
+  const values: Array<number | string> = [userId];
+  let eventTypeClause = "";
+
+  if (input.eventType) {
+    values.push(input.eventType);
+    eventTypeClause = `AND discovery.event_type = $${values.length}`;
+  }
+
+  values.push(input.limit);
+
+  const result = await pool.query<{
+    id: string;
+    watcher_id: string | null;
+    watcher_name: string;
+    source_platform: string;
+    provider: string;
+    job_id: string | null;
+    event_type: string;
+    payload: Record<string, unknown> | null;
+    company: string | null;
+    title: string | null;
+    created_at: string;
+  }>(
+    `SELECT
+       discovery.id,
+       discovery.watcher_id,
+       watchers.name AS watcher_name,
+       watchers.source_platform,
+       watchers.provider,
+       discovery.job_id,
+       discovery.event_type,
+       discovery.payload,
+       jobs.company,
+       jobs.title,
+       discovery.created_at
+     FROM job_discovery_events AS discovery
+     INNER JOIN job_feed_watchers AS watchers
+       ON watchers.id = discovery.watcher_id
+     LEFT JOIN jobs
+       ON jobs.id = discovery.job_id
+     WHERE watchers.user_id = $1
+       ${eventTypeClause}
+     ORDER BY discovery.created_at DESC, discovery.id DESC
+     LIMIT $${values.length}`,
+    values,
+  );
+
+  return result.rows.map((row) => ({
+    id: Number(row.id),
+    watcherId: row.watcher_id == null ? null : Number(row.watcher_id),
+    watcherName: row.watcher_name,
+    sourcePlatform: row.source_platform as RecentJobDiscoveryEventRecord["sourcePlatform"],
+    provider: row.provider as RecentJobDiscoveryEventRecord["provider"],
+    jobId: row.job_id == null ? null : Number(row.job_id),
+    eventType: row.event_type as RecentJobDiscoveryEventRecord["eventType"],
+    payload: row.payload ?? {},
+    company: row.company,
+    title: row.title,
+    createdAt: new Date(row.created_at).toISOString(),
+  }));
 }
 
 export async function createJobDiscoveryEvent(input: {

@@ -10,3 +10,8 @@ export interface ApplyAttemptRecord {
   durationMs: number | null;
   createdAt: string;
 }
+
+export interface ApplyAttemptListRecord extends ApplyAttemptRecord {
+  company: string;
+  title: string;
+}

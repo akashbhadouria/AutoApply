@@ -181,11 +181,13 @@ The frontend now also shows a global runtime banner so backend connectivity prob
 - `GET /api/me/connected-accounts`
 - `POST /api/me/connected-accounts`
 - `GET /api/me/job-watchers`
+- `GET /api/me/job-watchers/activity`
 - `POST /api/me/job-watchers`
 - `PUT /api/me/job-watchers/:watcherId/status`
 - `GET /api/me/job-watchers/:watcherId/cursor`
 - `PUT /api/me/job-watchers/:watcherId/cursor`
 - `GET /api/me/job-watchers/:watcherId/discovery-events`
+- `GET /api/me/job-watchers/discovery-events/recent`
 - `POST /api/me/job-watchers/:watcherId/discovery-events`
 - `GET /api/profile-fields`
 - `PUT /api/profile-fields/:key`
@@ -200,6 +202,7 @@ The frontend now also shows a global runtime banner so backend connectivity prob
 - `GET /api/applications/rate-window`
 - `GET /api/applications/job/:jobId`
 - `POST /api/applications`
+- `GET /api/apply-attempts`
 - `GET /api/apply-attempts/job/:jobId`
 - `POST /api/apply-attempts`
 - `GET /api/contacts`

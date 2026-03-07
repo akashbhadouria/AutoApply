@@ -15,11 +15,13 @@ The AutoApply V1 watcher slice adds user-level discovery rules and a dedicated w
 ## Endpoints
 
 - `GET /api/me/job-watchers`
+- `GET /api/me/job-watchers/activity`
 - `POST /api/me/job-watchers`
 - `PUT /api/me/job-watchers/:watcherId/status`
 - `GET /api/me/job-watchers/:watcherId/cursor`
 - `PUT /api/me/job-watchers/:watcherId/cursor`
 - `GET /api/me/job-watchers/:watcherId/discovery-events`
+- `GET /api/me/job-watchers/discovery-events/recent`
 - `POST /api/me/job-watchers/:watcherId/discovery-events`
 
 ## Worker behavior
@@ -45,6 +47,11 @@ The `/job-watchers` page lets the operator:
 - create watcher rules
 - activate or pause watchers
 - run a watcher immediately
+
+The backend now also exposes two focused operator feeds for redesigned UI work:
+
+- watcher activity snapshots with cursor and recent discovery counts
+- recent discovery stream across all current-user watchers, optionally filtered by event type
 
 This is the bridge between the old scanner prototype and a real near-real-time discovery system.
 

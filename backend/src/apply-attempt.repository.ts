@@ -1,6 +1,6 @@
 import { pool } from "./db.js";
-import type { SaveApplyAttemptInput } from "./apply-attempt.schema.js";
-import type { ApplyAttemptRecord } from "./apply-attempt.types.js";
+import type { ListApplyAttemptsQuery, SaveApplyAttemptInput } from "./apply-attempt.schema.js";
+import type { ApplyAttemptListRecord, ApplyAttemptRecord } from "./apply-attempt.types.js";
 
 function mapApplyAttemptRow(row: Record<string, unknown>): ApplyAttemptRecord {
   return {
@@ -62,4 +62,60 @@ export async function listApplyAttemptsByJobId(jobId: number): Promise<ApplyAtte
   );
 
   return result.rows.map(mapApplyAttemptRow);
+}
+
+export async function listApplyAttempts(input: ListApplyAttemptsQuery): Promise<ApplyAttemptListRecord[]> {
+  const values: Array<number | string> = [];
+  const conditions: string[] = [];
+
+  if (input.status) {
+    values.push(input.status);
+    conditions.push(`apply_attempts.status = $${values.length}`);
+  }
+
+  if (input.strategy) {
+    values.push(input.strategy);
+    conditions.push(`apply_attempts.strategy = $${values.length}`);
+  }
+
+  if (input.provider) {
+    values.push(input.provider);
+    conditions.push(`apply_attempts.provider = $${values.length}`);
+  }
+
+  values.push(input.limit);
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const result = await pool.query<{
+    id: string;
+    job_id: string;
+    strategy: string;
+    provider: string;
+    status: string;
+    external_reference: string | null;
+    request_payload: Record<string, unknown> | null;
+    response_summary: Record<string, unknown> | null;
+    duration_ms: string | null;
+    created_at: string;
+    company: string;
+    title: string;
+  }>(
+    `SELECT
+       apply_attempts.*,
+       jobs.company,
+       jobs.title
+     FROM apply_attempts
+     INNER JOIN jobs ON jobs.id = apply_attempts.job_id
+     ${whereClause}
+     ORDER BY apply_attempts.created_at DESC, apply_attempts.id DESC
+     LIMIT $${values.length}`,
+    values,
+  );
+
+  return result.rows.map((row) => ({
+    ...mapApplyAttemptRow(row),
+    company: row.company,
+    title: row.title,
+  }));
 }
