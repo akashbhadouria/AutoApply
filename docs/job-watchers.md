@@ -66,6 +66,13 @@ The preview panel now tells you:
 - how many jobs matched your title/location/recency filters
 - a short sample of matched jobs before you save the watcher
 
+The UI also includes quick presets for a few public feeds so local testing is faster:
+
+- `Postman Greenhouse`
+- `Vercel Greenhouse`
+- `Figma Lever`
+- `Rippling Lever`
+
 The backend now also exposes two focused operator feeds for redesigned UI work:
 
 - watcher activity snapshots with cursor and recent discovery counts

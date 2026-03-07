@@ -21,6 +21,37 @@ const emptyForm = {
   company: "",
 };
 
+const feedPresets = [
+  {
+    label: "Postman Greenhouse",
+    provider: "greenhouse" as const,
+    sourcePlatform: "company_site" as const,
+    company: "Postman",
+    feedUrl: "https://boards-api.greenhouse.io/v1/boards/postman/jobs",
+  },
+  {
+    label: "Vercel Greenhouse",
+    provider: "greenhouse" as const,
+    sourcePlatform: "company_site" as const,
+    company: "Vercel",
+    feedUrl: "https://boards-api.greenhouse.io/v1/boards/vercel/jobs",
+  },
+  {
+    label: "Figma Lever",
+    provider: "lever" as const,
+    sourcePlatform: "company_site" as const,
+    company: "Figma",
+    feedUrl: "https://api.lever.co/v0/postings/figma?mode=json",
+  },
+  {
+    label: "Rippling Lever",
+    provider: "lever" as const,
+    sourcePlatform: "company_site" as const,
+    company: "Rippling",
+    feedUrl: "https://api.lever.co/v0/postings/rippling?mode=json",
+  },
+] as const;
+
 function providerNeedsFeed(provider: JobFeedWatcher["provider"]) {
   return provider === "greenhouse" || provider === "lever" || provider === "generic_json" || provider === "google_jobs";
 }
@@ -250,6 +281,19 @@ export function JobWatchersManager({
     }
   }
 
+  function applyPreset(preset: (typeof feedPresets)[number]) {
+    setPreview(null);
+    setError(null);
+    setForm((current) => ({
+      ...current,
+      sourcePlatform: preset.sourcePlatform,
+      provider: preset.provider,
+      company: preset.company,
+      feedUrl: preset.feedUrl,
+      name: current.name || `${preset.company} watcher`,
+    }));
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-3">
@@ -306,6 +350,21 @@ export function JobWatchersManager({
             </select>
             {providerNeedsFeed(form.provider) ? (
               <>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                  <p className="text-sm font-medium text-ink">Quick presets</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {feedPresets.map((preset) => (
+                      <Button
+                        key={preset.label}
+                        type="button"
+                        variant="secondary"
+                        onClick={() => applyPreset(preset)}
+                      >
+                        {preset.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
                 <Input
                   placeholder="Live feed URL (required for greenhouse / lever / generic_json / google_jobs)"
                   value={form.feedUrl}
