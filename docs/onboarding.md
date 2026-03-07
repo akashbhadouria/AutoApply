@@ -21,4 +21,11 @@ The AutoApply V1 onboarding flow introduces a product-facing setup surface for t
 
 ## UI behavior
 
-The `/onboarding` page saves identity and job targeting together so the rest of the product has a single source of truth before watchers or applications run.
+The `/onboarding` page now behaves like a two-step wizard:
+
+- Step 1 captures candidate identity, contact targets, and resume data
+- Step 2 captures job preferences and automation policy
+- Arrow controls let the user move back and next between steps
+- Final save automatically redirects the user to `/connected-accounts`
+
+This keeps setup linear instead of showing the entire product configuration in one long screen.
