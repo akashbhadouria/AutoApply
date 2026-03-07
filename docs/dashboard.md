@@ -10,6 +10,7 @@ The root route `/` is now the live dashboard for the platform rather than a stat
 - referral status breakdown
 - recent events
 - recent normalized jobs
+- latest scanner diagnostics with live, fallback, and error visibility per feed
 - direct navigation into every operational page
 
 ## Backend contract
@@ -24,6 +25,7 @@ That endpoint aggregates:
 - runtime readiness checks
 - recent jobs
 - recent events
+- latest job scanner telemetry parsed from the most recent `job_scanner.run_requested` event
 - application and referral status breakdowns
 
 ## Local development

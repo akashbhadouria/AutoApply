@@ -3,6 +3,7 @@ import { pool } from "./db.js";
 import {
   getApplicationBreakdown,
   getDashboardCounts,
+  getLatestScannerRun,
   getRecentEvents,
   getRecentJobs,
   getReferralBreakdown,
@@ -47,13 +48,14 @@ async function getRedisStatus() {
 }
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
-  const [counts, applicationBreakdown, referralBreakdown, recentJobs, recentEvents, databaseStatus, redisStatus] =
+  const [counts, applicationBreakdown, referralBreakdown, recentJobs, recentEvents, latestScannerRun, databaseStatus, redisStatus] =
     await Promise.all([
       getDashboardCounts(),
       getApplicationBreakdown(),
       getReferralBreakdown(),
       getRecentJobs(),
       getRecentEvents(),
+      getLatestScannerRun(),
       getDatabaseStatus(),
       getRedisStatus(),
     ]);
@@ -80,5 +82,6 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     referralBreakdown,
     recentJobs,
     recentEvents,
+    latestScannerRun,
   };
 }

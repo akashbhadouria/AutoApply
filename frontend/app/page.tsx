@@ -47,6 +47,11 @@ function BreakdownCard({
 }
 
 function DashboardContent({ summary }: { summary: DashboardSummary }) {
+  const latestScannerRun = summary.latestScannerRun;
+  const liveSourceCount = latestScannerRun?.sources.filter((source) => source.mode === "live").length ?? 0;
+  const fallbackSourceCount = latestScannerRun?.sources.filter((source) => source.mode === "fallback").length ?? 0;
+  const scannerErrorCount = latestScannerRun?.sources.filter((source) => source.error).length ?? 0;
+
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -139,6 +144,84 @@ function DashboardContent({ summary }: { summary: DashboardSummary }) {
           )}
         </Card>
       </div>
+
+      <Card className="mt-6 p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Scanner diagnostics</p>
+            <h2 className="mt-2 text-2xl font-semibold text-white">Latest job discovery run by source.</h2>
+          </div>
+          <Link className="text-sm font-medium text-cyan-300" href="/automation">
+            Trigger scanner
+          </Link>
+        </div>
+
+        {!latestScannerRun ? (
+          <p className="mt-6 text-sm text-slate-400">No scanner run has been recorded yet. Enqueue `job-scanner` from the Automation page.</p>
+        ) : (
+          <>
+            <div className="mt-6 grid gap-4 lg:grid-cols-4">
+              <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+                <p className="text-xs uppercase tracking-[0.24em] text-cyan-300">Jobs found</p>
+                <p className="mt-3 text-3xl font-semibold text-white">{latestScannerRun.discoveredCount}</p>
+              </div>
+              <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+                <p className="text-xs uppercase tracking-[0.24em] text-cyan-300">Live feeds</p>
+                <p className="mt-3 text-3xl font-semibold text-white">{liveSourceCount}</p>
+              </div>
+              <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+                <p className="text-xs uppercase tracking-[0.24em] text-cyan-300">Fallback feeds</p>
+                <p className="mt-3 text-3xl font-semibold text-white">{fallbackSourceCount}</p>
+              </div>
+              <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+                <p className="text-xs uppercase tracking-[0.24em] text-cyan-300">Feed errors</p>
+                <p className="mt-3 text-3xl font-semibold text-white">{scannerErrorCount}</p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3 text-xs uppercase tracking-[0.18em] text-slate-400">
+              <span>titles: {latestScannerRun.searchTitles.join(", ") || "none"}</span>
+              <span>locations: {latestScannerRun.locations.join(", ") || "none"}</span>
+              <span>recency: {latestScannerRun.recencyDays} days</span>
+              <span>run: {new Date(latestScannerRun.createdAt).toLocaleString()}</span>
+            </div>
+
+            <div className="mt-6 grid gap-4 lg:grid-cols-2">
+              {latestScannerRun.sources.length === 0 ? (
+                <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
+                  No source diagnostics were attached to the last scanner run.
+                </div>
+              ) : (
+                latestScannerRun.sources.map((source) => (
+                  <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5" key={`${source.name}-${source.platform}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-lg font-semibold text-white">{source.name}</p>
+                        <p className="mt-1 text-sm text-slate-300">
+                          {source.provider} on {source.platform.replaceAll("_", " ")}
+                        </p>
+                      </div>
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
+                          source.mode === "live"
+                            ? "bg-emerald-500/15 text-emerald-300"
+                            : "bg-fuchsia-500/15 text-fuchsia-300"
+                        }`}
+                      >
+                        {source.mode}
+                      </span>
+                    </div>
+                    <p className="mt-4 text-sm text-slate-300">Discovered {source.discoveredCount} matching jobs.</p>
+                    <p className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-500">
+                      {source.error ? `error: ${source.error}` : "no source errors recorded"}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        )}
+      </Card>
 
       <Card className="mt-6 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">

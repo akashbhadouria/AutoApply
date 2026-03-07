@@ -26,6 +26,25 @@ export interface DashboardRecentEvent {
   createdAt: string;
 }
 
+export interface DashboardScannerSource {
+  name: string;
+  provider: string;
+  platform: string;
+  mode: "live" | "fallback";
+  discoveredCount: number;
+  error?: string;
+}
+
+export interface DashboardScannerRun {
+  eventId: number;
+  createdAt: string;
+  searchTitles: string[];
+  locations: string[];
+  recencyDays: number;
+  discoveredCount: number;
+  sources: DashboardScannerSource[];
+}
+
 export interface DashboardSummary {
   metrics: DashboardMetric[];
   statuses: DashboardStatus[];
@@ -33,4 +52,5 @@ export interface DashboardSummary {
   referralBreakdown: Array<{ status: string; count: number }>;
   recentJobs: DashboardRecentJob[];
   recentEvents: DashboardRecentEvent[];
+  latestScannerRun: DashboardScannerRun | null;
 }

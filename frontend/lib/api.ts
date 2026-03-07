@@ -131,6 +131,25 @@ export interface DashboardStatus {
   detail: string;
 }
 
+export interface DashboardScannerSource {
+  name: string;
+  provider: string;
+  platform: string;
+  mode: "live" | "fallback";
+  discoveredCount: number;
+  error?: string;
+}
+
+export interface DashboardScannerRun {
+  eventId: number;
+  createdAt: string;
+  searchTitles: string[];
+  locations: string[];
+  recencyDays: number;
+  discoveredCount: number;
+  sources: DashboardScannerSource[];
+}
+
 export interface DashboardSummary {
   metrics: DashboardMetric[];
   statuses: DashboardStatus[];
@@ -150,6 +169,7 @@ export interface DashboardSummary {
     actor: string;
     createdAt: string;
   }>;
+  latestScannerRun: DashboardScannerRun | null;
 }
 
 export interface SystemSetting {
