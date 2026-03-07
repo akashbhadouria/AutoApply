@@ -115,6 +115,12 @@ Workers can also auto-enqueue due watchers using `WATCHER_SCHEDULER_ENABLED` and
 The `/automation` page now also shows live queue backlog and worker snapshots from BullMQ, including waiting, active, delayed, failed, connected-worker counts, retry policy, and recent retained failed jobs.
 It now also supports direct queue `Pause` and `Resume` controls for operator testing and incident handling.
 
+The dashboard summary API now also includes:
+
+- watcher activity snapshots
+- watcher cursor/discovery totals
+- recent apply-attempt audit rows
+
 The `/operations` page can now re-queue paused ATS sessions directly back into `browser-automation` through a `Resume` action.
 
 The notification worker can now perform optional live delivery for:

@@ -1,5 +1,12 @@
 import { pool } from "./db.js";
-import type { DashboardRecentEvent, DashboardRecentJob, DashboardScannerRun, DashboardScannerSource } from "./dashboard.types.js";
+import type {
+  DashboardApplyAttempt,
+  DashboardRecentEvent,
+  DashboardRecentJob,
+  DashboardScannerRun,
+  DashboardScannerSource,
+  DashboardWatcherActivity,
+} from "./dashboard.types.js";
 
 export interface DashboardCounts {
   jobs: number;
@@ -261,4 +268,97 @@ export async function getLatestScannerRun(): Promise<DashboardScannerRun | null>
     discoveredCount: Number.isFinite(discoveredCount) ? discoveredCount : 0,
     sources,
   };
+}
+
+export async function getWatcherActivities(): Promise<DashboardWatcherActivity[]> {
+  const result = await pool.query<{
+    watcher_id: string;
+    name: string;
+    status: string;
+    provider: string;
+    polling_interval_seconds: string;
+    last_run_at: string | null;
+    last_success_at: string | null;
+    last_error: string | null;
+    last_seen_timestamp: string | null;
+    recent_discovery_count: string;
+    recent_fresh_count: string;
+  }>(
+    `SELECT
+       watchers.id AS watcher_id,
+       watchers.name,
+       watchers.status,
+       watchers.provider,
+       watchers.polling_interval_seconds,
+       watchers.last_run_at,
+       watchers.last_success_at,
+       watchers.last_error,
+       cursors.last_seen_timestamp,
+       COALESCE(SUM(CASE WHEN discovery.event_type = 'job_discovered' THEN 1 ELSE 0 END), 0)::text AS recent_discovery_count,
+       COALESCE(SUM(CASE WHEN discovery.event_type = 'fresh_job_detected' THEN 1 ELSE 0 END), 0)::text AS recent_fresh_count
+     FROM job_feed_watchers AS watchers
+     LEFT JOIN job_feed_cursors AS cursors
+       ON cursors.watcher_id = watchers.id
+     LEFT JOIN job_discovery_events AS discovery
+       ON discovery.watcher_id = watchers.id
+      AND discovery.created_at >= NOW() - INTERVAL '24 hours'
+     GROUP BY watchers.id, cursors.watcher_id
+     ORDER BY watchers.updated_at DESC, watchers.id DESC
+     LIMIT 8`,
+  );
+
+  return result.rows.map((row) => ({
+    watcherId: Number(row.watcher_id),
+    name: row.name,
+    status: row.status as DashboardWatcherActivity["status"],
+    provider: row.provider,
+    pollingIntervalSeconds: Number(row.polling_interval_seconds),
+    lastRunAt: row.last_run_at ? new Date(row.last_run_at).toISOString() : null,
+    lastSuccessAt: row.last_success_at ? new Date(row.last_success_at).toISOString() : null,
+    lastError: row.last_error,
+    lastSeenTimestamp: row.last_seen_timestamp ? new Date(row.last_seen_timestamp).toISOString() : null,
+    recentDiscoveryCount: Number(row.recent_discovery_count),
+    recentFreshCount: Number(row.recent_fresh_count),
+  }));
+}
+
+export async function getRecentApplyAttempts(): Promise<DashboardApplyAttempt[]> {
+  const result = await pool.query<{
+    id: string;
+    job_id: string;
+    company: string;
+    title: string;
+    strategy: string;
+    provider: string;
+    status: string;
+    duration_ms: string | null;
+    created_at: string;
+  }>(
+    `SELECT
+       apply_attempts.id,
+       apply_attempts.job_id,
+       jobs.company,
+       jobs.title,
+       apply_attempts.strategy,
+       apply_attempts.provider,
+       apply_attempts.status,
+       apply_attempts.duration_ms::text,
+       apply_attempts.created_at
+     FROM apply_attempts
+     INNER JOIN jobs ON jobs.id = apply_attempts.job_id
+     ORDER BY apply_attempts.created_at DESC, apply_attempts.id DESC
+     LIMIT 8`,
+  );
+
+  return result.rows.map((row) => ({
+    id: Number(row.id),
+    jobId: Number(row.job_id),
+    company: row.company,
+    title: row.title,
+    strategy: row.strategy as DashboardApplyAttempt["strategy"],
+    provider: row.provider,
+    status: row.status as DashboardApplyAttempt["status"],
+    durationMs: row.duration_ms == null ? null : Number(row.duration_ms),
+    createdAt: new Date(row.created_at).toISOString(),
+  }));
 }

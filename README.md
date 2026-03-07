@@ -21,6 +21,7 @@ The first implemented feature is the `Profile Manager`, which provides:
 - persistent watcher cursors and discovery-event audit history for restart-safe job watching
 - fresh jobs and outreach inbox operator surfaces
 - a live dashboard overview with runtime status and aggregate system metrics
+- dashboard summary data now also includes watcher activity and recent apply-attempt audit snapshots
 - a PostgreSQL schema for dynamic profile fields
 - an Express API for listing, upserting, and deleting fields
 - a Next.js dashboard page for editing those fields

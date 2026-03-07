@@ -3,15 +3,17 @@ import {
   getDashboardCounts,
   getFreshJobs,
   getLatestScannerRun,
+  getRecentApplyAttempts,
   getRecentEvents,
   getRecentJobs,
   getReferralBreakdown,
+  getWatcherActivities,
 } from "./dashboard.repository.js";
 import type { DashboardSummary } from "./dashboard.types.js";
 import { getServiceHealthSummary } from "./health.service.js";
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
-  const [counts, applicationBreakdown, referralBreakdown, freshJobs, recentJobs, recentEvents, latestScannerRun, healthSummary] =
+  const [counts, applicationBreakdown, referralBreakdown, freshJobs, recentJobs, recentEvents, latestScannerRun, watcherActivities, recentApplyAttempts, healthSummary] =
     await Promise.all([
       getDashboardCounts(),
       getApplicationBreakdown(),
@@ -20,6 +22,8 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       getRecentJobs(),
       getRecentEvents(),
       getLatestScannerRun(),
+      getWatcherActivities(),
+      getRecentApplyAttempts(),
       getServiceHealthSummary(),
     ]);
 
@@ -40,5 +44,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     recentJobs,
     recentEvents,
     latestScannerRun,
+    watcherActivities,
+    recentApplyAttempts,
   };
 }

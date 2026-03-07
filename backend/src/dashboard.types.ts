@@ -48,6 +48,32 @@ export interface DashboardScannerRun {
   sources: DashboardScannerSource[];
 }
 
+export interface DashboardWatcherActivity {
+  watcherId: number;
+  name: string;
+  status: "active" | "paused" | "error";
+  provider: string;
+  pollingIntervalSeconds: number;
+  lastRunAt: string | null;
+  lastSuccessAt: string | null;
+  lastError: string | null;
+  lastSeenTimestamp: string | null;
+  recentDiscoveryCount: number;
+  recentFreshCount: number;
+}
+
+export interface DashboardApplyAttempt {
+  id: number;
+  jobId: number;
+  company: string;
+  title: string;
+  strategy: "api" | "http_form" | "browser";
+  provider: string;
+  status: "queued" | "submitted" | "failed" | "unsupported";
+  durationMs: number | null;
+  createdAt: string;
+}
+
 export interface DashboardSummary {
   metrics: DashboardMetric[];
   statuses: DashboardStatus[];
@@ -57,4 +83,6 @@ export interface DashboardSummary {
   recentJobs: DashboardRecentJob[];
   recentEvents: DashboardRecentEvent[];
   latestScannerRun: DashboardScannerRun | null;
+  watcherActivities: DashboardWatcherActivity[];
+  recentApplyAttempts: DashboardApplyAttempt[];
 }
