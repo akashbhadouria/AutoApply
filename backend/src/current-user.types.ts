@@ -69,3 +69,19 @@ export interface JobFeedWatcherRecord {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface JobFeedCursorRecord {
+  watcherId: number;
+  lastSeenJobId: string | null;
+  lastSeenTimestamp: string | null;
+  updatedAt: string;
+}
+
+export interface JobDiscoveryEventRecord {
+  id: number;
+  watcherId: number | null;
+  jobId: number | null;
+  eventType: "job_discovered" | "fresh_job_detected";
+  payload: Record<string, unknown>;
+  createdAt: string;
+}

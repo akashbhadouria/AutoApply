@@ -273,10 +273,14 @@ async function fetchLiveFeedJobs(feed: JobSourceFeedConfig): Promise<ScannedJob[
 
 function filterJobsForQuery(jobs: ScannedJob[], payload: JobDiscoveryJobData) {
   return jobs.filter((job) => {
+    const parsedPostedAt = Date.parse(job.postedDate);
+    const parsedCursor = payload.lastSeenTimestamp ? Date.parse(payload.lastSeenTimestamp) : NaN;
+
     return (
       matchesSearchTitles(job.title, payload.searchTitles) &&
       matchesLocations(job.location, payload.locations) &&
-      isRecentEnough(job.postedDate, payload.recencyDays)
+      isRecentEnough(job.postedDate, payload.recencyDays) &&
+      (Number.isNaN(parsedCursor) || (!Number.isNaN(parsedPostedAt) && parsedPostedAt > parsedCursor))
     );
   });
 }

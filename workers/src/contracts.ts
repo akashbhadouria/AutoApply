@@ -15,6 +15,7 @@ export interface JobDiscoveryJobData {
   searchTitles: string[];
   locations: string[];
   recencyDays: number;
+  lastSeenTimestamp?: string;
 }
 
 export interface ReferralJobData {

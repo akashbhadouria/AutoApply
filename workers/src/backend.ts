@@ -366,6 +366,47 @@ export async function fetchBackendJobFeedWatchers() {
   }>("/api/me/job-watchers");
 }
 
+export async function fetchBackendJobFeedCursor(watcherId: number) {
+  const response = await fetch(`${env.backendUrl}/api/me/job-watchers/${watcherId}/cursor`);
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`Backend request failed: ${response.status} /api/me/job-watchers/${watcherId}/cursor`);
+  }
+
+  return response.json() as Promise<{
+    data: {
+      watcherId: number;
+      lastSeenJobId: string | null;
+      lastSeenTimestamp: string | null;
+      updatedAt: string;
+    };
+  }>;
+}
+
+export async function saveBackendJobFeedCursor(
+  watcherId: number,
+  body: { lastSeenJobId?: string | null; lastSeenTimestamp?: string | null },
+) {
+  return request<{ data: { watcherId: number } }>(`/api/me/job-watchers/${watcherId}/cursor`, {
+    method: "PUT",
+    body,
+  });
+}
+
+export async function createBackendJobDiscoveryEvent(
+  watcherId: number,
+  body: { jobId?: number | null; eventType: "job_discovered" | "fresh_job_detected"; payload?: Record<string, unknown> },
+) {
+  return request<{ data: { id: number } }>(`/api/me/job-watchers/${watcherId}/discovery-events`, {
+    method: "POST",
+    body,
+  });
+}
+
 export async function updateBackendJobFeedWatcherStatus(
   watcherId: number,
   body: { status: "active" | "paused" | "error"; lastError?: string },

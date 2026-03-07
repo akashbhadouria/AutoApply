@@ -7,13 +7,17 @@ import {
 } from "./current-user.schema.js";
 import {
   createConnectedAccount,
+  createJobDiscoveryEvent,
   createJobFeedWatcher,
+  getJobFeedCursor,
   getCurrentUser,
   getUserJobPreferences,
+  listJobDiscoveryEventsByWatcherId,
   listActiveJobFeedWatchers,
   listConnectedAccounts,
   listJobFeedWatchers,
   markJobFeedWatcherRun,
+  saveJobFeedCursor,
   saveCurrentUser,
   saveUserJobPreferences,
   updateJobFeedWatcherStatus,
@@ -116,4 +120,31 @@ export async function recordJobFeedWatcherRun(
   input: { status: "active" | "paused" | "error"; lastError?: string; succeeded: boolean },
 ) {
   return markJobFeedWatcherRun(watcherId, input);
+}
+
+export async function fetchJobFeedCursor(watcherId: string) {
+  return getJobFeedCursor(Number(watcherId));
+}
+
+export async function updateJobFeedCursor(
+  watcherId: string,
+  payload: { lastSeenJobId?: string | null; lastSeenTimestamp?: string | null },
+) {
+  return saveJobFeedCursor(Number(watcherId), payload);
+}
+
+export async function fetchJobDiscoveryEvents(watcherId: string) {
+  return listJobDiscoveryEventsByWatcherId(Number(watcherId));
+}
+
+export async function addJobDiscoveryEvent(
+  watcherId: string,
+  payload: { jobId?: number | null; eventType: "job_discovered" | "fresh_job_detected"; payload?: Record<string, unknown> },
+) {
+  return createJobDiscoveryEvent({
+    watcherId: Number(watcherId),
+    jobId: payload.jobId,
+    eventType: payload.eventType,
+    payload: payload.payload,
+  });
 }

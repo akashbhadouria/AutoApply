@@ -2,8 +2,10 @@ import { Worker } from "bullmq";
 
 import {
   createBackendApplicationSession,
+  createBackendJobDiscoveryEvent,
   fetchBackendApplicationMethods,
   fetchBackendJobById,
+  fetchBackendJobFeedCursor,
   createBackendEvent,
   discoverBackendJobsBatch,
   createBackendNotification,
@@ -20,6 +22,7 @@ import {
   fetchBackendTimedOutReferrals,
   saveBackendApplyAttempt,
   saveBackendApplication,
+  saveBackendJobFeedCursor,
   saveBackendFieldMapping,
   saveBackendReferral,
   updateBackendJobFeedWatcherStatus,
@@ -225,10 +228,12 @@ export function startWorkers() {
 
       for (const watcher of watchers) {
         try {
+          const cursorResponse = await fetchBackendJobFeedCursor(watcher.id);
           const scannerRun = await scanDiscoveredJobs({
             searchTitles: watcher.searchTitles,
             locations: watcher.locations,
             recencyDays: watcher.recencyDays,
+            lastSeenTimestamp: cursorResponse?.data.lastSeenTimestamp ?? undefined,
           });
 
           const jobs = scannerRun.jobs.map((discoveredJob) => {
@@ -251,10 +256,33 @@ export function startWorkers() {
           const batchResult = await discoverBackendJobsBatch({ jobs });
           totalDiscovered += batchResult.data.length;
 
+          let latestSeenTimestamp = cursorResponse?.data.lastSeenTimestamp ?? null;
+          let latestSeenJobId = cursorResponse?.data.lastSeenJobId ?? null;
+
           for (const [index, discoveredJob] of jobs.entries()) {
             const discoveredId = batchResult.data[index]?.id;
             if (!discoveredId) {
               continue;
+            }
+
+            await createBackendJobDiscoveryEvent(watcher.id, {
+              jobId: discoveredId,
+              eventType: "job_discovered",
+              payload: {
+                company: discoveredJob.company,
+                title: discoveredJob.title,
+                sourcePlatform: discoveredJob.sourcePlatform,
+                applyStrategy: discoveredJob.applyStrategy,
+                applyProvider: discoveredJob.applyProvider,
+              },
+            });
+
+            const discoveredPostedTime = Date.parse(discoveredJob.postedDate);
+            if (!Number.isNaN(discoveredPostedTime)) {
+              if (!latestSeenTimestamp || discoveredPostedTime > Date.parse(latestSeenTimestamp)) {
+                latestSeenTimestamp = new Date(discoveredPostedTime).toISOString();
+                latestSeenJobId = String(discoveredId);
+              }
             }
 
             if (discoveredJob.freshnessStatus !== "fresh") {
@@ -262,6 +290,17 @@ export function startWorkers() {
             }
 
             freshJobs += 1;
+            await createBackendJobDiscoveryEvent(watcher.id, {
+              jobId: discoveredId,
+              eventType: "fresh_job_detected",
+              payload: {
+                company: discoveredJob.company,
+                title: discoveredJob.title,
+                sourcePlatform: discoveredJob.sourcePlatform,
+                applyStrategy: discoveredJob.applyStrategy,
+                applyProvider: discoveredJob.applyProvider,
+              },
+            });
             const matchingContacts = contacts.filter(
               (contact) => normalizeText(contact.company) === normalizeText(discoveredJob.company),
             );
@@ -324,6 +363,13 @@ export function startWorkers() {
                 relatedJobId: discoveredId,
               });
             }
+          }
+
+          if (latestSeenTimestamp || latestSeenJobId) {
+            await saveBackendJobFeedCursor(watcher.id, {
+              lastSeenJobId: latestSeenJobId,
+              lastSeenTimestamp: latestSeenTimestamp,
+            });
           }
 
           await updateBackendJobFeedWatcherStatus(watcher.id, {

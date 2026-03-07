@@ -2,6 +2,8 @@ import { pool } from "./db.js";
 import type {
   ConnectedAccountRecord,
   CurrentUserRecord,
+  JobDiscoveryEventRecord,
+  JobFeedCursorRecord,
   JobFeedWatcherRecord,
   UserJobPreferencesRecord,
 } from "./current-user.types.js";
@@ -76,6 +78,26 @@ function mapWatcherRow(row: Record<string, unknown>): JobFeedWatcherRecord {
     lastError: row.last_error ? String(row.last_error) : null,
     createdAt: new Date(String(row.created_at)).toISOString(),
     updatedAt: new Date(String(row.updated_at)).toISOString(),
+  };
+}
+
+function mapJobFeedCursorRow(row: Record<string, unknown>): JobFeedCursorRecord {
+  return {
+    watcherId: Number(row.watcher_id),
+    lastSeenJobId: row.last_seen_job_id ? String(row.last_seen_job_id) : null,
+    lastSeenTimestamp: row.last_seen_timestamp ? new Date(String(row.last_seen_timestamp)).toISOString() : null,
+    updatedAt: new Date(String(row.updated_at)).toISOString(),
+  };
+}
+
+function mapJobDiscoveryEventRow(row: Record<string, unknown>): JobDiscoveryEventRecord {
+  return {
+    id: Number(row.id),
+    watcherId: row.watcher_id == null ? null : Number(row.watcher_id),
+    jobId: row.job_id == null ? null : Number(row.job_id),
+    eventType: String(row.event_type) as JobDiscoveryEventRecord["eventType"],
+    payload: row.payload && typeof row.payload === "object" ? (row.payload as Record<string, unknown>) : {},
+    createdAt: new Date(String(row.created_at)).toISOString(),
   };
 }
 
@@ -308,4 +330,57 @@ export async function markJobFeedWatcherRun(
     [watcherId, input.status, input.lastError ?? null, input.succeeded],
   );
   return result.rows[0] ? mapWatcherRow(result.rows[0]) : null;
+}
+
+export async function getJobFeedCursor(watcherId: number) {
+  const result = await pool.query(
+    `SELECT * FROM job_feed_cursors WHERE watcher_id = $1`,
+    [watcherId],
+  );
+  return result.rows[0] ? mapJobFeedCursorRow(result.rows[0]) : null;
+}
+
+export async function saveJobFeedCursor(
+  watcherId: number,
+  input: { lastSeenJobId?: string | null; lastSeenTimestamp?: string | null },
+) {
+  const result = await pool.query(
+    `INSERT INTO job_feed_cursors (watcher_id, last_seen_job_id, last_seen_timestamp)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (watcher_id)
+     DO UPDATE SET
+       last_seen_job_id = EXCLUDED.last_seen_job_id,
+       last_seen_timestamp = EXCLUDED.last_seen_timestamp,
+       updated_at = NOW()
+     RETURNING *`,
+    [watcherId, input.lastSeenJobId ?? null, input.lastSeenTimestamp ?? null],
+  );
+  return mapJobFeedCursorRow(result.rows[0]);
+}
+
+export async function listJobDiscoveryEventsByWatcherId(watcherId: number) {
+  const result = await pool.query(
+    `SELECT *
+     FROM job_discovery_events
+     WHERE watcher_id = $1
+     ORDER BY created_at DESC, id DESC
+     LIMIT 100`,
+    [watcherId],
+  );
+  return result.rows.map(mapJobDiscoveryEventRow);
+}
+
+export async function createJobDiscoveryEvent(input: {
+  watcherId: number;
+  jobId?: number | null;
+  eventType: JobDiscoveryEventRecord["eventType"];
+  payload?: Record<string, unknown>;
+}) {
+  const result = await pool.query(
+    `INSERT INTO job_discovery_events (watcher_id, job_id, event_type, payload)
+     VALUES ($1, $2, $3, $4::jsonb)
+     RETURNING *`,
+    [input.watcherId, input.jobId ?? null, input.eventType, JSON.stringify(input.payload ?? {})],
+  );
+  return mapJobDiscoveryEventRow(result.rows[0]);
 }

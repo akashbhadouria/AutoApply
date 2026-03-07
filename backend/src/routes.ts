@@ -14,12 +14,16 @@ import { enqueueAutomationJob, getAutomationQueues, pauseAutomationQueue, resume
 import { getContacts, saveContact } from "./contact.service.js";
 import {
   addConnectedAccount,
+  addJobDiscoveryEvent,
   addJobFeedWatcher,
   changeJobFeedWatcherStatus,
+  fetchJobDiscoveryEvents,
+  fetchJobFeedCursor,
   fetchConnectedAccounts,
   fetchCurrentUserPreferences,
   fetchJobFeedWatchers,
   getOrCreateCurrentUser,
+  updateJobFeedCursor,
   updateCurrentUser,
   updateCurrentUserPreferences,
 } from "./current-user.service.js";
@@ -137,6 +141,42 @@ apiRouter.put("/api/me/job-watchers/:watcherId/status", async (request, response
   try {
     const watcher = await changeJobFeedWatcherStatus(request.params.watcherId, request.body);
     response.status(watcher ? 200 : 404).json(watcher ? { data: watcher } : { error: "Not found" });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/me/job-watchers/:watcherId/cursor", async (request, response, next) => {
+  try {
+    const cursor = await fetchJobFeedCursor(request.params.watcherId);
+    response.status(cursor ? 200 : 404).json(cursor ? { data: cursor } : { error: "Not found" });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.put("/api/me/job-watchers/:watcherId/cursor", async (request, response, next) => {
+  try {
+    const cursor = await updateJobFeedCursor(request.params.watcherId, request.body);
+    response.status(200).json({ data: cursor });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/me/job-watchers/:watcherId/discovery-events", async (request, response, next) => {
+  try {
+    const events = await fetchJobDiscoveryEvents(request.params.watcherId);
+    response.json({ data: events });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/me/job-watchers/:watcherId/discovery-events", async (request, response, next) => {
+  try {
+    const event = await addJobDiscoveryEvent(request.params.watcherId, request.body);
+    response.status(201).json({ data: event });
   } catch (error) {
     next(error);
   }
