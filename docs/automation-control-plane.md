@@ -44,3 +44,15 @@ The `/automation` page is a manual control harness that:
 This is the first operational bridge between the dashboard and the worker runtime.
 
 The `job-scanner` queue now performs real backend ingestion through the batch discovery endpoint.
+
+## n8n alignment
+
+The following importable workflow templates now exist under [n8n-workflows](/home/akash/AutoApply/n8n-workflows):
+
+- `job-discovery.json`
+- `referral-timeout.json`
+- `notification-delivery.json`
+- `application-monitoring.json`
+- `resume-session-alerts.json`
+
+These workflows call the same backend enqueue APIs used by the `/automation` page.

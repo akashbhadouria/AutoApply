@@ -1,0 +1,116 @@
+{
+  "name": "AutoApply Resume Session Alerts",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 20
+            }
+          ]
+        }
+      },
+      "id": "schedule-resume-session-alerts",
+      "name": "Every 20 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.AUTOAPPLY_BACKEND_URL || 'http://localhost:4000'}}/api/application-sessions",
+        "options": {}
+      },
+      "id": "fetch-application-sessions",
+      "name": "Fetch Application Sessions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const sessions = $input.first().json.data ?? [];\nreturn sessions\n  .filter((session) => session.status === 'paused' || session.status === 'ready_to_resume')\n  .slice(0, 5)\n  .map((session) => ({\n    json: {\n      type: 'n8n.resume_session_alert',\n      title: `Resume application for ${session.company}`,\n      message: `Job ${session.jobId} is ${session.status} on ${session.formUrl}. Missing field: ${session.missingField}.`,\n      channel: 'dashboard',\n      status: 'pending',\n      relatedJobId: session.jobId,\n    },\n  }));"
+      },
+      "id": "build-resume-session-alerts",
+      "name": "Build Resume Session Alerts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.AUTOAPPLY_BACKEND_URL || 'http://localhost:4000'}}/api/notifications",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "create-resume-session-notification",
+      "name": "Create Resume Session Notifications",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1060,
+        280
+      ]
+    }
+  ],
+  "connections": {
+    "Every 20 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Fetch Application Sessions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Application Sessions": {
+      "main": [
+        [
+          {
+            "node": "Build Resume Session Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Resume Session Alerts": {
+      "main": [
+        [
+          {
+            "node": "Create Resume Session Notifications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "resume-session-alerts-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "autoapply-resume-session-alerts"
+}

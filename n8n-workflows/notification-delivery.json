@@ -1,15 +1,116 @@
 {
-  "name": "notification-delivery",
-  "description": "Placeholder workflow: poll pending notifications and route by configured channel.",
+  "name": "AutoApply Notification Delivery Pump",
   "nodes": [
     {
-      "name": "Cron",
-      "type": "n8n-nodes-base.cron"
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "schedule-notification-delivery",
+      "name": "Every 5 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        260
+      ]
     },
     {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.AUTOAPPLY_BACKEND_URL || 'http://localhost:4000'}}/api/notifications",
+        "options": {}
+      },
+      "id": "fetch-pending-notifications-source",
       "name": "Fetch Notifications",
-      "type": "n8n-nodes-base.httpRequest"
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $input.first().json.data ?? [];\nreturn payload\n  .filter((notification) => notification.status === 'pending')\n  .map((notification) => ({\n    json: {\n      queueName: 'notifications',\n      payload: {\n        notificationId: notification.id,\n      },\n      channel: notification.channel,\n      type: notification.type,\n    },\n  }));"
+      },
+      "id": "select-pending-notifications",
+      "name": "Select Pending Notifications",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        760,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.AUTOAPPLY_BACKEND_URL || 'http://localhost:4000'}}/api/automation/enqueue",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { queueName: $json.queueName, payload: $json.payload } }}",
+        "options": {}
+      },
+      "id": "enqueue-notification-delivery",
+      "name": "Enqueue Notification Jobs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1040,
+        260
+      ]
     }
-  ]
+  ],
+  "connections": {
+    "Every 5 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Fetch Notifications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Notifications": {
+      "main": [
+        [
+          {
+            "node": "Select Pending Notifications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Pending Notifications": {
+      "main": [
+        [
+          {
+            "node": "Enqueue Notification Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "notification-delivery-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "autoapply-notification-delivery"
 }
-

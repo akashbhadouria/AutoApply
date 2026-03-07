@@ -1,0 +1,116 @@
+{
+  "name": "AutoApply Application Monitoring",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      },
+      "id": "schedule-application-monitoring",
+      "name": "Every 10 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.AUTOAPPLY_BACKEND_URL || 'http://localhost:4000'}}/api/dashboard/summary",
+        "options": {}
+      },
+      "id": "fetch-dashboard-summary",
+      "name": "Fetch Dashboard Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const summary = $input.first().json.data ?? {};\nconst metricMap = new Map((summary.metrics ?? []).map((metric) => [metric.label, metric.value]));\nconst degraded = (summary.statuses ?? []).filter((status) => status.status !== 'healthy');\nconst pausedSessions = metricMap.get('Paused ATS sessions') ?? 0;\nconst pendingNotifications = metricMap.get('Pending notifications') ?? 0;\nif (degraded.length === 0 && pausedSessions === 0 && pendingNotifications === 0) {\n  return [];\n}\nconst fragments = [];\nif (degraded.length > 0) {\n  fragments.push(`degraded systems: ${degraded.map((status) => status.label).join(', ')}`);\n}\nif (pausedSessions > 0) {\n  fragments.push(`paused ATS sessions: ${pausedSessions}`);\n}\nif (pendingNotifications > 0) {\n  fragments.push(`pending notifications: ${pendingNotifications}`);\n}\nreturn [{\n  json: {\n    type: 'n8n.application_monitoring',\n    title: 'Automation monitoring alert',\n    message: `AutoApply monitoring detected ${fragments.join(' | ')}.`,\n    channel: 'dashboard',\n    status: 'pending',\n  },\n}];"
+      },
+      "id": "build-monitoring-alert",
+      "name": "Build Monitoring Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.AUTOAPPLY_BACKEND_URL || 'http://localhost:4000'}}/api/notifications",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "create-monitoring-notification",
+      "name": "Create Monitoring Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1060,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Every 10 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Fetch Dashboard Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Dashboard Summary": {
+      "main": [
+        [
+          {
+            "node": "Build Monitoring Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Monitoring Alert": {
+      "main": [
+        [
+          {
+            "node": "Create Monitoring Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "application-monitoring-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "autoapply-application-monitoring"
+}

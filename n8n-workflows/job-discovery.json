@@ -1,15 +1,90 @@
 {
-  "name": "job-discovery-scheduler",
-  "description": "Placeholder workflow: run every 15 minutes and enqueue job scanner work.",
+  "name": "AutoApply Job Discovery Scheduler",
   "nodes": [
     {
-      "name": "Cron",
-      "type": "n8n-nodes-base.cron"
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "schedule-job-discovery",
+      "name": "Every 15 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        260,
+        260
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    queueName: 'job-scanner',\n    payload: {\n      searchTitles: ['Frontend Engineer', 'React Developer', 'UI Engineer', 'SDE-2 Frontend', 'Frontend Developer'],\n      locations: ['Bangalore', 'Remote India'],\n      recencyDays: 7,\n    },\n  },\n}];"
+      },
+      "id": "build-job-discovery-payload",
+      "name": "Build Discovery Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.AUTOAPPLY_BACKEND_URL || 'http://localhost:4000'}}/api/automation/enqueue",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "enqueue-job-discovery",
       "name": "Enqueue Job Scanner",
-      "type": "n8n-nodes-base.httpRequest"
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        260
+      ]
     }
-  ]
+  ],
+  "connections": {
+    "Every 15 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Build Discovery Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Discovery Payload": {
+      "main": [
+        [
+          {
+            "node": "Enqueue Job Scanner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "job-discovery-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "autoapply-job-discovery"
 }
-

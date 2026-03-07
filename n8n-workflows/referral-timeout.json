@@ -1,15 +1,90 @@
 {
-  "name": "referral-timeout",
-  "description": "Placeholder workflow: check pending referrals older than 24 hours and raise application queue or notifications.",
+  "name": "AutoApply Referral Timeout Sweep",
   "nodes": [
     {
-      "name": "Cron",
-      "type": "n8n-nodes-base.cron"
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "schedule-referral-timeout",
+      "name": "Hourly Sweep",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        260,
+        260
+      ]
     },
     {
-      "name": "Fetch Pending Referrals",
-      "type": "n8n-nodes-base.httpRequest"
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    queueName: 'referral-engine',\n    payload: {\n      mode: 'timeouts',\n      olderThanHours: Number($env.AUTOAPPLY_REFERRAL_TIMEOUT_HOURS || 24),\n    },\n  },\n}];"
+      },
+      "id": "build-referral-timeout-payload",
+      "name": "Build Timeout Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.AUTOAPPLY_BACKEND_URL || 'http://localhost:4000'}}/api/automation/enqueue",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "enqueue-referral-timeout",
+      "name": "Enqueue Referral Sweep",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        260
+      ]
     }
-  ]
+  ],
+  "connections": {
+    "Hourly Sweep": {
+      "main": [
+        [
+          {
+            "node": "Build Timeout Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Timeout Payload": {
+      "main": [
+        [
+          {
+            "node": "Enqueue Referral Sweep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "referral-timeout-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "autoapply-referral-timeout"
 }
-

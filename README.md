@@ -25,6 +25,7 @@ The first implemented feature is the `Profile Manager`, which provides:
 - dedicated notifications and settings pages backed by persistent storage
 - notifications and resumable paused application session tracking
 - worker, queue, n8n, and agent scaffolding aligned with the target architecture
+- importable n8n workflows aligned with the current backend queue contracts
 - backend queue producer APIs and a manual automation control plane
 - Playwright-backed browser analysis and persistent field mapping storage
 

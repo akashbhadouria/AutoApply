@@ -59,6 +59,8 @@ If you want to reseed demo data manually without restarting the stack:
 npm run seed:demo
 ```
 
+Importable n8n workflow templates are available in [n8n-workflows](/home/akash/AutoApply/n8n-workflows) and documented in [docs/n8n-workflows.md](/home/akash/AutoApply/docs/n8n-workflows.md).
+
 To manually run the referral-timeout sweep from the Automation page, enqueue `referral-engine` with:
 
 ```json
@@ -149,6 +151,7 @@ If host database auth is inconsistent, pages now remain styled and show explicit
 - [docs/applications-tracker.md](/home/akash/AutoApply/docs/applications-tracker.md)
 - [docs/referrals-hub.md](/home/akash/AutoApply/docs/referrals-hub.md)
 - [docs/notifications.md](/home/akash/AutoApply/docs/notifications.md)
+- [docs/n8n-workflows.md](/home/akash/AutoApply/docs/n8n-workflows.md)
 - [docs/operations-layer.md](/home/akash/AutoApply/docs/operations-layer.md)
 - [docs/worker-architecture.md](/home/akash/AutoApply/docs/worker-architecture.md)
 - [docs/automation-control-plane.md](/home/akash/AutoApply/docs/automation-control-plane.md)
