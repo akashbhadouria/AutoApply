@@ -29,4 +29,13 @@ The `notifications` worker now reads persisted settings such as:
 
 If a channel is disabled, the worker marks the notification as `failed` and records a `notification.delivery_blocked` event.
 
-If a channel is enabled, the worker marks the notification as `delivered` and records a `notification.delivered` event.
+If a channel is enabled but the transport is not configured, the worker marks the notification as `failed` and records a `notification.delivery_blocked` event with `reason: transport_unconfigured`.
+
+If delivery throws during transport execution, the worker marks the notification as `failed` and records a `notification.delivery_failed` event.
+
+Current transport behavior:
+
+- `dashboard`: local simulated delivery
+- `telegram`: real Telegram Bot API delivery when `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are present
+- `email`: webhook-based delivery when `EMAIL_WEBHOOK_URL` is present
+- `whatsapp`: webhook-based delivery when `WHATSAPP_WEBHOOK_URL` is present

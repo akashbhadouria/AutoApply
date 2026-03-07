@@ -94,6 +94,12 @@ The `/automation` page now also shows live queue backlog and worker snapshots fr
 
 The `/operations` page can now re-queue paused ATS sessions directly back into `browser-automation` through a `Resume` action.
 
+The notification worker can now perform optional live delivery for:
+
+- Telegram via `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`
+- email via `EMAIL_WEBHOOK_URL`
+- WhatsApp via `WHATSAPP_WEBHOOK_URL`
+
 To inspect the current applied-application count in the active rate window:
 
 ```bash

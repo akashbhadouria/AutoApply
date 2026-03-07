@@ -30,6 +30,7 @@ import type {
 } from "./contracts.js";
 import { getConnectionOptions } from "./connection.js";
 import { queueNames } from "./contracts.js";
+import { deliverNotification, getNotificationTransportStatus } from "./notification-delivery.js";
 import { enqueueApplicationQueueJob, enqueueBrowserAutomationJob } from "./queues.js";
 import { scanDiscoveredJobs } from "./scanners.js";
 
@@ -494,6 +495,7 @@ export function startWorkers() {
         settings.get(settingKey),
         notification.channel === "dashboard",
       );
+      const transportStatus = getNotificationTransportStatus(notification.channel);
 
       if (!channelEnabled) {
         await updateBackendNotificationStatus(notification.id, {
@@ -512,19 +514,54 @@ export function startWorkers() {
         return;
       }
 
-      await updateBackendNotificationStatus(notification.id, {
-        status: "delivered",
-        deliveredAt: new Date().toISOString(),
-      });
-      await createBackendEvent({
-        eventType: "notification.delivered",
-        actor: "notificationWorker",
-        payload: {
-          notificationId: notification.id,
-          channel: notification.channel,
-          transport: "simulated",
-        },
-      });
+      if (!transportStatus.configured) {
+        await updateBackendNotificationStatus(notification.id, {
+          status: "failed",
+        });
+        await createBackendEvent({
+          eventType: "notification.delivery_blocked",
+          actor: "notificationWorker",
+          payload: {
+            notificationId: notification.id,
+            channel: notification.channel,
+            reason: "transport_unconfigured",
+            transport: transportStatus.transport,
+          },
+        });
+        return;
+      }
+
+      try {
+        const delivery = await deliverNotification(notification);
+        await updateBackendNotificationStatus(notification.id, {
+          status: "delivered",
+          deliveredAt: new Date().toISOString(),
+        });
+        await createBackendEvent({
+          eventType: "notification.delivered",
+          actor: "notificationWorker",
+          payload: {
+            notificationId: notification.id,
+            channel: notification.channel,
+            transport: delivery.transport,
+            mode: delivery.mode,
+          },
+        });
+      } catch (error) {
+        await updateBackendNotificationStatus(notification.id, {
+          status: "failed",
+        });
+        await createBackendEvent({
+          eventType: "notification.delivery_failed",
+          actor: "notificationWorker",
+          payload: {
+            notificationId: notification.id,
+            channel: notification.channel,
+            transport: transportStatus.transport,
+            error: error instanceof Error ? error.message : "Unknown delivery error",
+          },
+        });
+      }
     },
     { connection },
   );

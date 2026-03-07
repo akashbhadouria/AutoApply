@@ -30,6 +30,7 @@ const suggestedSettings: Array<Pick<SettingFormState, "key" | "label" | "value" 
   { key: "email_enabled", label: "Email Enabled", value: "true", valueType: "boolean", category: "notifications" },
   { key: "telegram_enabled", label: "Telegram Enabled", value: "true", valueType: "boolean", category: "notifications" },
   { key: "whatsapp_enabled", label: "WhatsApp Enabled", value: "false", valueType: "boolean", category: "notifications" },
+  { key: "notification_delivery_mode", label: "Notification Delivery Mode", value: "mixed", valueType: "string", category: "notifications" },
   { key: "application_rate_limit_per_hour", label: "Application Rate Limit / Hour", value: "10", valueType: "number", category: "automation" },
   { key: "referral_timeout_hours", label: "Referral Timeout Hours", value: "24", valueType: "number", category: "automation" },
 ];

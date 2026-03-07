@@ -61,6 +61,10 @@ function parseJobSourceFeeds(rawValue: string | undefined): JobSourceFeedConfig[
 
 export const env = {
   backendUrl: process.env.BACKEND_URL ?? "http://localhost:4000",
+  emailWebhookUrl: process.env.EMAIL_WEBHOOK_URL,
   jobSourceFeeds: parseJobSourceFeeds(process.env.JOB_SOURCE_FEEDS_JSON),
   redisUrl: process.env.REDIS_URL ?? "redis://localhost:6379",
+  telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
+  telegramChatId: process.env.TELEGRAM_CHAT_ID,
+  whatsappWebhookUrl: process.env.WHATSAPP_WEBHOOK_URL,
 };
