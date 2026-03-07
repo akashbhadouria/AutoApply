@@ -68,3 +68,13 @@ export const jobFeedWatcherStatusSchema = z.object({
   status: z.enum(["active", "paused", "error"]),
   lastError: z.string().trim().min(1).max(500).optional(),
 });
+
+export const jobFeedPreviewSchema = z.object({
+  provider: z.enum(["greenhouse", "lever", "generic_json", "google_jobs"]),
+  sourcePlatform: sourcePlatformSchema,
+  url: z.string().trim().url(),
+  company: z.string().trim().min(1).max(160).optional(),
+  searchTitles: z.array(z.string().trim().min(1).max(160)).min(1).max(20),
+  locations: z.array(z.string().trim().min(1).max(160)).min(1).max(20),
+  recencyDays: z.coerce.number().int().min(1).max(30).default(7),
+});

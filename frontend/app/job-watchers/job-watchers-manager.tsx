@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, StatCard } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import type { JobFeedWatcher, JobWatcherActivity, RecentJobDiscoveryEvent } from "@/lib/api";
+import type { JobFeedPreviewResult, JobFeedWatcher, JobWatcherActivity, RecentJobDiscoveryEvent } from "@/lib/api";
 
 const emptyForm = {
   name: "",
@@ -59,7 +59,9 @@ export function JobWatchersManager({
   const [eventFilter, setEventFilter] = useState<"all" | RecentJobDiscoveryEvent["eventType"]>("all");
   const [isSaving, setIsSaving] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
   const [busyWatcherId, setBusyWatcherId] = useState<number | null>(null);
+  const [preview, setPreview] = useState<JobFeedPreviewResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const totals = useMemo(() => {
@@ -143,6 +145,7 @@ export function JobWatchersManager({
       }
 
       setForm(emptyForm);
+      setPreview(null);
       await refreshAll();
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : "Failed to create watcher");
@@ -203,6 +206,48 @@ export function JobWatchersManager({
   async function handleEventFilterChange(nextFilter: "all" | RecentJobDiscoveryEvent["eventType"]) {
     setEventFilter(nextFilter);
     await refreshAll(nextFilter);
+  }
+
+  async function handlePreviewFeed() {
+    setError(null);
+    setPreview(null);
+    setIsPreviewing(true);
+
+    try {
+      if (!providerNeedsFeed(form.provider)) {
+        throw new Error("Preview abhi sirf greenhouse, lever, generic_json, aur google_jobs ke liye available hai.");
+      }
+
+      if (!form.feedUrl.trim()) {
+        throw new Error("Preview ke liye live feed URL dena zaroori hai.");
+      }
+
+      const response = await fetch("/api/me/job-watchers/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: form.provider,
+          sourcePlatform: form.sourcePlatform,
+          url: form.feedUrl.trim(),
+          company: form.company.trim() || undefined,
+          searchTitles: form.searchTitles.split(",").map((entry) => entry.trim()).filter(Boolean),
+          locations: form.locations.split(",").map((entry) => entry.trim()).filter(Boolean),
+          recencyDays: Number(form.recencyDays),
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json()) as { error?: string };
+        throw new Error(payload.error ?? "Unable to preview feed");
+      }
+
+      const payload = (await response.json()) as { data: JobFeedPreviewResult };
+      setPreview(payload.data);
+    } catch (previewError) {
+      setError(previewError instanceof Error ? previewError.message : "Failed to preview feed");
+    } finally {
+      setIsPreviewing(false);
+    }
   }
 
   return (
@@ -305,12 +350,48 @@ export function JobWatchersManager({
                 {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Radar className="size-4" />}
                 Save watcher
               </Button>
+              {providerNeedsFeed(form.provider) ? (
+                <Button disabled={isPreviewing} type="button" variant="ghost" onClick={() => void handlePreviewFeed()}>
+                  {isPreviewing ? <Loader2 className="size-4 animate-spin" /> : <Activity className="size-4" />}
+                  Preview feed
+                </Button>
+              ) : null}
               <Button disabled={isRefreshing} onClick={() => void refreshAll()} variant="secondary">
                 {isRefreshing ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
                 Refresh telemetry
               </Button>
             </div>
           </form>
+
+          {preview ? (
+            <div className="mt-6 rounded-[24px] border border-cyan-400/20 bg-cyan-500/5 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-200">Feed preview</p>
+                  <p className="mt-1 text-sm text-slate-300">
+                    {preview.matchedCount} matching jobs out of {preview.totalFetched} fetched records
+                  </p>
+                </div>
+                <Badge variant="freshness">{preview.matchedCount} matches</Badge>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {preview.jobs.length === 0 ? (
+                  <p className="text-sm text-slate-400">No matching jobs mile. Titles, locations, ya recency filter check karo.</p>
+                ) : (
+                  preview.jobs.map((job, index) => (
+                    <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-3" key={`${job.jobUrl}-${index}`}>
+                      <p className="text-sm font-medium text-white">
+                        {job.company} · {job.title}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-400">{job.location}</p>
+                      <p className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-500">posted {job.postedDate}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          ) : null}
         </Card>
 
         <div className="space-y-6">

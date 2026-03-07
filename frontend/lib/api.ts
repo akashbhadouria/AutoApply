@@ -93,6 +93,19 @@ export interface JobFeedWatcher {
   updatedAt: string;
 }
 
+export interface JobFeedPreviewResult {
+  totalFetched: number;
+  matchedCount: number;
+  jobs: Array<{
+    company: string;
+    title: string;
+    location: string;
+    jobUrl: string;
+    postedDate: string;
+    sourcePlatform: JobFeedWatcher["sourcePlatform"];
+  }>;
+}
+
 export interface JobWatcherActivity {
   watcherId: number;
   watcherName: string;
@@ -684,6 +697,31 @@ export async function createJobFeedWatcher(body: {
   }
 
   return response.json() as Promise<{ data: JobFeedWatcher }>;
+}
+
+export async function previewJobFeed(body: {
+  provider: "greenhouse" | "lever" | "generic_json" | "google_jobs";
+  sourcePlatform: JobFeedWatcher["sourcePlatform"];
+  url: string;
+  company?: string;
+  searchTitles: string[];
+  locations: string[];
+  recencyDays?: number;
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/me/job-watchers/preview`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to preview job feed");
+  }
+
+  return response.json() as Promise<{ data: JobFeedPreviewResult }>;
 }
 
 export async function updateJobFeedWatcherStatus(

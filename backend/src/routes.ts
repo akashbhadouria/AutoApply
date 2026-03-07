@@ -32,6 +32,7 @@ import {
 import { getEvents, saveEvent } from "./event.service.js";
 import { getFieldMappings, saveFieldMapping } from "./field-mapping.service.js";
 import { getApplicationByJobId, getApplicationRateWindow, getApplications, saveApplication } from "./application.service.js";
+import { previewJobFeed } from "./job-feed-preview.service.js";
 import { getFreshJobs, getJobById, getJobs, ingestDiscoveredJob, ingestDiscoveredJobsBatch } from "./job.service.js";
 import { changeNotificationStatus, getNotificationById, getNotifications, saveNotification } from "./notification.service.js";
 import {
@@ -151,6 +152,15 @@ apiRouter.post("/api/me/job-watchers", async (request, response, next) => {
   try {
     const watcher = await addJobFeedWatcher(request.body);
     response.status(201).json({ data: watcher });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/me/job-watchers/preview", async (request, response, next) => {
+  try {
+    const preview = await previewJobFeed(request.body);
+    response.status(200).json({ data: preview });
   } catch (error) {
     next(error);
   }

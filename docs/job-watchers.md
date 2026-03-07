@@ -46,6 +46,7 @@ The `/job-watchers` page lets the operator:
 
 - create watcher rules
 - provide a watcher-specific live feed URL for `greenhouse`, `lever`, `generic_json`, or `google_jobs`
+- preview a live feed before saving the watcher
 - activate or pause watchers
 - run a watcher immediately
 - inspect per-watcher cursor health and recent discovery counts
@@ -58,6 +59,12 @@ For real company-site testing, use:
 - a real public feed URL such as:
   - `https://boards-api.greenhouse.io/v1/boards/<company>/jobs`
   - `https://api.lever.co/v0/postings/<company>?mode=json`
+
+The preview panel now tells you:
+
+- how many records the remote feed returned
+- how many jobs matched your title/location/recency filters
+- a short sample of matched jobs before you save the watcher
 
 The backend now also exposes two focused operator feeds for redesigned UI work:
 
