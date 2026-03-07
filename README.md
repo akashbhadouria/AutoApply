@@ -33,5 +33,6 @@ The first implemented feature is the `Profile Manager`, which provides:
 - configurable live company ATS feed ingestion for the job scanner with deterministic fallback
 - BullMQ queue diagnostics surfaced in the automation control plane
 - queue retry/backoff policy and recent failed-job retention surfaced in the automation control plane
+- resumable ATS sessions can now be re-queued directly from the operations surface
 
 See [quickstart.md](/home/akash/AutoApply/quickstart.md) to run the current slice locally.

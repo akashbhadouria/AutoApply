@@ -92,6 +92,8 @@ The job scanner can now consume live company ATS feeds if the workers environmen
 
 The `/automation` page now also shows live queue backlog and worker snapshots from BullMQ, including waiting, active, delayed, failed, connected-worker counts, retry policy, and recent retained failed jobs.
 
+The `/operations` page can now re-queue paused ATS sessions directly back into `browser-automation` through a `Resume` action.
+
 To inspect the current applied-application count in the active rate window:
 
 ```bash

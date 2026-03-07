@@ -18,7 +18,13 @@ import { changeNotificationStatus, getNotificationById, getNotifications, saveNo
 import { getDashboardSummary } from "./dashboard.service.js";
 import { getProfileFields, removeProfileField, saveProfileField } from "./profile.service.js";
 import { changeReferralStatus, getReferrals, getReferralsForJob, getTimedOutPendingReferrals, saveReferral } from "./referral.service.js";
-import { getApplicationSessions, saveApplicationSession } from "./session.service.js";
+import {
+  getApplicationSession,
+  getApplicationSessions,
+  markApplicationSessionStatus,
+  parseResumeApplicationSessionPayload,
+  saveApplicationSession,
+} from "./session.service.js";
 import { getSystemSettings, removeSystemSetting, saveSystemSetting } from "./settings.service.js";
 
 export const apiRouter = Router();
@@ -296,6 +302,67 @@ apiRouter.post("/api/application-sessions", async (request, response, next) => {
   try {
     const session = await saveApplicationSession(request.body);
     response.status(201).json({ data: session });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/application-sessions/:id/resume", async (request, response, next) => {
+  try {
+    const session = await getApplicationSession(request.params.id);
+    if (!session) {
+      response.status(404).json({ error: "Not found" });
+      return;
+    }
+
+    if (session.status === "completed") {
+      response.status(409).json({ error: "Completed sessions cannot be resumed." });
+      return;
+    }
+
+    const body = await parseResumeApplicationSessionPayload(request.body);
+    const updatedSession = await markApplicationSessionStatus(request.params.id, "ready_to_resume");
+    if (!updatedSession) {
+      response.status(404).json({ error: "Not found" });
+      return;
+    }
+
+    const queuedJob = await enqueueAutomationJob({
+      queueName: "browser-automation",
+      payload: {
+        jobId: updatedSession.jobId,
+        formUrl: updatedSession.formUrl,
+        resumePath: body.resumePath,
+      },
+    });
+
+    await saveEvent({
+      eventType: "application_session.resume_queued",
+      actor: "operationsApi",
+      payload: {
+        sessionId: updatedSession.id,
+        jobId: updatedSession.jobId,
+        formUrl: updatedSession.formUrl,
+        queueName: queuedJob.queueName,
+        queuedJobId: queuedJob.jobId,
+      },
+      relatedJobId: updatedSession.jobId,
+    });
+    await saveNotification({
+      type: "application_session_resume_queued",
+      title: "Paused ATS session queued for resume",
+      message: `Queued browser automation to resume job ${updatedSession.jobId} from saved session ${updatedSession.id}.`,
+      channel: "dashboard",
+      status: "pending",
+      relatedJobId: updatedSession.jobId,
+    });
+
+    response.status(202).json({
+      data: {
+        session: updatedSession,
+        queuedJob,
+      },
+    });
   } catch (error) {
     next(error);
   }

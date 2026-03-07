@@ -41,6 +41,10 @@ Returns paused and resumable application sessions with job context.
 
 Creates or updates a paused application session record.
 
+### `POST /api/application-sessions/:id/resume`
+
+Marks a saved session as `ready_to_resume` and re-enqueues browser automation for the saved `job_id` and `form_url`.
+
 ### `GET /api/notifications`
 
 Returns notifications ordered by creation time.
@@ -55,6 +59,7 @@ The `/operations` page allows the user to:
 
 - inspect paused sessions
 - save or update missing-field interruptions
+- queue resumable ATS sessions back into browser automation
 - inspect notifications
 - create sample notifications for workflow testing
 - review the event audit stream created by workers

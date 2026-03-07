@@ -62,6 +62,7 @@ export function OperationsManager({
   const [error, setError] = useState<string | null>(null);
   const [savingSession, setSavingSession] = useState(false);
   const [savingNotification, setSavingNotification] = useState(false);
+  const [resumingSessionId, setResumingSessionId] = useState<number | null>(null);
 
   const jobOptions = useMemo(
     () => jobs.map((job) => ({ id: job.id, label: `${job.company} - ${job.title} - ${job.location}` })),
@@ -158,6 +159,31 @@ export function OperationsManager({
       setError(submissionError instanceof Error ? submissionError.message : "Failed to save notification");
     } finally {
       setSavingNotification(false);
+    }
+  }
+
+  async function handleResumeSession(sessionId: number) {
+    setError(null);
+    setResumingSessionId(sessionId);
+
+    try {
+      const response = await fetch(`/api/application-sessions/${sessionId}/resume`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        throw new Error("Unable to resume application session");
+      }
+
+      await refreshSessions();
+      await refreshNotifications();
+      await refreshEvents();
+    } catch (resumeError) {
+      setError(resumeError instanceof Error ? resumeError.message : "Failed to resume session");
+    } finally {
+      setResumingSessionId(null);
     }
   }
 
@@ -285,12 +311,13 @@ export function OperationsManager({
                   <TableHeaderCell>Role</TableHeaderCell>
                   <TableHeaderCell>Missing field</TableHeaderCell>
                   <TableHeaderCell>Status</TableHeaderCell>
+                  <TableHeaderCell className="text-right">Action</TableHeaderCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {sessions.length === 0 ? (
                   <TableRow>
-                    <TableCell className="px-4 py-10 text-muted" colSpan={4}>
+                    <TableCell className="px-4 py-10 text-muted" colSpan={5}>
                       No paused sessions yet.
                     </TableCell>
                   </TableRow>
@@ -301,6 +328,21 @@ export function OperationsManager({
                       <TableCell>{session.title}</TableCell>
                       <TableCell>{session.missingField}</TableCell>
                       <TableCell>{session.status}</TableCell>
+                      <TableCell className="text-right">
+                        {session.status === "completed" ? (
+                          <span className="text-xs uppercase tracking-[0.18em] text-muted">Completed</span>
+                        ) : (
+                          <Button
+                            className="bg-transparent px-3 text-ink hover:bg-canvas hover:text-ink"
+                            disabled={resumingSessionId === session.id}
+                            onClick={() => void handleResumeSession(session.id)}
+                            type="button"
+                          >
+                            {resumingSessionId === session.id ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+                            Resume
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}

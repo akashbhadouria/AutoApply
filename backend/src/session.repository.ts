@@ -40,6 +40,12 @@ export async function listApplicationSessions(): Promise<ApplicationSessionRecor
   return result.rows.map(mapSessionRow);
 }
 
+export async function getApplicationSessionById(sessionId: number): Promise<ApplicationSessionRecord | null> {
+  const result = await pool.query(`${sessionSelect} WHERE application_sessions.id = $1`, [sessionId]);
+  const row = result.rows[0];
+  return row ? mapSessionRow(row) : null;
+}
+
 export async function upsertApplicationSession(input: UpsertApplicationSessionInput): Promise<ApplicationSessionRecord> {
   const result = await pool.query(
     `INSERT INTO application_sessions (
@@ -64,3 +70,24 @@ export async function upsertApplicationSession(input: UpsertApplicationSessionIn
   return mapSessionRow(record.rows[0]);
 }
 
+export async function updateApplicationSessionStatus(
+  sessionId: number,
+  status: ApplicationSessionRecord["status"],
+): Promise<ApplicationSessionRecord | null> {
+  const result = await pool.query(
+    `UPDATE application_sessions
+     SET status = $2,
+         updated_at = NOW()
+     WHERE id = $1
+     RETURNING id`,
+    [sessionId, status],
+  );
+
+  const updatedId = result.rows[0]?.id;
+  if (!updatedId) {
+    return null;
+  }
+
+  const record = await pool.query(`${sessionSelect} WHERE application_sessions.id = $1`, [Number(updatedId)]);
+  return mapSessionRow(record.rows[0]);
+}

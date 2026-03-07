@@ -554,6 +554,28 @@ export async function upsertApplicationSession(body: {
   return response.json();
 }
 
+export async function resumeApplicationSession(sessionId: number, body?: { resumePath?: string }) {
+  const response = await fetch(`${getBackendUrl()}/api/application-sessions/${sessionId}/resume`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body ?? {}),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to resume application session");
+  }
+
+  return response.json() as Promise<{
+    data: {
+      session: ApplicationSession;
+      queuedJob: EnqueuedAutomationJob;
+    };
+  }>;
+}
+
 export async function fetchNotifications(): Promise<Notification[]> {
   const response = await fetch(`${getBackendUrl()}/api/notifications`, {
     cache: "no-store",
