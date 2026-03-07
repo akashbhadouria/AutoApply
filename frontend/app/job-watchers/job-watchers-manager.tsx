@@ -17,7 +17,13 @@ const emptyForm = {
   searchTitles: "Frontend Engineer, React Developer",
   locations: "Bangalore, Remote India",
   recencyDays: "7",
+  feedUrl: "",
+  company: "",
 };
+
+function providerNeedsFeed(provider: JobFeedWatcher["provider"]) {
+  return provider === "greenhouse" || provider === "lever" || provider === "generic_json" || provider === "google_jobs";
+}
 
 function formatTime(value: string | null) {
   if (!value) return "Never";
@@ -108,6 +114,10 @@ export function JobWatchersManager({
     setIsSaving(true);
 
     try {
+      if (providerNeedsFeed(form.provider) && !form.feedUrl.trim()) {
+        throw new Error("Is provider ke liye live feed URL dena zaroori hai.");
+      }
+
       const response = await fetch("/api/me/job-watchers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -119,6 +129,12 @@ export function JobWatchersManager({
           searchTitles: form.searchTitles.split(",").map((entry) => entry.trim()).filter(Boolean),
           locations: form.locations.split(",").map((entry) => entry.trim()).filter(Boolean),
           recencyDays: Number(form.recencyDays),
+          configuration: providerNeedsFeed(form.provider)
+            ? {
+                feedUrl: form.feedUrl.trim(),
+                company: form.company.trim() || undefined,
+              }
+            : undefined,
         }),
       });
 
@@ -243,6 +259,20 @@ export function JobWatchersManager({
               <option value="generic_json">generic_json</option>
               <option value="google_jobs">google_jobs</option>
             </select>
+            {providerNeedsFeed(form.provider) ? (
+              <>
+                <Input
+                  placeholder="Live feed URL (required for greenhouse / lever / generic_json / google_jobs)"
+                  value={form.feedUrl}
+                  onChange={(event) => setForm((current) => ({ ...current, feedUrl: event.target.value }))}
+                />
+                <Input
+                  placeholder="Company name override (optional)"
+                  value={form.company}
+                  onChange={(event) => setForm((current) => ({ ...current, company: event.target.value }))}
+                />
+              </>
+            ) : null}
             <Input
               placeholder="Titles, comma separated"
               value={form.searchTitles}

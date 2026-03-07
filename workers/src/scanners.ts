@@ -391,12 +391,14 @@ function buildFallbackResult(payload: JobDiscoveryJobData): ScannerRunResult {
 }
 
 export async function scanDiscoveredJobs(payload: JobDiscoveryJobData): Promise<ScannerRunResult> {
-  if (env.jobSourceFeeds.length === 0) {
+  const feeds = payload.feeds && payload.feeds.length > 0 ? payload.feeds : env.jobSourceFeeds;
+
+  if (feeds.length === 0) {
     return buildFallbackResult(payload);
   }
 
   const liveResults = await Promise.all(
-    env.jobSourceFeeds.map(async (feed) => {
+    feeds.map(async (feed) => {
       try {
         const discoveredJobs = filterJobsForQuery(await fetchLiveFeedJobs(feed), payload);
         return {

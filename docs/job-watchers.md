@@ -45,10 +45,19 @@ The `job-feed-watcher` queue now:
 The `/job-watchers` page lets the operator:
 
 - create watcher rules
+- provide a watcher-specific live feed URL for `greenhouse`, `lever`, `generic_json`, or `google_jobs`
 - activate or pause watchers
 - run a watcher immediately
 - inspect per-watcher cursor health and recent discovery counts
 - inspect the latest cross-watcher discovery stream with event-type filtering
+
+For real company-site testing, use:
+
+- `sourcePlatform = company_site`
+- `provider = greenhouse` or `lever`
+- a real public feed URL such as:
+  - `https://boards-api.greenhouse.io/v1/boards/<company>/jobs`
+  - `https://api.lever.co/v0/postings/<company>?mode=json`
 
 The backend now also exposes two focused operator feeds for redesigned UI work:
 

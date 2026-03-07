@@ -219,6 +219,46 @@ function inferFreshness(postedDate: string) {
   };
 }
 
+function buildWatcherFeedConfigs(
+  watcher: {
+    name: string;
+    provider: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site" | "greenhouse" | "lever" | "generic_json" | "google_jobs";
+    sourcePlatform: "linkedin" | "instahyre" | "hirist" | "naukri" | "company_site";
+    configuration: Record<string, unknown>;
+  },
+) {
+  if (
+    watcher.provider !== "greenhouse" &&
+    watcher.provider !== "lever" &&
+    watcher.provider !== "generic_json" &&
+    watcher.provider !== "google_jobs"
+  ) {
+    return [];
+  }
+
+  const configuredUrl =
+    typeof watcher.configuration.feedUrl === "string" && watcher.configuration.feedUrl.trim()
+      ? watcher.configuration.feedUrl.trim()
+      : null;
+
+  if (!configuredUrl) {
+    return [];
+  }
+
+  return [
+    {
+      name: watcher.name,
+      provider: watcher.provider,
+      platform: watcher.sourcePlatform,
+      url: configuredUrl,
+      company:
+        typeof watcher.configuration.company === "string" && watcher.configuration.company.trim()
+          ? watcher.configuration.company.trim()
+          : undefined,
+    },
+  ];
+}
+
 export function startWorkers() {
   const connection = getConnectionOptions();
   let notificationSchedulerTimer: NodeJS.Timeout | null = null;
@@ -255,11 +295,13 @@ export function startWorkers() {
       for (const watcher of watchers) {
         try {
           const cursorResponse = await fetchBackendJobFeedCursor(watcher.id);
+          const watcherFeeds = buildWatcherFeedConfigs(watcher);
           const scannerRun = await scanDiscoveredJobs({
             searchTitles: watcher.searchTitles,
             locations: watcher.locations,
             recencyDays: watcher.recencyDays,
             lastSeenTimestamp: cursorResponse?.data.lastSeenTimestamp ?? undefined,
+            feeds: watcherFeeds,
           });
 
           const jobs = scannerRun.jobs.map((discoveredJob) => {

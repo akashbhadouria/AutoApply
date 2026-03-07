@@ -1,3 +1,5 @@
+import type { JobSourceFeedConfig } from "./config.js";
+
 export const queueNames = {
   jobFeedWatcher: "job-feed-watcher",
   jobScanner: "job-scanner",
@@ -17,6 +19,7 @@ export interface JobDiscoveryJobData {
   locations: string[];
   recencyDays: number;
   lastSeenTimestamp?: string;
+  feeds?: JobSourceFeedConfig[];
 }
 
 export interface ReferralJobData {
