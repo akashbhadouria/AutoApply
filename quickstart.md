@@ -66,6 +66,18 @@ If you want to reseed demo data manually without restarting the stack:
 npm run seed:demo
 ```
 
+To verify the stack end to end:
+
+```bash
+npm run doctor
+```
+
+If the frontend starts behaving strangely after a redesign or runtime crash, restart only the frontend with a clean Next cache:
+
+```bash
+npm run dev:frontend
+```
+
 Importable n8n workflow templates are available in [n8n-workflows](/home/akash/AutoApply/n8n-workflows) and documented in [docs/n8n-workflows.md](/home/akash/AutoApply/docs/n8n-workflows.md).
 
 To manually run the referral-timeout sweep from the Automation page, enqueue `referral-engine` with:
