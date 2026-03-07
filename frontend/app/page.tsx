@@ -152,6 +152,44 @@ function DashboardContent({ summary }: { summary: DashboardSummary }) {
       <Card className="mt-6 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Fresh jobs</p>
+            <h2 className="mt-2 text-2xl font-semibold text-white">Jobs in the instant-response window.</h2>
+          </div>
+          <Link className="text-sm font-medium text-cyan-300" href="/job-watchers">
+            Open watchers
+          </Link>
+        </div>
+
+        {summary.freshJobs.length === 0 ? (
+          <p className="mt-6 text-sm text-slate-400">No fresh jobs are currently waiting in the high-priority window.</p>
+        ) : (
+          <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            {summary.freshJobs.map((job) => (
+              <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5" key={job.id}>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-lg font-semibold text-white">{job.company}</p>
+                    <p className="mt-1 text-sm text-slate-300">{job.title}</p>
+                  </div>
+                  <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs uppercase tracking-[0.18em] text-amber-300">
+                    {job.jobPriority}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm text-slate-300">{job.location}</p>
+                <p className="mt-2 text-sm text-slate-400">strategy: {job.applyStrategy}</p>
+                <p className="mt-2 text-sm text-slate-400">sources: {job.sourcePlatforms.join(", ") || "none"}</p>
+                <p className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">
+                  discovered {new Date(job.discoveredAt).toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card className="mt-6 p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Scanner diagnostics</p>
             <h2 className="mt-2 text-2xl font-semibold text-white">Latest job discovery run by source.</h2>
           </div>
@@ -254,6 +292,9 @@ function DashboardContent({ summary }: { summary: DashboardSummary }) {
                   </span>
                 </div>
                 <p className="mt-4 text-sm text-slate-400">{job.sourcePlatforms.join(", ") || "No sources recorded"}</p>
+                <p className="mt-2 text-sm text-slate-500">
+                  {job.freshnessStatus} / {job.jobPriority} / {job.applyStrategy}
+                </p>
                 <p className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">
                   discovered {new Date(job.discoveredAt).toLocaleString()}
                 </p>

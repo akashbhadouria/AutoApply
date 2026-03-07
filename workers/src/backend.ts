@@ -144,6 +144,21 @@ export async function fetchBackendSettings() {
   }>("/api/settings");
 }
 
+export async function fetchBackendCurrentUserPreferences() {
+  return request<{
+    data: {
+      preferredRoles: string[];
+      preferredLocations: string[];
+      remotePreference: "remote_only" | "hybrid" | "onsite_only" | "any";
+      referralPreference: "referral_first" | "instant_apply" | "balanced";
+      instantApplyEnabled: boolean;
+      blockedCompanies: string[];
+      targetApplicationsPerDay: number;
+      notificationChannels: Array<"dashboard" | "email" | "telegram" | "whatsapp">;
+    };
+  }>("/api/me/preferences");
+}
+
 export async function fetchBackendNotificationById(notificationId: number) {
   const response = await fetch(`${env.backendUrl}/api/notifications/${notificationId}`);
 

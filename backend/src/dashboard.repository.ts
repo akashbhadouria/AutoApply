@@ -3,6 +3,7 @@ import type { DashboardRecentEvent, DashboardRecentJob, DashboardScannerRun, Das
 
 export interface DashboardCounts {
   jobs: number;
+  freshJobs: number;
   applications: number;
   referrals: number;
   pausedSessions: number;
@@ -13,6 +14,7 @@ export interface DashboardCounts {
 export async function getDashboardCounts(): Promise<DashboardCounts> {
   const result = await pool.query<{
     jobs: string;
+    fresh_jobs: string;
     applications: string;
     referrals: string;
     paused_sessions: string;
@@ -21,6 +23,7 @@ export async function getDashboardCounts(): Promise<DashboardCounts> {
   }>(
     `SELECT
        (SELECT COUNT(*) FROM jobs) AS jobs,
+       (SELECT COUNT(*) FROM jobs WHERE freshness_status = 'fresh') AS fresh_jobs,
        (SELECT COUNT(*) FROM applications) AS applications,
        (SELECT COUNT(*) FROM referrals) AS referrals,
        (SELECT COUNT(*) FROM application_sessions WHERE status <> 'completed') AS paused_sessions,
@@ -32,6 +35,7 @@ export async function getDashboardCounts(): Promise<DashboardCounts> {
 
   return {
     jobs: Number(row.jobs),
+    freshJobs: Number(row.fresh_jobs),
     applications: Number(row.applications),
     referrals: Number(row.referrals),
     pausedSessions: Number(row.paused_sessions),
@@ -76,6 +80,9 @@ export async function getRecentJobs(): Promise<DashboardRecentJob[]> {
     location: string;
     discovered_at: string;
     source_platforms: string[] | null;
+    freshness_status: string;
+    job_priority: string;
+    apply_strategy: string;
   }>(
     `SELECT
        jobs.id,
@@ -83,6 +90,9 @@ export async function getRecentJobs(): Promise<DashboardRecentJob[]> {
        jobs.title,
        jobs.location,
        jobs.discovered_at,
+       jobs.freshness_status,
+       jobs.job_priority,
+       jobs.apply_strategy,
        ARRAY_REMOVE(ARRAY_AGG(job_sources.source_platform ORDER BY job_sources.source_platform), NULL) AS source_platforms
      FROM jobs
      LEFT JOIN job_sources ON job_sources.job_id = jobs.id
@@ -97,6 +107,52 @@ export async function getRecentJobs(): Promise<DashboardRecentJob[]> {
     title: row.title,
     location: row.location,
     sourcePlatforms: row.source_platforms ?? [],
+    freshnessStatus: row.freshness_status as DashboardRecentJob["freshnessStatus"],
+    jobPriority: row.job_priority as DashboardRecentJob["jobPriority"],
+    applyStrategy: row.apply_strategy as DashboardRecentJob["applyStrategy"],
+    discoveredAt: new Date(row.discovered_at).toISOString(),
+  }));
+}
+
+export async function getFreshJobs(): Promise<DashboardRecentJob[]> {
+  const result = await pool.query<{
+    id: string;
+    company: string;
+    title: string;
+    location: string;
+    discovered_at: string;
+    source_platforms: string[] | null;
+    freshness_status: string;
+    job_priority: string;
+    apply_strategy: string;
+  }>(
+    `SELECT
+       jobs.id,
+       jobs.company,
+       jobs.title,
+       jobs.location,
+       jobs.discovered_at,
+       jobs.freshness_status,
+       jobs.job_priority,
+       jobs.apply_strategy,
+       ARRAY_REMOVE(ARRAY_AGG(job_sources.source_platform ORDER BY job_sources.source_platform), NULL) AS source_platforms
+     FROM jobs
+     LEFT JOIN job_sources ON job_sources.job_id = jobs.id
+     WHERE jobs.freshness_status = 'fresh'
+     GROUP BY jobs.id
+     ORDER BY jobs.first_seen_at DESC, jobs.id DESC
+     LIMIT 6`,
+  );
+
+  return result.rows.map((row) => ({
+    id: Number(row.id),
+    company: row.company,
+    title: row.title,
+    location: row.location,
+    sourcePlatforms: row.source_platforms ?? [],
+    freshnessStatus: row.freshness_status as DashboardRecentJob["freshnessStatus"],
+    jobPriority: row.job_priority as DashboardRecentJob["jobPriority"],
+    applyStrategy: row.apply_strategy as DashboardRecentJob["applyStrategy"],
     discoveredAt: new Date(row.discovered_at).toISOString(),
   }));
 }

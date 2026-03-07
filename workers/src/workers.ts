@@ -8,6 +8,7 @@ import {
   fetchBackendApplicationByJobId,
   fetchBackendApplicationRateWindow,
   fetchBackendContacts,
+  fetchBackendCurrentUserPreferences,
   fetchBackendFieldMappings,
   fetchBackendJobFeedWatchers,
   fetchBackendNotificationById,
@@ -34,7 +35,7 @@ import type {
 import { getConnectionOptions } from "./connection.js";
 import { queueNames } from "./contracts.js";
 import { deliverNotification, getNotificationTransportStatus } from "./notification-delivery.js";
-import { enqueueApplicationQueueJob, enqueueBrowserAutomationJob } from "./queues.js";
+import { enqueueApplicationQueueJob, enqueueBrowserAutomationJob, enqueueReferralEngineJob } from "./queues.js";
 import { scanDiscoveredJobs } from "./scanners.js";
 
 function logWorkerStart(name: string, data: unknown) {
@@ -60,6 +61,10 @@ ${params.userName ?? "Akash"}`;
 
 function buildConnectionDraft(params: { company: string; role: string }) {
   return `Hi, I found the ${params.role} opening at ${params.company} and would value the chance to connect.`;
+}
+
+function normalizeText(value: string) {
+  return value.trim().toLowerCase();
 }
 
 function buildMockApplicationFormUrl(jobId: number, sourcePlatform: ApplicationQueueJobData["sourcePlatform"]) {
@@ -147,12 +152,21 @@ export function startWorkers() {
     queueNames.jobFeedWatcher,
     async (job) => {
       logWorkerStart(queueNames.jobFeedWatcher, job.data);
-      const watchersResponse = await fetchBackendJobFeedWatchers();
+      const [watchersResponse, contactsResponse, preferencesResponse] = await Promise.all([
+        fetchBackendJobFeedWatchers(),
+        fetchBackendContacts(),
+        fetchBackendCurrentUserPreferences(),
+      ]);
       const watchers = job.data.watcherId
         ? watchersResponse.data.filter((watcher) => watcher.id === job.data.watcherId && watcher.status === "active")
         : watchersResponse.data.filter((watcher) => watcher.status === "active");
+      const contacts = contactsResponse.data;
+      const preferences = preferencesResponse.data;
 
       let totalDiscovered = 0;
+      let freshJobs = 0;
+      let referralQueued = 0;
+      let applicationQueued = 0;
 
       for (const watcher of watchers) {
         try {
@@ -177,6 +191,81 @@ export function startWorkers() {
 
           const batchResult = await discoverBackendJobsBatch({ jobs });
           totalDiscovered += batchResult.data.length;
+
+          for (const [index, discoveredJob] of jobs.entries()) {
+            const discoveredId = batchResult.data[index]?.id;
+            if (!discoveredId) {
+              continue;
+            }
+
+            if (discoveredJob.freshnessStatus !== "fresh") {
+              continue;
+            }
+
+            freshJobs += 1;
+            const matchingContacts = contacts.filter(
+              (contact) => normalizeText(contact.company) === normalizeText(discoveredJob.company),
+            );
+            const shouldPreferReferral =
+              preferences.referralPreference !== "instant_apply" && matchingContacts.length > 0;
+            const shouldInstantApply =
+              preferences.instantApplyEnabled && (!shouldPreferReferral || preferences.referralPreference === "instant_apply");
+
+            await createBackendEvent({
+              eventType: "fresh_job_detected",
+              actor: "jobFeedWatcherWorker",
+              payload: {
+                watcherId: watcher.id,
+                jobId: discoveredId,
+                company: discoveredJob.company,
+                title: discoveredJob.title,
+                sourcePlatform: discoveredJob.sourcePlatform,
+                applyStrategy: discoveredJob.applyStrategy,
+              },
+              relatedJobId: discoveredId,
+            });
+
+            if (shouldPreferReferral) {
+              await enqueueReferralEngineJob({
+                mode: "drafts",
+                jobId: discoveredId,
+              }, {
+                priority: 10,
+              });
+              referralQueued += 1;
+              await createBackendEvent({
+                eventType: "referral_requested",
+                actor: "jobFeedWatcherWorker",
+                payload: {
+                  watcherId: watcher.id,
+                  jobId: discoveredId,
+                  matchingContacts: matchingContacts.length,
+                },
+                relatedJobId: discoveredId,
+              });
+            } else if (shouldInstantApply) {
+              await enqueueApplicationQueueJob(
+                {
+                  jobId: discoveredId,
+                  sourcePlatform: discoveredJob.sourcePlatform,
+                },
+                {
+                  priority: 20,
+                },
+              );
+              applicationQueued += 1;
+              await createBackendEvent({
+                eventType: "application_requested",
+                actor: "jobFeedWatcherWorker",
+                payload: {
+                  watcherId: watcher.id,
+                  jobId: discoveredId,
+                  reason: "fresh_job_no_referral_path",
+                },
+                relatedJobId: discoveredId,
+              });
+            }
+          }
 
           await updateBackendJobFeedWatcherStatus(watcher.id, {
             status: "active",
@@ -205,7 +294,7 @@ export function startWorkers() {
         message:
           watchers.length === 0
             ? "No active job watchers were available for this run."
-            : `Processed ${watchers.length} watcher(s) and discovered ${totalDiscovered} jobs.`,
+            : `Processed ${watchers.length} watcher(s), discovered ${totalDiscovered} jobs, flagged ${freshJobs} fresh jobs, queued ${referralQueued} referral runs, and queued ${applicationQueued} applications.`,
         channel: "dashboard",
         status: "delivered",
       });
@@ -303,9 +392,18 @@ export function startWorkers() {
       const profileFieldMap = new Map(profileFieldsResponse.data.map((field) => [field.key, field.value]));
       const resumeLink = profileFieldMap.get("resume_link") ?? profileFieldMap.get("resume");
       const userName = profileFieldMap.get("name");
-      const matchingContacts = contactsResponse.data.filter(
-        (contact) => !alreadyTrackedContactIds.has(contact.id),
-      );
+      const referralCompany = existingReferrals.data[0]?.company;
+      const matchingContacts = contactsResponse.data.filter((contact) => {
+        if (alreadyTrackedContactIds.has(contact.id)) {
+          return false;
+        }
+
+        if (!referralCompany) {
+          return true;
+        }
+
+        return normalizeText(contact.company) === normalizeText(referralCompany);
+      });
 
       let createdReferrals = 0;
       for (const contact of matchingContacts.slice(0, 3)) {

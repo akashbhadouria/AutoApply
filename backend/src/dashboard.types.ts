@@ -16,6 +16,9 @@ export interface DashboardRecentJob {
   title: string;
   location: string;
   sourcePlatforms: string[];
+  freshnessStatus: "fresh" | "recent" | "standard";
+  jobPriority: "high" | "normal" | "low";
+  applyStrategy: "api" | "http_form" | "browser";
   discoveredAt: string;
 }
 
@@ -50,6 +53,7 @@ export interface DashboardSummary {
   statuses: DashboardStatus[];
   applicationBreakdown: Array<{ status: string; count: number }>;
   referralBreakdown: Array<{ status: string; count: number }>;
+  freshJobs: DashboardRecentJob[];
   recentJobs: DashboardRecentJob[];
   recentEvents: DashboardRecentEvent[];
   latestScannerRun: DashboardScannerRun | null;

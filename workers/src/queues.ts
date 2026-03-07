@@ -60,6 +60,17 @@ export async function enqueueJobFeedWatcherJob(data: JobFeedWatcherJobData, over
   return jobFeedWatcherQueue.add(queueNames.jobFeedWatcher, data, getQueueJobOptions(queueNames.jobFeedWatcher, overrides));
 }
 
+export async function enqueueReferralEngineJob(
+  data: {
+    mode?: "drafts" | "timeouts";
+    jobId?: number;
+    olderThanHours?: number;
+  },
+  overrides?: Partial<JobsOptions>,
+) {
+  return referralEngineQueue.add(queueNames.referralEngine, data, getQueueJobOptions(queueNames.referralEngine, overrides));
+}
+
 export async function enqueueBrowserAutomationJob(
   data: {
     jobId: number;

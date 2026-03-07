@@ -94,6 +94,7 @@ The referrals and field-mappings pages now include backend-powered agent actions
 
 The job scanner can now consume live company ATS feeds if the workers environment defines `JOB_SOURCE_FEEDS_JSON`. Without that configuration, it falls back to deterministic discovery data so local development stays stable.
 The new AutoApply V1 watcher surface stores per-user discovery rules and can enqueue the `job-feed-watcher` queue directly.
+Fresh watcher-discovered jobs now trigger downstream work automatically: referral runs when company contacts exist, or immediate application queue handoff when no referral path exists.
 
 The `/automation` page now also shows live queue backlog and worker snapshots from BullMQ, including waiting, active, delayed, failed, connected-worker counts, retry policy, and recent retained failed jobs.
 It now also supports direct queue `Pause` and `Resume` controls for operator testing and incident handling.

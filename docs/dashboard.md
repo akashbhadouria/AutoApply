@@ -9,6 +9,7 @@ The root route `/` is now the live dashboard for the platform rather than a stat
 - application status breakdown
 - referral status breakdown
 - recent events
+- fresh jobs currently in the high-priority window
 - recent normalized jobs
 - latest scanner diagnostics with live, fallback, and error visibility per feed
 - direct navigation into every operational page
@@ -24,6 +25,7 @@ That endpoint aggregates:
 - entity counts from the main persistence tables
 - runtime readiness checks
 - recent jobs
+- fresh jobs with priority and apply strategy
 - recent events
 - latest job scanner telemetry parsed from the most recent `job_scanner.run_requested` event
 - application and referral status breakdowns

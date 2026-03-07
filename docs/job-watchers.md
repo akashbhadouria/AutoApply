@@ -24,6 +24,9 @@ The `job-feed-watcher` queue now:
 - loads active watcher records
 - runs discovery for their title/location rules
 - writes jobs with freshness, priority, apply strategy, and watcher attribution
+- emits `fresh_job_detected` for jobs inside the instant-response window
+- queues `referral-engine` when same-company contacts exist and referral-first policy applies
+- queues `application-queue` immediately when no referral path exists and instant apply is allowed
 - records dashboard notifications for watcher sweeps
 
 ## UI behavior

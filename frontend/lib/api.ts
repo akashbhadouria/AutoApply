@@ -261,12 +261,26 @@ export interface DashboardSummary {
   statuses: DashboardStatus[];
   applicationBreakdown: Array<{ status: string; count: number }>;
   referralBreakdown: Array<{ status: string; count: number }>;
+  freshJobs: Array<{
+    id: number;
+    company: string;
+    title: string;
+    location: string;
+    sourcePlatforms: string[];
+    freshnessStatus: "fresh" | "recent" | "standard";
+    jobPriority: "high" | "normal" | "low";
+    applyStrategy: "api" | "http_form" | "browser";
+    discoveredAt: string;
+  }>;
   recentJobs: Array<{
     id: number;
     company: string;
     title: string;
     location: string;
     sourcePlatforms: string[];
+    freshnessStatus: "fresh" | "recent" | "standard";
+    jobPriority: "high" | "normal" | "low";
+    applyStrategy: "api" | "http_form" | "browser";
     discoveredAt: string;
   }>;
   recentEvents: Array<{
