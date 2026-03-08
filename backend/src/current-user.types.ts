@@ -35,7 +35,7 @@ export interface UserJobPreferencesRecord {
 export interface ConnectedAccountRecord {
   id: number;
   userId: number;
-  provider: "linkedin" | "gmail" | "outlook" | "telegram" | "whatsapp";
+  provider: "linkedin" | "naukri" | "instahyre" | "hirist" | "gmail" | "outlook" | "telegram" | "whatsapp";
   accountLabel: string;
   connectionStatus: "pending" | "connected" | "degraded" | "disconnected";
   approvalMode: "manual_approval" | "auto_send";

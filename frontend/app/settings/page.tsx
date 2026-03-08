@@ -33,7 +33,7 @@ export default async function SettingsPage() {
         bullets={[
           "Settings are now backed by the database rather than temporary UI-only state.",
           "The page keeps the shell intact even when the settings dataset cannot load.",
-          "Use the deterministic local stack to avoid host-environment drift.",
+          "Use the supported local stack to avoid host-environment drift.",
           "After recovery, the page should render persisted automation and notification controls.",
         ]}
         description="The settings surface could not fetch its live data."

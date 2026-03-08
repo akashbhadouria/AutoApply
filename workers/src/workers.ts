@@ -501,7 +501,7 @@ export function startWorkers() {
         title: "Job scanner completed",
         message:
           liveSourceCount === 0
-            ? `Discovered ${batchResult.data.length} normalized jobs using fallback scanner data for ${job.data.searchTitles.length} titles across ${job.data.locations.length} locations.`
+            ? `No live job feeds are configured, so this scanner run produced no jobs.`
             : `Discovered ${batchResult.data.length} normalized jobs from ${liveSourceCount} configured live feed(s)${liveErrorCount > 0 ? ` with ${liveErrorCount} feed error(s)` : ""}.`,
         channel: "dashboard",
         status: "delivered",

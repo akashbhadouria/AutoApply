@@ -341,7 +341,7 @@ CREATE TABLE IF NOT EXISTS connected_accounts (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT connected_accounts_provider_check CHECK (
-    provider IN ('linkedin', 'gmail', 'outlook', 'telegram', 'whatsapp')
+    provider IN ('linkedin', 'naukri', 'instahyre', 'hirist', 'gmail', 'outlook', 'telegram', 'whatsapp')
   ),
   CONSTRAINT connected_accounts_status_check CHECK (
     connection_status IN ('pending', 'connected', 'degraded', 'disconnected')
@@ -355,6 +355,36 @@ DROP TRIGGER IF EXISTS connected_accounts_set_updated_at ON connected_accounts;
 
 CREATE TRIGGER connected_accounts_set_updated_at
 BEFORE UPDATE ON connected_accounts
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE IF NOT EXISTS platform_sessions (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  platform TEXT NOT NULL,
+  encrypted_session BYTEA NOT NULL,
+  session_format TEXT NOT NULL DEFAULT 'cookie_bundle',
+  status TEXT NOT NULL DEFAULT 'active',
+  account_identifier TEXT,
+  user_agent TEXT,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  last_validated_at TIMESTAMPTZ,
+  expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT platform_sessions_platform_check CHECK (
+    platform IN ('linkedin', 'naukri', 'instahyre', 'hirist')
+  ),
+  CONSTRAINT platform_sessions_status_check CHECK (
+    status IN ('active', 'expired', 'revoked')
+  ),
+  CONSTRAINT platform_sessions_unique_user_platform UNIQUE (user_id, platform)
+);
+
+DROP TRIGGER IF EXISTS platform_sessions_set_updated_at ON platform_sessions;
+
+CREATE TRIGGER platform_sessions_set_updated_at
+BEFORE UPDATE ON platform_sessions
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 

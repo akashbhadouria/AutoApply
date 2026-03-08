@@ -1,106 +1,40 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { BackgroundBeams } from "@/components/aceternity/background-beams";
-import { BentoGrid, BentoGridItem } from "@/components/aceternity/bento-grid";
-import { LampContainer } from "@/components/aceternity/lamp";
 import { RuntimeHealthBanner } from "@/components/runtime-health-banner";
 import { Card } from "@/components/ui/card";
-
-const navigation = [
-  { href: "/", label: "Overview" },
-  { href: "/onboarding", label: "Onboarding" },
-  { href: "/connected-accounts", label: "Accounts" },
-  { href: "/job-watchers", label: "Watchers" },
-  { href: "/fresh-jobs", label: "Fresh Jobs" },
-  { href: "/outreach-inbox", label: "Outreach" },
-  { href: "/profile", label: "Profile" },
-  { href: "/jobs", label: "Jobs" },
-  { href: "/applications", label: "Applications" },
-  { href: "/referrals", label: "Referrals" },
-  { href: "/notifications", label: "Notifications" },
-  { href: "/operations", label: "Operations" },
-  { href: "/automation", label: "Automation" },
-  { href: "/field-mappings", label: "Field Mappings" },
-  { href: "/settings", label: "Settings" },
-];
 
 export function FeaturePageShell({
   badge,
   title,
   description,
-  bullets,
   children,
+  bullets: _bullets,
 }: {
   badge: string;
   title: string;
   description: string;
-  bullets: string[];
+  bullets?: string[];
   children: ReactNode;
 }) {
   return (
-    <main className="relative min-h-screen overflow-hidden px-6 py-10">
-      <BackgroundBeams />
-      <div className="relative z-10 mx-auto max-w-7xl">
-        <RuntimeHealthBanner />
+    <main className="min-h-screen px-8 py-8">
+      <RuntimeHealthBanner />
 
-        <Card className="mb-6 overflow-hidden border-white/15 bg-slate-950/55 p-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-cyan-300">AutoApply Control Surface</p>
-              <p className="mt-2 max-w-2xl text-sm text-slate-300">
-                Frontend automation console for jobs, referrals, ATS sessions, queues, and self-learning mappings.
-              </p>
-            </div>
-            <nav className="flex flex-wrap gap-2">
-              {navigation.map((item) => (
-                <Link
-                  className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-200 transition hover:border-cyan-400/40 hover:bg-cyan-400/10 hover:text-cyan-100"
-                  href={item.href}
-                  key={item.href}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </Card>
+      {/* Page header */}
+      <div className="mb-8">
+        <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-cyan-500/[0.08] px-3 py-1">
+          <span className="size-1.5 rounded-full bg-cyan-400" style={{ boxShadow: "0 0 6px rgba(34,211,238,0.8)" }} />
+          <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-cyan-400">{badge}</span>
+        </span>
 
-        <div className="mb-8">
-          <LampContainer>
-            <div className="mx-auto max-w-4xl text-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.38em] text-cyan-300">{badge}</p>
-              <h1 className="mt-6 text-4xl font-semibold leading-tight text-white md:text-6xl">{title}</h1>
-              <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-slate-300 md:text-lg">{description}</p>
-              <div className="mt-8 flex flex-wrap justify-center gap-3 text-sm text-slate-300">
-                <Link className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 hover:bg-cyan-400/20" href="/">
-                  Overview
-                </Link>
-                <Link className="rounded-full border border-white/10 bg-white/5 px-4 py-2 hover:bg-white/10" href="/automation">
-                  Automation
-                </Link>
-                <Link className="rounded-full border border-white/10 bg-white/5 px-4 py-2 hover:bg-white/10" href="/field-mappings">
-                  Field Mappings
-                </Link>
-              </div>
-            </div>
-          </LampContainer>
-        </div>
+        <h1 className="mb-2 text-3xl font-bold tracking-tight grad-text">{title}</h1>
+        <p className="max-w-2xl text-sm leading-relaxed text-slate-400">{description}</p>
 
-        <BentoGrid className="mb-8 md:grid-cols-4">
-          {bullets.map((bullet, index) => (
-            <BentoGridItem
-              className={index === 0 ? "md:col-span-2" : ""}
-              description={bullet}
-              header={<div className="h-1 w-16 rounded-full bg-gradient-to-r from-cyan-400 to-fuchsia-500" />}
-              key={bullet}
-              title={`Signal ${index + 1}`}
-            />
-          ))}
-        </BentoGrid>
-
-        {children}
+        {/* Separator */}
+        <div className="mt-6 h-px w-full bg-gradient-to-r from-cyan-500/30 via-violet-500/20 to-transparent" />
       </div>
+
+      {children}
     </main>
   );
 }
@@ -114,19 +48,30 @@ export function FeaturePageErrorState({
 }) {
   return (
     <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-      <Card className="p-6">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-red-400">Runtime dependency error</p>
-        <p className="mt-3 text-sm leading-7 text-slate-200">{message}</p>
-        <p className="mt-4 text-sm text-slate-400">
-          The UI shell is still healthy, but this page cannot fetch live data from the backend right now.
+      <Card className="border-red-500/20 bg-red-500/[0.04] p-6">
+        <div className="mb-4 flex items-center gap-2.5">
+          <div
+            className="size-2 rounded-full bg-red-400"
+            style={{ boxShadow: "0 0 8px rgba(248,113,113,0.8)" }}
+          />
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-400">Runtime Error</p>
+        </div>
+        <p className="text-sm leading-7 text-slate-200">{message}</p>
+        <p className="mt-3 text-xs leading-relaxed text-slate-500">
+          The UI shell is healthy, but this page cannot fetch live data from the backend right now.
         </p>
       </Card>
 
       <Card className="p-6">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Verify these checks</p>
-        <ul className="mt-4 space-y-3 text-sm text-slate-200">
-          {checks.map((check) => (
-            <li key={check}>{check}</li>
+        <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Recovery Checklist</p>
+        <ul className="space-y-3">
+          {checks.map((check, i) => (
+            <li key={check} className="flex items-start gap-3 text-sm text-slate-300">
+              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border border-violet-500/30 bg-violet-500/10 text-[10px] font-bold text-violet-400">
+                {i + 1}
+              </span>
+              {check}
+            </li>
           ))}
         </ul>
       </Card>

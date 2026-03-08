@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const providerSchema = z.enum(["linkedin", "gmail", "outlook", "telegram", "whatsapp"]);
+const providerSchema = z.enum(["linkedin", "naukri", "instahyre", "hirist", "gmail", "outlook", "telegram", "whatsapp"]);
 const channelSchema = z.enum(["dashboard", "email", "telegram", "whatsapp"]);
 const sourcePlatformSchema = z.enum(["linkedin", "instahyre", "hirist", "naukri", "company_site"]);
 const watcherProviderSchema = z.enum([

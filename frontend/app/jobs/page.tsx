@@ -11,15 +11,15 @@ export default async function JobsPage() {
 
     return (
       <FeaturePageShell
-        badge="Phase 2 foundation"
+        badge="Jobs Board"
         bullets={[
-          "Automated scanners can safely upsert without fragmenting the same role.",
-          "Source analytics remain attached to one canonical job identity.",
-          "Referral and application workers now consume normalized job records.",
-          "The queue-driven scanner already writes into this page's data model.",
+          "This is the user-facing jobs board, not a manual operator intake surface.",
+          "All rows here should come from backend discovery or real ingestion flows.",
+          "The board keeps one canonical job record while tracking multiple source platforms.",
+          "Empty state is preferable to fake jobs because it tells us discovery is not wired yet.",
         ]}
-        description="This page exercises the same ingestion path the future scanner workers will use. If the same job appears from LinkedIn and Instahyre, the system keeps one job record and tracks both sources."
-        title="A normalized jobs inventory with duplicate detection and platform merging."
+        description="Review the complete board of discovered jobs. If the board stays empty, backend discovery is not yet producing real jobs from connected platforms."
+        title="All discovered jobs in one board."
       >
         <JobsManager initialJobs={jobs} />
       </FeaturePageShell>

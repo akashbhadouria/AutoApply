@@ -50,6 +50,7 @@ export async function listJobs(): Promise<JobRecord[]> {
        ARRAY_REMOVE(ARRAY_AGG(job_sources.source_platform ORDER BY job_sources.source_platform), NULL) AS source_platforms
      FROM jobs
      LEFT JOIN job_sources ON job_sources.job_id = jobs.id
+     WHERE jobs.job_url NOT LIKE 'https://example.com/%'
      GROUP BY jobs.id
      ORDER BY jobs.discovered_at DESC, jobs.id DESC`,
   );
@@ -79,6 +80,7 @@ export async function listFreshJobs(): Promise<JobRecord[]> {
      FROM jobs
      LEFT JOIN job_sources ON job_sources.job_id = jobs.id
      WHERE jobs.freshness_status = 'fresh'
+       AND jobs.job_url NOT LIKE 'https://example.com/%'
      GROUP BY jobs.id
      ORDER BY jobs.first_seen_at DESC, jobs.id DESC`,
   );
@@ -108,6 +110,7 @@ export async function findJobById(jobId: number): Promise<JobRecord | null> {
      FROM jobs
      LEFT JOIN job_sources ON job_sources.job_id = jobs.id
      WHERE jobs.id = $1
+       AND jobs.job_url NOT LIKE 'https://example.com/%'
      GROUP BY jobs.id`,
     [jobId],
   );

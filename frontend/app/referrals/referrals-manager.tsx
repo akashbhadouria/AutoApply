@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,12 @@ const emptyReferralForm: ReferralFormState = {
   messageSentAt: "",
 };
 
+const selectClass =
+  "h-10 w-full rounded-xl border border-white/10 bg-slate-950/80 px-3 text-sm text-slate-100 outline-none transition focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20";
+
+const textareaClass =
+  "w-full rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2.5 text-sm text-slate-100 outline-none transition focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20 resize-none";
+
 export function ReferralsManager({
   initialContacts,
   initialProfileFields,
@@ -71,7 +78,7 @@ export function ReferralsManager({
   const [error, setError] = useState<string | null>(null);
 
   const jobOptions = useMemo(
-    () => jobs.map((job) => ({ id: job.id, label: `${job.company} - ${job.title} - ${job.location}` })),
+    () => jobs.map((job) => ({ id: job.id, label: `${job.company} — ${job.title}` })),
     [jobs],
   );
   const profileFieldMap = useMemo(
@@ -89,18 +96,14 @@ export function ReferralsManager({
 
   async function refreshContacts() {
     const response = await fetch("/api/contacts", { cache: "no-store" });
-    if (!response.ok) {
-      throw new Error("Failed to refresh contacts");
-    }
+    if (!response.ok) throw new Error("Failed to refresh contacts");
     const payload = (await response.json()) as { data: Contact[] };
     setContacts(payload.data);
   }
 
   async function refreshReferrals() {
     const response = await fetch("/api/referrals", { cache: "no-store" });
-    if (!response.ok) {
-      throw new Error("Failed to refresh referrals");
-    }
+    if (!response.ok) throw new Error("Failed to refresh referrals");
     const payload = (await response.json()) as { data: Referral[] };
     setReferrals(payload.data);
   }
@@ -109,7 +112,6 @@ export function ReferralsManager({
     event.preventDefault();
     setError(null);
     setIsLoadingContact(true);
-
     try {
       const response = await fetch("/api/contacts", {
         method: "POST",
@@ -124,15 +126,11 @@ export function ReferralsManager({
           sourcePlatform: contactForm.sourcePlatform,
         }),
       });
-
-      if (!response.ok) {
-        throw new Error("Unable to save contact");
-      }
-
+      if (!response.ok) throw new Error("Unable to save contact");
       setContactForm(emptyContactForm);
       await refreshContacts();
-    } catch (submissionError) {
-      setError(submissionError instanceof Error ? submissionError.message : "Failed to save contact");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save contact");
     } finally {
       setIsLoadingContact(false);
     }
@@ -142,7 +140,6 @@ export function ReferralsManager({
     event.preventDefault();
     setError(null);
     setIsLoadingReferral(true);
-
     try {
       const response = await fetch("/api/referrals", {
         method: "POST",
@@ -156,15 +153,11 @@ export function ReferralsManager({
           messageSentAt: referralForm.messageSentAt ? new Date(referralForm.messageSentAt).toISOString() : undefined,
         }),
       });
-
-      if (!response.ok) {
-        throw new Error("Unable to save referral");
-      }
-
+      if (!response.ok) throw new Error("Unable to save referral");
       setReferralForm(emptyReferralForm);
       await refreshReferrals();
-    } catch (submissionError) {
-      setError(submissionError instanceof Error ? submissionError.message : "Failed to save referral");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save referral");
     } finally {
       setIsLoadingReferral(false);
     }
@@ -175,12 +168,9 @@ export function ReferralsManager({
       setError("Select both a job and a contact before generating a draft.");
       return;
     }
-
     setError(null);
     setIsGeneratingDraft(true);
-
     try {
-      const primarySkills = ["React", "TypeScript", "UI engineering"];
       const response = await fetch("/api/agents/referral-draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -194,23 +184,19 @@ export function ReferralsManager({
           resumeLink: profileFieldMap.get("resume_link") ?? undefined,
           portfolioLink: profileFieldMap.get("portfolio") ?? undefined,
           yearsOfExperience: profileFieldMap.get("years_experience") ?? undefined,
-          primarySkills,
+          primarySkills: ["React", "TypeScript", "UI engineering"],
         }),
       });
-
-      if (!response.ok) {
-        throw new Error("Unable to generate referral draft");
-      }
-
+      if (!response.ok) throw new Error("Unable to generate referral draft");
       const payload = (await response.json()) as { data: ReferralDraftResult };
       setDraftResult(payload.data);
-      setReferralForm((current) => ({
-        ...current,
+      setReferralForm((c) => ({
+        ...c,
         outreachMessage: payload.data.outreachMessage,
         connectionRequestMessage: payload.data.connectionRequestMessage,
       }));
-    } catch (generationError) {
-      setError(generationError instanceof Error ? generationError.message : "Failed to generate referral draft");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to generate referral draft");
     } finally {
       setIsGeneratingDraft(false);
     }
@@ -219,7 +205,6 @@ export function ReferralsManager({
   async function handleReferralStatusUpdate(referralId: number, status: Referral["status"]) {
     setError(null);
     setUpdatingReferralId(referralId);
-
     try {
       const response = await fetch(`/api/referrals/${referralId}/status`, {
         method: "PUT",
@@ -229,14 +214,10 @@ export function ReferralsManager({
           repliedAt: status === "replied" ? new Date().toISOString() : undefined,
         }),
       });
-
-      if (!response.ok) {
-        throw new Error("Unable to update referral status");
-      }
-
+      if (!response.ok) throw new Error("Unable to update referral status");
       await refreshReferrals();
-    } catch (updateError) {
-      setError(updateError instanceof Error ? updateError.message : "Failed to update referral status");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update referral status");
     } finally {
       setUpdatingReferralId(null);
     }
@@ -250,169 +231,162 @@ export function ReferralsManager({
 
   return (
     <div className="space-y-6">
+      {/* Forms row */}
       <div className="grid gap-6 lg:grid-cols-2">
+        {/* Add Contact */}
         <Card className="p-6">
-          <div className="space-y-2">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">Contacts</p>
-            <h2 className="text-2xl font-semibold text-ink">Capture referral targets by company and role context.</h2>
-          </div>
-
-          <form className="mt-6 space-y-4" onSubmit={handleContactSubmit}>
-            <Input placeholder="Company" required value={contactForm.company} onChange={(event) => setContactForm((current) => ({ ...current, company: event.target.value }))} />
-            <Input placeholder="Full name" required value={contactForm.fullName} onChange={(event) => setContactForm((current) => ({ ...current, fullName: event.target.value }))} />
-            <Input placeholder="First name" required value={contactForm.firstName} onChange={(event) => setContactForm((current) => ({ ...current, firstName: event.target.value }))} />
-            <Input placeholder="Title" required value={contactForm.title} onChange={(event) => setContactForm((current) => ({ ...current, title: event.target.value }))} />
-            <Input placeholder="Profile URL" value={contactForm.profileUrl} onChange={(event) => setContactForm((current) => ({ ...current, profileUrl: event.target.value }))} />
-            <Input placeholder="Email" value={contactForm.email} onChange={(event) => setContactForm((current) => ({ ...current, email: event.target.value }))} />
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-500">Contacts</p>
+          <h2 className="mb-5 text-lg font-semibold text-white">Add referral target</h2>
+          <form className="space-y-3" onSubmit={handleContactSubmit}>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input placeholder="Company *" required value={contactForm.company} onChange={(e) => setContactForm((c) => ({ ...c, company: e.target.value }))} />
+              <Input placeholder="Full name *" required value={contactForm.fullName} onChange={(e) => setContactForm((c) => ({ ...c, fullName: e.target.value }))} />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input placeholder="First name *" required value={contactForm.firstName} onChange={(e) => setContactForm((c) => ({ ...c, firstName: e.target.value }))} />
+              <Input placeholder="Title *" required value={contactForm.title} onChange={(e) => setContactForm((c) => ({ ...c, title: e.target.value }))} />
+            </div>
+            <Input placeholder="Profile URL" value={contactForm.profileUrl} onChange={(e) => setContactForm((c) => ({ ...c, profileUrl: e.target.value }))} />
+            <Input placeholder="Email" value={contactForm.email} onChange={(e) => setContactForm((c) => ({ ...c, email: e.target.value }))} />
             <select
-              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className={selectClass}
               value={contactForm.sourcePlatform}
-              onChange={(event) => setContactForm((current) => ({ ...current, sourcePlatform: event.target.value as Job["primarySourcePlatform"] }))}
+              onChange={(e) => setContactForm((c) => ({ ...c, sourcePlatform: e.target.value as Job["primarySourcePlatform"] }))}
             >
-              <option value="linkedin">linkedin</option>
-              <option value="instahyre">instahyre</option>
-              <option value="hirist">hirist</option>
-              <option value="naukri">naukri</option>
-              <option value="company_site">company_site</option>
+              <option value="linkedin">LinkedIn</option>
+              <option value="instahyre">Instahyre</option>
+              <option value="hirist">Hirist</option>
+              <option value="naukri">Naukri</option>
+              <option value="company_site">Company Site</option>
             </select>
+            {error ? (
+              <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-300">{error}</p>
+            ) : null}
             <Button className="w-full" disabled={isLoadingContact} type="submit">
               {isLoadingContact ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-              Save contact
+              Save Contact
             </Button>
           </form>
         </Card>
 
+        {/* Add Referral */}
         <Card className="p-6">
-          <div className="space-y-2">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">Referrals</p>
-            <h2 className="text-2xl font-semibold text-ink">Link a job to a contact and store outreach drafts.</h2>
-          </div>
-
-          <form className="mt-6 space-y-4" onSubmit={handleReferralSubmit}>
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-violet-400">Referrals</p>
+          <h2 className="mb-5 text-lg font-semibold text-white">Link job to contact</h2>
+          <form className="space-y-3" onSubmit={handleReferralSubmit}>
             <select
-              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className={selectClass}
               required
               value={referralForm.jobId}
-              onChange={(event) => setReferralForm((current) => ({ ...current, jobId: event.target.value }))}
+              onChange={(e) => setReferralForm((c) => ({ ...c, jobId: e.target.value }))}
             >
               <option value="">Select job</option>
               {jobOptions.map((job) => (
-                <option key={job.id} value={job.id}>
-                  {job.label}
-                </option>
+                <option key={job.id} value={job.id}>{job.label}</option>
               ))}
             </select>
 
             <select
-              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className={selectClass}
               required
               value={referralForm.contactId}
-              onChange={(event) => setReferralForm((current) => ({ ...current, contactId: event.target.value }))}
+              onChange={(e) => setReferralForm((c) => ({ ...c, contactId: e.target.value }))}
             >
               <option value="">Select contact</option>
               {contacts.map((contact) => (
                 <option key={contact.id} value={contact.id}>
-                  {contact.fullName} - {contact.company} - {contact.title}
+                  {contact.fullName} — {contact.company}
                 </option>
               ))}
             </select>
 
             <select
-              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className={selectClass}
               value={referralForm.status}
-              onChange={(event) => setReferralForm((current) => ({ ...current, status: event.target.value as Referral["status"] }))}
+              onChange={(e) => setReferralForm((c) => ({ ...c, status: e.target.value as Referral["status"] }))}
             >
-              <option value="pending">pending</option>
-              <option value="replied">replied</option>
-              <option value="referred">referred</option>
-              <option value="no_response">no_response</option>
+              <option value="pending">Pending</option>
+              <option value="replied">Replied</option>
+              <option value="referred">Referred</option>
+              <option value="no_response">No Response</option>
             </select>
 
             <textarea
-              className="min-h-28 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
-              placeholder="Referral outreach message"
+              className={textareaClass}
+              placeholder="Outreach message *"
               required
+              rows={4}
               value={referralForm.outreachMessage}
-              onChange={(event) => setReferralForm((current) => ({ ...current, outreachMessage: event.target.value }))}
+              onChange={(e) => setReferralForm((c) => ({ ...c, outreachMessage: e.target.value }))}
             />
 
             <textarea
-              className="min-h-24 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
-              placeholder="Connection request draft"
+              className={textareaClass}
+              placeholder="Connection request (optional)"
+              rows={3}
               value={referralForm.connectionRequestMessage}
-              onChange={(event) => setReferralForm((current) => ({ ...current, connectionRequestMessage: event.target.value }))}
+              onChange={(e) => setReferralForm((c) => ({ ...c, connectionRequestMessage: e.target.value }))}
             />
 
             <input
-              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className={selectClass}
               type="datetime-local"
               value={referralForm.messageSentAt}
-              onChange={(event) => setReferralForm((current) => ({ ...current, messageSentAt: event.target.value }))}
+              onChange={(e) => setReferralForm((c) => ({ ...c, messageSentAt: e.target.value }))}
             />
 
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            {error ? (
+              <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-300">{error}</p>
+            ) : null}
 
-            <Button className="w-full" disabled={isGeneratingDraft} onClick={handleGenerateDraft} type="button">
-              {isGeneratingDraft ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-              Generate agent draft
+            <Button
+              className="w-full"
+              disabled={isGeneratingDraft}
+              onClick={handleGenerateDraft}
+              type="button"
+              variant="violet"
+            >
+              {isGeneratingDraft ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Sparkles className="mr-2 size-4" />}
+              Generate AI Draft
             </Button>
 
             <Button className="w-full" disabled={isLoadingReferral} type="submit">
               {isLoadingReferral ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-              Save referral
+              Save Referral
             </Button>
           </form>
         </Card>
       </div>
 
-      <Card className="p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-2">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">Agent Drafting</p>
-            <h2 className="text-2xl font-semibold text-ink">OpenClaw-compatible prompts, deterministic output today.</h2>
-          </div>
-          <div className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-100">
-            Profile fields available: {profileFields.length}
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-          <div className="space-y-3 rounded-[24px] border border-white/10 bg-slate-950/60 p-5">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Draft context</p>
-            <div className="space-y-2 text-sm text-slate-300">
-              <p>Job: {selectedJob ? `${selectedJob.company} - ${selectedJob.title}` : "Select a job above"}</p>
-              <p>Contact: {selectedContact ? `${selectedContact.fullName} - ${selectedContact.title}` : "Select a contact above"}</p>
-              <p>Resume: {profileFieldMap.get("resume_link") ?? "Missing from profile"}</p>
-              <p>Portfolio: {profileFieldMap.get("portfolio") ?? "Missing from profile"}</p>
+      {/* AI Draft preview */}
+      {draftResult ? (
+        <Card className="p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-violet-400">AI Draft Result</p>
+              <p className="mt-1 text-sm text-slate-300">{draftResult.summary}</p>
             </div>
+            <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-300">
+              {draftResult.provider}
+            </span>
           </div>
-
-          <div className="space-y-4 rounded-[24px] border border-white/10 bg-slate-950/60 p-5">
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Latest result</p>
-              {draftResult ? (
-                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.18em] text-slate-300">
-                  {draftResult.provider}
-                </span>
-              ) : null}
+          {draftResult.promptArtifact && (
+            <div className="mt-4 rounded-xl border border-white/[0.06] bg-slate-950/60 px-4 py-3 text-xs text-slate-500">
+              Template: {draftResult.promptArtifact.templateName}
             </div>
-            <p className="text-sm text-slate-300">
-              {draftResult?.summary ?? "Generate a draft to fill the outreach fields with a backend-produced result."}
-            </p>
-            {draftResult ? (
-              <div className="rounded-[20px] border border-white/10 bg-black/20 p-4 text-xs text-slate-400">
-                Prompt template: {draftResult.promptArtifact.templateName}
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </Card>
+          )}
+        </Card>
+      ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-        <Card className="overflow-hidden p-2">
-          <div className="flex items-center justify-between px-4 pb-4 pt-3">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Contacts</p>
-            <p className="rounded-full bg-slate-900/80 px-3 py-1 text-sm font-medium text-ink">{contacts.length} contacts</p>
+      {/* Tables row */}
+      <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
+        {/* Contacts table */}
+        <Card className="overflow-hidden">
+          <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+            <p className="font-semibold text-white">Contacts</p>
+            <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-slate-300">
+              {contacts.length}
+            </span>
           </div>
           <div className="overflow-x-auto">
             <Table>
@@ -426,16 +400,14 @@ export function ReferralsManager({
               <TableBody>
                 {contacts.length === 0 ? (
                   <TableRow>
-                    <TableCell className="px-4 py-10 text-muted" colSpan={3}>
-                      No contacts saved yet.
-                    </TableCell>
+                    <TableCell className="py-12 text-center text-slate-500" colSpan={3}>No contacts saved yet.</TableCell>
                   </TableRow>
                 ) : (
                   contacts.map((contact) => (
                     <TableRow key={contact.id}>
-                      <TableCell className="font-medium">{contact.fullName}</TableCell>
-                      <TableCell>{contact.company}</TableCell>
-                      <TableCell>{contact.title}</TableCell>
+                      <TableCell className="font-medium text-white">{contact.fullName}</TableCell>
+                      <TableCell className="text-slate-300">{contact.company}</TableCell>
+                      <TableCell className="text-slate-400">{contact.title}</TableCell>
                     </TableRow>
                   ))
                 )}
@@ -444,62 +416,68 @@ export function ReferralsManager({
           </div>
         </Card>
 
-        <Card className="overflow-hidden p-2">
-          <div className="flex items-center justify-between px-4 pb-4 pt-3">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Referrals</p>
-            <p className="rounded-full bg-slate-900/80 px-3 py-1 text-sm font-medium text-ink">{referrals.length} referrals</p>
+        {/* Referrals table */}
+        <Card className="overflow-hidden">
+          <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+            <p className="font-semibold text-white">Referrals</p>
+            <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-slate-300">
+              {referrals.length}
+            </span>
           </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHead>
                 <TableRow>
                   <TableHeaderCell>Company</TableHeaderCell>
-                  <TableHeaderCell>Role</TableHeaderCell>
                   <TableHeaderCell>Contact</TableHeaderCell>
                   <TableHeaderCell>Status</TableHeaderCell>
-                  <TableHeaderCell className="text-right">Action</TableHeaderCell>
+                  <TableHeaderCell className="text-right">Actions</TableHeaderCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {referrals.length === 0 ? (
                   <TableRow>
-                    <TableCell className="px-4 py-10 text-muted" colSpan={5}>
-                      No referrals tracked yet.
-                    </TableCell>
+                    <TableCell className="py-12 text-center text-slate-500" colSpan={4}>No referrals tracked yet.</TableCell>
                   </TableRow>
                 ) : (
                   referrals.map((referral) => (
                     <TableRow key={referral.id}>
-                      <TableCell className="font-medium">{referral.company}</TableCell>
-                      <TableCell>{referral.jobTitle}</TableCell>
-                      <TableCell>{referral.contactName}</TableCell>
-                      <TableCell className="capitalize">{referral.status}</TableCell>
+                      <TableCell>
+                        <div className="font-medium text-white">{referral.company}</div>
+                        <div className="text-xs text-slate-500">{referral.jobTitle}</div>
+                      </TableCell>
+                      <TableCell className="text-slate-300">{referral.contactName}</TableCell>
+                      <TableCell>
+                        <Badge label={referral.status} variant="referral" />
+                      </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end gap-1.5">
                           <Button
-                            className="bg-transparent px-3 text-ink hover:bg-canvas hover:text-ink"
+                            className="px-2.5 py-1 text-xs"
                             disabled={updatingReferralId === referral.id || referral.status === "replied"}
                             onClick={() => void handleReferralStatusUpdate(referral.id, "replied")}
                             type="button"
+                            variant="ghost"
                           >
-                            {updatingReferralId === referral.id ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-                            Replied
+                            {updatingReferralId === referral.id ? <Loader2 className="size-3 animate-spin" /> : "Replied"}
                           </Button>
                           <Button
-                            className="bg-transparent px-3 text-ink hover:bg-canvas hover:text-ink"
+                            className="px-2.5 py-1 text-xs"
                             disabled={updatingReferralId === referral.id || referral.status === "referred"}
                             onClick={() => void handleReferralStatusUpdate(referral.id, "referred")}
                             type="button"
+                            variant="ghost"
                           >
                             Referred
                           </Button>
                           <Button
-                            className="bg-transparent px-3 text-ink hover:bg-canvas hover:text-ink"
+                            className="px-2.5 py-1 text-xs"
                             disabled={updatingReferralId === referral.id || referral.status === "no_response"}
                             onClick={() => void handleReferralStatusUpdate(referral.id, "no_response")}
                             type="button"
+                            variant="ghost"
                           >
-                            No response
+                            No Reply
                           </Button>
                         </div>
                       </TableCell>

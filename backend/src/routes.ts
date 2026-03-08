@@ -46,6 +46,7 @@ import {
 import { getDashboardSummary } from "./dashboard.service.js";
 import { getServiceHealthSummary } from "./health.service.js";
 import { getProfileFields, removeProfileField, saveProfileField } from "./profile.service.js";
+import { capturePlatformSession, getPlatformSessions } from "./platform-session.service.js";
 import { changeReferralStatus, getPendingReferrals, getReferrals, getReferralsForJob, getTimedOutPendingReferrals, saveReferral } from "./referral.service.js";
 import {
   getApplicationSession,
@@ -125,6 +126,24 @@ apiRouter.post("/api/me/connected-accounts", async (request, response, next) => 
   try {
     const account = await addConnectedAccount(request.body);
     response.status(201).json({ data: account });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.get("/api/platform-sessions", async (_request, response, next) => {
+  try {
+    const sessions = await getPlatformSessions();
+    response.json({ data: sessions });
+  } catch (error) {
+    next(error);
+  }
+});
+
+apiRouter.post("/api/platform-sessions/capture", async (request, response, next) => {
+  try {
+    const session = await capturePlatformSession(request.body);
+    response.status(201).json({ data: session });
   } catch (error) {
     next(error);
   }

@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "AutoApply Session Bridge",
+  "version": "0.1.0",
+  "description": "Captures logged-in platform sessions for AutoApply onboarding.",
+  "permissions": ["cookies", "tabs", "scripting"],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "https://www.linkedin.com/*",
+    "https://*.linkedin.com/*",
+    "https://www.naukri.com/*",
+    "https://*.naukri.com/*",
+    "https://www.instahyre.com/*",
+    "https://*.instahyre.com/*",
+    "https://www.hirist.tech/*",
+    "https://*.hirist.tech/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://localhost:3000/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

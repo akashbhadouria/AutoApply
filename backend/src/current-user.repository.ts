@@ -254,22 +254,52 @@ export async function createConnectedAccount(
   userId: number,
   input: Omit<ConnectedAccountRecord, "id" | "userId" | "lastCheckedAt" | "createdAt" | "updatedAt">,
 ) {
-  const result = await pool.query(
-    `INSERT INTO connected_accounts (
-       user_id, provider, account_label, connection_status, approval_mode, account_identifier, metadata, last_checked_at
-     )
-     VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,NOW())
-     RETURNING *`,
-    [
-      userId,
-      input.provider,
-      input.accountLabel,
-      input.connectionStatus,
-      input.approvalMode,
-      input.accountIdentifier ?? null,
-      JSON.stringify(input.metadata),
-    ],
+  const existing = await pool.query(
+    `SELECT id
+     FROM connected_accounts
+     WHERE user_id = $1 AND provider = $2
+     ORDER BY updated_at DESC, id DESC
+     LIMIT 1`,
+    [userId, input.provider],
   );
+
+  const result = existing.rows[0]
+    ? await pool.query(
+        `UPDATE connected_accounts
+         SET account_label = $3,
+             connection_status = $4,
+             approval_mode = $5,
+             account_identifier = $6,
+             metadata = $7::jsonb,
+             last_checked_at = NOW(),
+             updated_at = NOW()
+         WHERE id = $1
+         RETURNING *`,
+        [
+          Number(existing.rows[0].id),
+          input.accountLabel,
+          input.connectionStatus,
+          input.approvalMode,
+          input.accountIdentifier ?? null,
+          JSON.stringify(input.metadata),
+        ],
+      )
+    : await pool.query(
+        `INSERT INTO connected_accounts (
+           user_id, provider, account_label, connection_status, approval_mode, account_identifier, metadata, last_checked_at
+         )
+         VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,NOW())
+         RETURNING *`,
+        [
+          userId,
+          input.provider,
+          input.accountLabel,
+          input.connectionStatus,
+          input.approvalMode,
+          input.accountIdentifier ?? null,
+          JSON.stringify(input.metadata),
+        ],
+      );
 
   return mapConnectedAccountRow(result.rows[0]);
 }

@@ -38,7 +38,6 @@ That single command will:
 - start Dockerized PostgreSQL on `localhost:55432`
 - start Dockerized Redis on `localhost:56379`
 - apply `database/schema.sql`
-- seed deterministic demo data
 - start backend on `http://localhost:4000`
 - start frontend on `http://localhost:3000`
 - start workers against the same local dependencies
@@ -62,8 +61,9 @@ Open:
 
 The onboarding page now supports local resume upload. Uploaded files are stored under `storage/resumes` and the absolute path is saved back into the user profile for ATS/browser workers.
 Onboarding now also captures `notificationEmail`, `telegramUsername`, `telegramChatId`, and `whatsappNumber` so notification delivery has real per-user destination targets instead of only channel toggles.
+Platform connection now expects the unpacked Chrome extension at [extension/autoapply-session-bridge](/home/akash/AutoApply/extension/autoapply-session-bridge). Load it in Chrome developer mode before trying to connect LinkedIn, Naukri, Instahyre, or Hirist from onboarding.
 
-If you want to reseed demo data manually without restarting the stack:
+If you intentionally want demo data for local debugging, seed it manually:
 
 ```bash
 npm run seed:demo
@@ -115,7 +115,7 @@ The referrals and field-mappings pages now include backend-powered agent actions
 - `Summarize job description` on `/jobs`
 - `Summarize notification` on `/notifications`
 
-The job scanner can now consume live company ATS feeds if the workers environment defines `JOB_SOURCE_FEEDS_JSON`. Supported live providers include `greenhouse`, `lever`, `google_jobs`, and `generic_json`. Without that configuration, it falls back to deterministic discovery data so local development stays stable.
+The job scanner can now consume live company ATS feeds if the workers environment defines `JOB_SOURCE_FEEDS_JSON`. Supported live providers include `greenhouse`, `lever`, `google_jobs`, and `generic_json`. Without that configuration, discovery returns no jobs.
 The new AutoApply V1 watcher surface stores per-user discovery rules and can enqueue the `job-feed-watcher` queue directly.
 For `greenhouse`, `lever`, `generic_json`, and `google_jobs` watchers, the UI now accepts a watcher-specific live feed URL so you can test real company-site feeds without editing worker env files.
 The job-watchers form also includes quick presets for public Postman, Vercel, Figma, and Rippling feeds so local testing can start immediately.

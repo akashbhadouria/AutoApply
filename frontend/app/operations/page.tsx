@@ -54,7 +54,7 @@ export default async function OperationsPage() {
             "Backend health returns 200.",
             "The database schema includes notifications, events, and application_sessions.",
             "Workers are only needed to produce new runtime events, not to view the page.",
-            "Use npm run dev:stack for a deterministic local environment.",
+            "Use npm run dev:stack for the supported local environment.",
           ]}
           message={message}
         />

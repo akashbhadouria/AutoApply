@@ -1,5 +1,5 @@
 import { FeaturePageErrorState, FeaturePageShell } from "@/components/page-shell";
-import { fetchCurrentUser, fetchCurrentUserPreferences } from "@/lib/api";
+import { fetchConnectedAccounts, fetchCurrentUser, fetchCurrentUserPreferences, fetchProfileFields } from "@/lib/api";
 
 import { OnboardingManager } from "./onboarding-manager";
 
@@ -7,21 +7,31 @@ export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
   try {
-    const [user, preferences] = await Promise.all([fetchCurrentUser(), fetchCurrentUserPreferences()]);
+    const [user, preferences, connectedAccounts, profileFields] = await Promise.all([
+      fetchCurrentUser(),
+      fetchCurrentUserPreferences(),
+      fetchConnectedAccounts(),
+      fetchProfileFields(),
+    ]);
 
     return (
       <FeaturePageShell
-        badge="AutoApply V1"
+        badge="AutoApply Onboarding"
         bullets={[
-          "This is the first user-facing startup-grade onboarding flow in the repo.",
-          "Identity, preferences, and automation policy are now configured together.",
-          "The product can evolve to multi-tenant auth without discarding this surface.",
-          "Fresh-job and referral policy now have a home in the product UI.",
+          "Stepper flow now owns candidate setup, job preferences, and activation gating.",
+          "Resume upload, rich profile capture, and platform connection now sit in one flow.",
+          "Automation stays blocked until at least one supported job platform is connected.",
+          "This surface is the product entry point for the final AutoApply direction.",
         ]}
-        description="Use this page to configure founder-level candidate identity, resume links, targeting preferences, and instant-apply rules before watchers and applications start running."
-        title="Onboard the user before continuous job hunting begins."
+        description="Complete your candidate profile, job targeting, and platform connections here. Once activated, the backend policy engine takes over."
+        title="Set up AutoApply once, then let the system run in the background."
       >
-        <OnboardingManager initialPreferences={preferences} initialUser={user} />
+        <OnboardingManager
+          initialConnectedAccounts={connectedAccounts}
+          initialPreferences={preferences}
+          initialProfileFields={profileFields}
+          initialUser={user}
+        />
       </FeaturePageShell>
     );
   } catch (error) {
@@ -31,18 +41,20 @@ export default async function OnboardingPage() {
       <FeaturePageShell
         badge="AutoApply V1"
         bullets={[
-          "This page depends on the new current-user and preferences endpoints.",
-          "It should remain usable even if the rest of the product is only partially migrated.",
+          "This page depends on current-user, profile-fields, preferences, and connected-accounts APIs.",
+          "This onboarding flow now centralizes the activation gate for AutoApply.",
           "Use the local dev stack if your backend/runtime is inconsistent.",
           "The runtime banner above should show where the dependency failure is happening.",
         ]}
-        description="The onboarding flow is implemented, but the backend user state could not be loaded."
+        description="The onboarding flow is implemented, but the required user state could not be loaded."
         title="Onboarding is temporarily unavailable."
       >
         <FeaturePageErrorState
           checks={[
             "GET /api/me returns a current user payload.",
             "GET /api/me/preferences returns user targeting preferences.",
+            "GET /api/profile-fields returns persisted profile-field state.",
+            "GET /api/me/connected-accounts returns connected platform state.",
             "database/schema.sql has been applied after the AutoApply V1 schema update.",
             "Use npm run dev:stack after schema changes so the Docker DB is current.",
           ]}

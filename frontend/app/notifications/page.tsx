@@ -33,7 +33,7 @@ export default async function NotificationsPage() {
         bullets={[
           "This page depends on notifications and jobs being reachable from the backend.",
           "It preserves the shell even when the inbox data source is unavailable.",
-          "Use the deterministic Docker stack to keep the runtime consistent.",
+          "Use the supported Docker stack to keep the runtime consistent.",
           "The notification worker can continue processing independently of this page.",
         ]}
         description="The dedicated notifications inbox could not fetch its live data."

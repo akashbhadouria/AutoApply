@@ -11,12 +11,15 @@ npm run dev:stack
 ```
 
 That command brings up Dockerized PostgreSQL and Redis, applies the schema, and starts backend, frontend, and workers together with consistent local credentials.
-It also seeds deterministic demo data so the dashboard and operational pages are immediately usable.
+It does not seed demo data automatically.
 
-The first implemented feature is the `Profile Manager`, which provides:
+The current implemented product slice provides:
 
-- AutoApply V1 onboarding for the current user and targeting preferences
-- connected accounts for outreach-capable providers
+- a stepper-based AutoApply onboarding flow with activation gating
+- in-onboarding job-platform connection for LinkedIn, Naukri, Instahyre, and Hirist
+- persisted current-user identity and job preferences
+- persisted extended onboarding data through dynamic profile fields
+- a connected-platform hub aligned with the new product model
 - approval-ready outreach attempt auditing linked to referrals and connected accounts
 - an outreach execution worker for approved email/Telegram/WhatsApp sends, with LinkedIn kept in manual-review mode
 - job watchers for per-user discovery rules and near-real-time watcher runs
@@ -39,7 +42,7 @@ The first implemented feature is the `Profile Manager`, which provides:
 - Playwright-backed browser analysis and persistent field mapping storage
 - backend-powered agent endpoints and UI flows for referral drafts and ATS field mapping suggestions
 - agent-assisted job-description and notification summarization directly in the dashboard UI
-- configurable live company ATS feed ingestion for the job scanner with deterministic fallback
+- configurable live company ATS feed ingestion for the job scanner
 - BullMQ queue diagnostics surfaced in the automation control plane
 - queue retry/backoff policy and recent failed-job retention surfaced in the automation control plane
 - resumable ATS sessions can now be re-queued directly from the operations surface

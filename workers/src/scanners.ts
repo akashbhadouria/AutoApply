@@ -13,9 +13,9 @@ interface ScannedJob {
 
 interface ScannerRunSource {
   name: string;
-  provider: "deterministic" | "greenhouse" | "lever" | "generic_json" | "google_jobs";
+  provider: "greenhouse" | "lever" | "generic_json" | "google_jobs";
   platform: ScannedJob["sourcePlatform"];
-  mode: "live" | "fallback";
+  mode: "live";
   discoveredCount: number;
   error?: string;
 }
@@ -23,50 +23,6 @@ interface ScannerRunSource {
 export interface ScannerRunResult {
   jobs: ScannedJob[];
   sources: ScannerRunSource[];
-}
-
-function slugify(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-}
-
-function dateDaysAgo(daysAgo: number) {
-  const date = new Date();
-  date.setUTCDate(date.getUTCDate() - daysAgo);
-  return date.toISOString().slice(0, 10);
-}
-
-function pickCompanies(title: string) {
-  const normalized = title.toLowerCase();
-
-  if (normalized.includes("react")) {
-    return ["Razorpay", "Groww", "PhonePe"];
-  }
-
-  if (normalized.includes("ui")) {
-    return ["Swiggy", "Myntra", "CRED"];
-  }
-
-  return ["Flipkart", "Meesho", "Zeta"];
-}
-
-function buildDeterministicJobsForSource(
-  sourcePlatform: ScannedJob["sourcePlatform"],
-  payload: JobDiscoveryJobData,
-): ScannedJob[] {
-  return payload.searchTitles.flatMap((title, titleIndex) => {
-    const companies = pickCompanies(title);
-
-    return payload.locations.flatMap((location, locationIndex) =>
-      companies.map((company, companyIndex) => ({
-        company,
-        title,
-        location,
-        sourcePlatform,
-        postedDate: dateDaysAgo((titleIndex + locationIndex + companyIndex) % Math.max(payload.recencyDays, 1)),
-        jobUrl: `https://${sourcePlatform}.example.com/jobs/${slugify(company)}/${slugify(title)}/${slugify(location)}`,
-      })),
-    );
-  });
 }
 
 function normalizeText(value: string | undefined | null) {
@@ -355,46 +311,14 @@ function filterJobsForQuery(jobs: ScannedJob[], payload: JobDiscoveryJobData) {
   });
 }
 
-function buildFallbackResult(payload: JobDiscoveryJobData): ScannerRunResult {
-  const deterministicJobs = [
-    ...buildDeterministicJobsForSource("linkedin", payload),
-    ...buildDeterministicJobsForSource("instahyre", payload),
-    ...buildDeterministicJobsForSource("company_site", payload),
-  ].slice(0, 18);
-
-  return {
-    jobs: deterministicJobs,
-    sources: [
-      {
-        name: "deterministic-linkedin",
-        provider: "deterministic",
-        platform: "linkedin",
-        mode: "fallback",
-        discoveredCount: deterministicJobs.filter((job) => job.sourcePlatform === "linkedin").length,
-      },
-      {
-        name: "deterministic-instahyre",
-        provider: "deterministic",
-        platform: "instahyre",
-        mode: "fallback",
-        discoveredCount: deterministicJobs.filter((job) => job.sourcePlatform === "instahyre").length,
-      },
-      {
-        name: "deterministic-company-site",
-        provider: "deterministic",
-        platform: "company_site",
-        mode: "fallback",
-        discoveredCount: deterministicJobs.filter((job) => job.sourcePlatform === "company_site").length,
-      },
-    ],
-  };
-}
-
 export async function scanDiscoveredJobs(payload: JobDiscoveryJobData): Promise<ScannerRunResult> {
   const feeds = payload.feeds && payload.feeds.length > 0 ? payload.feeds : env.jobSourceFeeds;
 
   if (feeds.length === 0) {
-    return buildFallbackResult(payload);
+    return {
+      jobs: [],
+      sources: [],
+    };
   }
 
   const liveResults = await Promise.all(
@@ -437,9 +361,8 @@ export async function scanDiscoveredJobs(payload: JobDiscoveryJobData): Promise<
     };
   }
 
-  const fallback = buildFallbackResult(payload);
   return {
-    jobs: fallback.jobs,
-    sources: [...liveSources, ...fallback.sources],
+    jobs: [],
+    sources: liveSources,
   };
 }

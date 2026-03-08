@@ -57,9 +57,6 @@ done
 echo "Applying schema..."
 docker compose -f "$COMPOSE_FILE" exec -T postgres psql -U postgres -d job_hunter < database/schema.sql >/dev/null
 
-echo "Seeding demo data..."
-DATABASE_URL="$POSTGRES_URL" REDIS_URL="$REDIS_URL" FRONTEND_ORIGIN="$FRONTEND_URL" npm run seed -w backend >/dev/null
-
 start_process() {
   local name="$1"
   shift

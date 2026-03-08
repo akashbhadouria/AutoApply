@@ -42,7 +42,7 @@ export default async function FreshJobsPage() {
             "GET /api/jobs/fresh returns data.",
             "job-feed-watcher has been enqueued at least once.",
             "database/schema.sql includes freshness columns on jobs.",
-            "Use npm run dev:stack and npm run seed:demo after schema changes.",
+            "Make sure your discovery path is writing real jobs into the database.",
           ]}
           message={error instanceof Error ? error.message : "Unknown error"}
         />

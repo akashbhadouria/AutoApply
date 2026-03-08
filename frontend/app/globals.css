@@ -2,73 +2,137 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Design tokens ─────────────────────────────── */
 :root {
   color-scheme: dark;
-  --grid-line: rgba(148, 163, 184, 0.08);
+
+  --bg:           #08081E;
+  --sidebar:      #0D0D28;
+  --surface:      rgba(255, 255, 255, 0.04);
+  --surface-hi:   rgba(255, 255, 255, 0.07);
+  --border:       rgba(255, 255, 255, 0.08);
+  --border-hi:    rgba(255, 255, 255, 0.15);
+
+  /* Brand palette */
+  --violet:       #7C3AED;
+  --violet-lo:    rgba(124, 58, 237, 0.15);
+  --indigo:       #4F46E5;
+  --cyan:         #06B6D4;
+  --cyan-lo:      rgba(6, 182, 212, 0.15);
+  --emerald:      #10B981;
+  --emerald-lo:   rgba(16, 185, 129, 0.15);
+  --amber:        #F59E0B;
+  --amber-lo:     rgba(245, 158, 11, 0.15);
+  --rose:         #F43F5E;
+  --rose-lo:      rgba(244, 63, 94, 0.15);
 }
 
+/* ─── Keyframes ──────────────────────────────────── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1);   }
+  50%       { opacity: .5; transform: scale(.8); }
+}
+@keyframes slide-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ─── Base ───────────────────────────────────────── */
 @layer base {
-  * {
-    box-sizing: border-box;
-  }
+  *, *::before, *::after { box-sizing: border-box; }
 
   html {
-    background-color: #020617;
+    font-size: 16px;
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
     min-height: 100vh;
-    background:
-      linear-gradient(180deg, rgba(2, 6, 23, 0.72), rgba(2, 6, 23, 0.94)),
-      radial-gradient(circle at top, rgba(56, 189, 248, 0.2), transparent 24%),
-      radial-gradient(circle at 20% 20%, rgba(14, 165, 233, 0.12), transparent 18%),
-      radial-gradient(circle at 85% 15%, rgba(244, 114, 182, 0.14), transparent 18%),
-      radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.12), transparent 20%),
-      #020617;
+    color: #E2E8F0;
+    font-family: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+
+    /* The main gradient background — rich, deep, visible */
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(ellipse 90% 60% at 0%   0%,   rgba(79,  70, 229, 0.45) 0%, transparent 55%),
+      radial-gradient(ellipse 70% 50% at 100% 10%,  rgba(124, 58, 237, 0.35) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 40% at 50%  100%, rgba(6,  182, 212, 0.18) 0%, transparent 60%);
     background-attachment: fixed;
-    color: #e2e8f0;
   }
 
+  /* Subtle dot-grid on top */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
     pointer-events: none;
-    background-image:
-      linear-gradient(var(--grid-line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-    background-size: 72px 72px;
-    mask-image: radial-gradient(circle at center, black, transparent 78%);
+    z-index: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size: 28px 28px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 20%, transparent 80%);
   }
 
-  a {
-    color: inherit;
-    text-decoration: none;
-  }
+  a  { color: inherit; text-decoration: none; }
 
-  button,
-  input,
-  select,
-  textarea {
-    font: inherit;
-  }
+  button, input, select, textarea { font: inherit; }
+  input, select, textarea { color-scheme: dark; }
 
-  input,
-  select,
-  textarea {
-    color-scheme: dark;
-  }
+  ::selection { background: rgba(124,58,237,.35); color: #fff; }
 
-  ::selection {
-    background: rgba(34, 211, 238, 0.24);
-    color: #f8fafc;
-  }
+  /* Thin, tasteful scrollbars */
+  * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.1) transparent; }
+  *::-webkit-scrollbar       { width: 4px; height: 4px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 9px; }
 }
 
+/* ─── Utility classes ────────────────────────────── */
 @layer utilities {
-  .glass-ring {
-    box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.05),
-      0 24px 80px rgba(2, 6, 23, 0.5);
+
+  /* Gradient text */
+  .grad-text {
+    background: linear-gradient(135deg, #ffffff 0%, #94A3B8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
+  .grad-text-brand {
+    background: linear-gradient(135deg, #A78BFA 0%, #818CF8 50%, #67E8F9 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .grad-text-hot {
+    background: linear-gradient(135deg, #F43F5E 0%, #A855F7 60%, #22D3EE 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Gradient border helper */
+  .grad-border {
+    border: 1px solid transparent;
+    background:
+      linear-gradient(var(--bg), var(--bg)) padding-box,
+      linear-gradient(135deg, rgba(124,58,237,.5), rgba(6,182,212,.5)) border-box;
+  }
+
+  /* Glow helpers */
+  .glow-violet  { box-shadow: 0 0 24px rgba(124, 58, 237, .35); }
+  .glow-cyan    { box-shadow: 0 0 24px rgba(6,  182, 212, .35); }
+  .glow-emerald { box-shadow: 0 0 24px rgba(16, 185, 129, .35); }
+  .glow-rose    { box-shadow: 0 0 24px rgba(244, 63,  94, .35); }
+
+  /* Page entrance animation */
+  .animate-in { animation: slide-in-up .35s ease both; }
+  .fade-in    { animation: fade-in     .3s  ease both; }
+
+  /* Dot pulse */
+  .dot-pulse  { animation: pulse-dot 2s ease-in-out infinite; }
 }

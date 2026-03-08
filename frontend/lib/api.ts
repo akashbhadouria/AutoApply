@@ -63,13 +63,28 @@ export interface UserJobPreferences {
 export interface ConnectedAccount {
   id: number;
   userId: number;
-  provider: "linkedin" | "gmail" | "outlook" | "telegram" | "whatsapp";
+  provider: "linkedin" | "naukri" | "instahyre" | "hirist" | "gmail" | "outlook" | "telegram" | "whatsapp";
   accountLabel: string;
   connectionStatus: "pending" | "connected" | "degraded" | "disconnected";
   approvalMode: "manual_approval" | "auto_send";
   accountIdentifier: string | null;
   metadata: Record<string, unknown>;
   lastCheckedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlatformSession {
+  id: number;
+  userId: number;
+  platform: "linkedin" | "naukri" | "instahyre" | "hirist";
+  sessionFormat: "cookie_bundle";
+  status: "active" | "expired" | "revoked";
+  accountIdentifier: string | null;
+  userAgent: string | null;
+  metadata: Record<string, unknown>;
+  lastValidatedAt: string | null;
+  expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -613,10 +628,71 @@ export async function createConnectedAccount(body: {
   });
 
   if (!response.ok) {
-    throw new Error("Failed to create connected account");
+    let message = "Failed to create connected account";
+    try {
+      const payload = (await response.json()) as { error?: string };
+      message = payload.error ?? message;
+    } catch {
+      // ignore JSON parse failures
+    }
+    throw new Error(message);
   }
 
   return response.json() as Promise<{ data: ConnectedAccount }>;
+}
+
+export async function fetchPlatformSessions(): Promise<PlatformSession[]> {
+  const response = await fetch(`${getBackendUrl()}/api/platform-sessions`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load platform sessions");
+  }
+
+  const payload = (await response.json()) as { data: PlatformSession[] };
+  return payload.data;
+}
+
+export async function capturePlatformSession(body: {
+  platform: PlatformSession["platform"];
+  cookies: Array<{
+    name: string;
+    value: string;
+    domain: string;
+    path?: string;
+    httpOnly?: boolean;
+    secure?: boolean;
+    sameSite?: "Strict" | "Lax" | "None";
+    expirationDate?: number;
+  }>;
+  localStorage?: Record<string, string>;
+  sessionStorage?: Record<string, string>;
+  userAgent?: string;
+  metadata?: Record<string, unknown>;
+  accountIdentifier?: string;
+}) {
+  const response = await fetch(`${getBackendUrl()}/api/platform-sessions/capture`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    let message = "Failed to capture platform session";
+    try {
+      const payload = (await response.json()) as { error?: string };
+      message = payload.error ?? message;
+    } catch {
+      // ignore JSON parse failures
+    }
+    throw new Error(message);
+  }
+
+  return response.json() as Promise<{ data: PlatformSession }>;
 }
 
 export async function fetchJobFeedWatchers(): Promise<JobFeedWatcher[]> {

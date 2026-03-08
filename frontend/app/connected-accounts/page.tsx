@@ -11,15 +11,15 @@ export default async function ConnectedAccountsPage() {
 
     return (
       <FeaturePageShell
-        badge="AutoApply V1"
+        badge="Platform Hub"
         bullets={[
-          "User ko bas real provider identifiers dene chahiye, complex dropdown setup nahi.",
-          "LinkedIn, Gmail, Telegram, aur WhatsApp targets yahin capture honge.",
-          "At least one connection target ke bina outreach layer useful nahi hai.",
-          "Save ke baad har provided identifier ko later actual connect/verify state me le jaa sakte ho.",
+          "This page now tracks AutoApply job-platform connections instead of generic outreach targets.",
+          "LinkedIn, Naukri, Instahyre, and Hirist can be reviewed or refreshed here after onboarding.",
+          "At least one connected platform is still required for automation activation.",
+          "Platform operations remain backend-managed even after a connection is established.",
         ]}
-        description="Use this page to capture the real delivery identifiers that AutoApply can later connect and verify for outreach and notifications."
-        title="Connected account targets."
+        description="Review or refresh the job-platform accounts AutoApply will use for discovery and application flows."
+        title="Connected job platforms."
       >
         <ConnectedAccountsManager initialAccounts={accounts} />
       </FeaturePageShell>

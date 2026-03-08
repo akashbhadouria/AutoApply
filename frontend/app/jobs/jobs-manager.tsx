@@ -1,31 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { ExternalLink, Loader2, RefreshCw, Sparkles } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/table";
 import type { Job, JobSummaryResult } from "@/lib/api";
-
-interface JobFormState {
-  company: string;
-  title: string;
-  location: string;
-  jobUrl: string;
-  sourcePlatform: Job["primarySourcePlatform"];
-  postedDate: string;
-}
-
-const emptyForm: JobFormState = {
-  company: "",
-  title: "",
-  location: "",
-  jobUrl: "",
-  sourcePlatform: "linkedin",
-  postedDate: "",
-};
 
 const emptySummaryForm = {
   jobId: "",
@@ -34,56 +17,33 @@ const emptySummaryForm = {
   jobDescription: "",
 };
 
+const selectClass =
+  "h-10 w-full rounded-xl border border-white/10 bg-slate-950/80 px-3 text-sm text-slate-100 outline-none transition focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20";
+
 export function JobsManager({ initialJobs }: { initialJobs: Job[] }) {
   const [jobs, setJobs] = useState(initialJobs);
-  const [form, setForm] = useState<JobFormState>(emptyForm);
   const [summaryForm, setSummaryForm] = useState(emptySummaryForm);
   const [summaryResult, setSummaryResult] = useState<JobSummaryResult | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function refreshJobs() {
     const response = await fetch("/api/jobs", { cache: "no-store" });
-    if (!response.ok) {
-      throw new Error("Failed to refresh jobs");
-    }
-
+    if (!response.ok) throw new Error("Failed to refresh jobs");
     const payload = (await response.json()) as { data: Job[] };
     setJobs(payload.data);
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleRefresh() {
     setError(null);
-    setIsLoading(true);
-
+    setIsRefreshing(true);
     try {
-      const response = await fetch("/api/jobs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          company: form.company,
-          title: form.title,
-          location: form.location,
-          jobUrl: form.jobUrl,
-          sourcePlatform: form.sourcePlatform,
-          postedDate: form.postedDate || undefined,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Unable to ingest the job");
-      }
-
-      setForm(emptyForm);
       await refreshJobs();
-    } catch (submissionError) {
-      setError(submissionError instanceof Error ? submissionError.message : "Failed to ingest job");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to refresh jobs");
     } finally {
-      setIsLoading(false);
+      setIsRefreshing(false);
     }
   }
 
@@ -91,7 +51,6 @@ export function JobsManager({ initialJobs }: { initialJobs: Job[] }) {
     event.preventDefault();
     setError(null);
     setIsSummarizing(true);
-
     try {
       const response = await fetch("/api/agents/job-summary", {
         method: "POST",
@@ -102,15 +61,11 @@ export function JobsManager({ initialJobs }: { initialJobs: Job[] }) {
           jobDescription: summaryForm.jobDescription,
         }),
       });
-
-      if (!response.ok) {
-        throw new Error("Unable to summarize job description");
-      }
-
+      if (!response.ok) throw new Error("Unable to summarize job description");
       const payload = (await response.json()) as { data: JobSummaryResult };
       setSummaryResult(payload.data);
-    } catch (summaryError) {
-      setError(summaryError instanceof Error ? summaryError.message : "Failed to summarize job description");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to summarize job description");
     } finally {
       setIsSummarizing(false);
     }
@@ -122,124 +77,44 @@ export function JobsManager({ initialJobs }: { initialJobs: Job[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-        <Card className="p-6">
-        <div className="space-y-2">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">Jobs Intake</p>
-          <h2 className="text-2xl font-semibold text-ink">Normalize jobs before referrals and applications touch them.</h2>
-          <p className="text-sm text-muted">
-            Submitting the same company, role, and location from another source will merge the record and append the new platform instead of duplicating the job.
-          </p>
+      <Card className="overflow-hidden">
+        <div className="border-b border-white/[0.06] px-5 py-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="font-semibold text-white">Jobs Board</p>
+              <p className="text-xs text-slate-500">
+                This board should reflect backend-discovered jobs, not manual intake.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-slate-300">
+                {jobs.length} total
+              </span>
+              <Button disabled={isRefreshing} type="button" variant="ghost" onClick={() => void handleRefresh()}>
+                {isRefreshing ? <Loader2 className="mr-2 size-4 animate-spin" /> : <RefreshCw className="mr-2 size-4" />}
+                Refresh
+              </Button>
+            </div>
+          </div>
         </div>
 
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-ink" htmlFor="company">
-              Company
-            </label>
-            <Input
-              id="company"
-              onChange={(event) => setForm((current) => ({ ...current, company: event.target.value }))}
-              placeholder="Swiggy"
-              required
-              value={form.company}
-            />
+        {error ? (
+          <div className="border-b border-red-500/20 bg-red-500/10 px-5 py-3 text-sm text-red-300">{error}</div>
+        ) : null}
+
+        <div className="px-5 py-4">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300">
+            Product rule: the user should not enqueue scanners or add jobs manually. If this board is empty, the backend discovery path is not yet producing real jobs.
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-ink" htmlFor="title">
-              Role
-            </label>
-            <Input
-              id="title"
-              onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-              placeholder="Frontend Engineer"
-              required
-              value={form.title}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-ink" htmlFor="location">
-              Location
-            </label>
-            <Input
-              id="location"
-              onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))}
-              placeholder="Bangalore"
-              required
-              value={form.location}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-ink" htmlFor="job-url">
-              Job URL
-            </label>
-            <Input
-              id="job-url"
-              onChange={(event) => setForm((current) => ({ ...current, jobUrl: event.target.value }))}
-              placeholder="https://jobs.example.com/frontend-engineer"
-              required
-              value={form.jobUrl}
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-ink" htmlFor="source-platform">
-                Source platform
-              </label>
-              <select
-                className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
-                id="source-platform"
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    sourcePlatform: event.target.value as Job["primarySourcePlatform"],
-                  }))
-                }
-                value={form.sourcePlatform}
-              >
-                <option value="linkedin">linkedin</option>
-                <option value="instahyre">instahyre</option>
-                <option value="hirist">hirist</option>
-                <option value="naukri">naukri</option>
-                <option value="company_site">company_site</option>
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-ink" htmlFor="posted-date">
-                Posted date
-              </label>
-              <Input
-                id="posted-date"
-                onChange={(event) => setForm((current) => ({ ...current, postedDate: event.target.value }))}
-                type="date"
-                value={form.postedDate}
-              />
-            </div>
-          </div>
-
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
-          <Button className="w-full" disabled={isLoading} type="submit">
-            {isLoading ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-            Ingest job
-          </Button>
-        </form>
-        </Card>
-
-        <Card className="overflow-hidden p-2">
-          <div className="flex items-center justify-between px-4 pb-4 pt-3">
+        <div className="overflow-hidden">
+          <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Normalized jobs</p>
-              <p className="text-sm text-muted">Duplicate job discoveries are merged into a single record with multiple sources.</p>
+              <p className="font-semibold text-white">Normalized Jobs</p>
+              <p className="text-xs text-slate-500">Duplicates are merged by company + role + location</p>
             </div>
-            <p className="rounded-full bg-slate-900/80 px-3 py-1 text-sm font-medium text-ink">{jobs.length} jobs</p>
           </div>
-
           <div className="overflow-x-auto">
             <Table>
               <TableHead>
@@ -248,131 +123,151 @@ export function JobsManager({ initialJobs }: { initialJobs: Job[] }) {
                   <TableHeaderCell>Role</TableHeaderCell>
                   <TableHeaderCell>Location</TableHeaderCell>
                   <TableHeaderCell>Priority</TableHeaderCell>
-                  <TableHeaderCell>Sources</TableHeaderCell>
-                  <TableHeaderCell>Posted</TableHeaderCell>
+                  <TableHeaderCell>Freshness</TableHeaderCell>
+                  <TableHeaderCell>Platforms</TableHeaderCell>
+                  <TableHeaderCell>Link</TableHeaderCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {jobs.length === 0 ? (
                   <TableRow>
-                    <TableCell className="px-4 py-10 text-muted" colSpan={6}>
-                      No jobs ingested yet.
+                    <TableCell className="py-14 text-center text-slate-500" colSpan={7}>
+                      No jobs discovered yet. Connected platforms alone are not enough until authenticated discovery is producing real rows.
                     </TableCell>
                   </TableRow>
                 ) : (
                   jobs.map((job) => (
                     <TableRow key={job.id}>
-                      <TableCell className="font-medium">{job.company}</TableCell>
-                      <TableCell>{job.title}</TableCell>
-                      <TableCell>{job.location}</TableCell>
+                      <TableCell className="font-medium text-white">{job.company}</TableCell>
+                      <TableCell className="text-slate-300">{job.title}</TableCell>
+                      <TableCell className="text-slate-400">{job.location}</TableCell>
                       <TableCell>
-                        <span className={`rounded-full px-3 py-1 text-xs uppercase tracking-[0.18em] ${
-                          job.jobPriority === "high"
-                            ? "bg-amber-500/15 text-amber-300"
-                            : job.freshnessStatus === "fresh"
-                              ? "bg-emerald-500/15 text-emerald-300"
-                              : "bg-slate-500/15 text-slate-300"
-                        }`}>
-                          {job.jobPriority} / {job.applyStrategy}
-                        </span>
+                        <Badge label={job.jobPriority} variant="priority" />
                       </TableCell>
-                      <TableCell className="text-muted">{job.sourcePlatforms.join(", ")}</TableCell>
-                      <TableCell>{job.postedDate ?? "Unknown"}</TableCell>
+                      <TableCell>
+                        <Badge label={job.freshnessStatus} variant="freshness" />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {job.sourcePlatforms.map((p) => (
+                            <Badge key={p} label={p} variant="platform" />
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <a
+                          className="inline-flex items-center gap-1 text-xs text-slate-500 transition hover:text-cyan-400"
+                          href={job.jobUrl}
+                          rel="noopener noreferrer"
+                          target="_blank"
+                        >
+                          <ExternalLink className="size-3" />
+                          Open
+                        </a>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
               </TableBody>
             </Table>
           </div>
-        </Card>
-      </div>
+        </div>
+      </Card>
 
-      <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
+      {/* AI Summary */}
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card className="p-6">
-          <div className="space-y-2">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">Agent Summary</p>
-            <h2 className="text-2xl font-semibold text-ink">Paste a job description and generate a quick fit brief.</h2>
-          </div>
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-violet-400">AI Job Summary</p>
+          <h2 className="mb-5 text-lg font-semibold text-white">Paste JD to get fit brief</h2>
 
-          <form className="mt-6 space-y-4" onSubmit={handleSummarySubmit}>
+          <form className="space-y-3" onSubmit={handleSummarySubmit}>
             <select
-              className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 text-sm text-ink outline-none transition focus:border-accent"
+              className={selectClass}
               value={summaryForm.jobId}
-              onChange={(event) => {
-                const selectedJob = jobs.find((job) => job.id === Number(event.target.value));
-                setSummaryForm((current) => ({
-                  ...current,
-                  jobId: event.target.value,
-                  company: selectedJob?.company ?? current.company,
-                  jobTitle: selectedJob?.title ?? current.jobTitle,
+              onChange={(e) => {
+                const selectedJob = jobs.find((job) => job.id === Number(e.target.value));
+                setSummaryForm((c) => ({
+                  ...c,
+                  jobId: e.target.value,
+                  company: selectedJob?.company ?? c.company,
+                  jobTitle: selectedJob?.title ?? c.jobTitle,
                 }));
               }}
             >
-              <option value="">Optional canonical job context</option>
+              <option value="">Optional: pick from inventory</option>
               {jobs.map((job) => (
                 <option key={job.id} value={job.id}>
-                  {job.company} - {job.title}
+                  {job.company} — {job.title}
                 </option>
               ))}
             </select>
             <Input
-              placeholder="Company"
+              placeholder="Company *"
               required
               value={summaryForm.company}
-              onChange={(event) => setSummaryForm((current) => ({ ...current, company: event.target.value }))}
+              onChange={(e) => setSummaryForm((c) => ({ ...c, company: e.target.value }))}
             />
             <Input
-              placeholder="Job title"
+              placeholder="Job title *"
               required
               value={summaryForm.jobTitle}
-              onChange={(event) => setSummaryForm((current) => ({ ...current, jobTitle: event.target.value }))}
+              onChange={(e) => setSummaryForm((c) => ({ ...c, jobTitle: e.target.value }))}
             />
             <textarea
-              className="min-h-40 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
-              placeholder="Paste the job description here"
+              className="w-full resize-none rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2.5 text-sm text-slate-100 outline-none transition focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20"
+              placeholder="Paste the full job description here..."
               required
+              rows={8}
               value={summaryForm.jobDescription}
-              onChange={(event) => setSummaryForm((current) => ({ ...current, jobDescription: event.target.value }))}
+              onChange={(e) => setSummaryForm((c) => ({ ...c, jobDescription: e.target.value }))}
             />
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
-            <Button className="w-full" disabled={isSummarizing} type="submit">
-              {isSummarizing ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-              Summarize job description
+            {error ? (
+              <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-300">{error}</p>
+            ) : null}
+            <Button className="w-full" disabled={isSummarizing} type="submit" variant="violet">
+              {isSummarizing ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Sparkles className="mr-2 size-4" />}
+              Generate Summary
             </Button>
           </form>
         </Card>
 
         <Card className="p-6">
-          <div className="space-y-2">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">Summary Output</p>
-            <h2 className="text-2xl font-semibold text-ink">Use the brief to decide whether to prioritize outreach or direct application.</h2>
-          </div>
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Summary Result</p>
+          <h2 className="mb-5 text-lg font-semibold text-white">Fit brief output</h2>
 
-          <div className="mt-6 space-y-4">
-            <div className="rounded-[24px] border border-white/10 bg-slate-950/60 p-5 text-sm text-slate-300">
-              {summaryResult?.summary ?? "No summary generated yet."}
+          <div className="space-y-4">
+            <div className="rounded-xl border border-white/[0.06] bg-slate-950/60 p-4 text-sm leading-relaxed text-slate-300">
+              {summaryResult?.summary ?? "Generate a summary to see the fit brief here."}
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-[24px] border border-white/10 bg-black/20 p-5">
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Top signals</p>
-                <div className="mt-3 space-y-2 text-sm text-slate-300">
-                  {(summaryResult?.topSignals ?? ["Generate a summary to see key fit signals."]).map((signal) => (
-                    <p key={signal}>{signal}</p>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl border border-emerald-500/10 bg-emerald-500/[0.05] p-4">
+                <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-500">Top Signals</p>
+                <div className="space-y-1.5 text-sm text-slate-300">
+                  {(summaryResult?.topSignals ?? ["Awaiting summary..."]).map((signal) => (
+                    <p key={signal} className="flex items-start gap-2">
+                      <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-emerald-500" />
+                      {signal}
+                    </p>
                   ))}
                 </div>
               </div>
-              <div className="rounded-[24px] border border-white/10 bg-black/20 p-5">
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted">Risks</p>
-                <div className="mt-3 space-y-2 text-sm text-slate-300">
-                  {(summaryResult?.risks ?? ["Generate a summary to see possible scope or fit risks."]).map((risk) => (
-                    <p key={risk}>{risk}</p>
+              <div className="rounded-xl border border-amber-500/10 bg-amber-500/[0.05] p-4">
+                <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-500">Risks</p>
+                <div className="space-y-1.5 text-sm text-slate-300">
+                  {(summaryResult?.risks ?? ["Awaiting summary..."]).map((risk) => (
+                    <p key={risk} className="flex items-start gap-2">
+                      <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-amber-500" />
+                      {risk}
+                    </p>
                   ))}
                 </div>
               </div>
             </div>
+
             {summaryResult ? (
-              <div className="rounded-[20px] border border-cyan-400/20 bg-cyan-400/10 p-4 text-xs text-cyan-100">
-                Prompt template: {summaryResult.promptArtifact.templateName}
+              <div className="rounded-xl border border-violet-500/20 bg-violet-500/10 px-4 py-2.5 text-xs text-violet-300">
+                Template: {summaryResult.promptArtifact.templateName}
               </div>
             ) : null}
           </div>
